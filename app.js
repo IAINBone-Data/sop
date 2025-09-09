@@ -12,7 +12,7 @@
 
 // --- KONFIGURASI APLIKASI ---
 // Ganti URL ini dengan URL Web App dari Google Apps Script Anda.
-const WEB_APP_URL = 'GANTI_DENGAN_URL_WEB_APP_ANDA';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUGtvg6395FkwLtTZozVxXLExnOxXImGKcBC5mFSTR0UsO_31kadjGkaGu5EGANqmD/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
