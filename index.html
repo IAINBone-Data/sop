@@ -1,158 +1,1907 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data SOP IAIN Bone</title>
-    <!-- Menggunakan Tailwind CSS untuk styling cepat -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Style untuk scrollbar agar lebih modern */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Satu Data IAIN Bone</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+    #main-app { flex-grow: 1; }
+    .dataset-card { cursor: pointer; }
+    .modal-overlay { transition: opacity 0.3s ease; }
+    .admin-popup {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 0.5rem;
+        z-index: 50;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        transform-origin: top right;
+    }
+    .admin-popup.hidden {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+    }
+    .modal-scrollable .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    /* Gaya untuk filter Sifat Data */
+    input[type="radio"][name="filter-sifat"]:checked + .sifat-filter-label {
+        background-color: #3b82f6; /* bg-blue-600 */
+        color: white;
+        border-color: #3b82f6; /* border-blue-600 */
+    }
+    .sifat-filter-label {
+        transition: background-color 0.2s, color 0.2s;
+    }
+    .sifat-filter-label:hover {
+        background-color: #eff6ff; /* bg-blue-100 */
+    }
+
+    html, body {
+        scroll-behavior: smooth;
+    }
+  </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-slate-50">
 
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Standar Operasional Prosedur (SOP)</h1>
-            <p class="text-lg text-gray-600 mt-2">Institut Agama Islam Negeri (IAIN) Bone</p>
-        </header>
+  <!-- Custom Alert Modal -->
+  <div id="custom-alert-modal" class="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-sm p-6 space-y-4 bg-white rounded-xl shadow-lg text-center transform transition-all">
+        <div id="custom-alert-icon-container" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full">
+            <!-- Icon will be injected here -->
+        </div>
+        <p id="custom-alert-message" class="text-lg font-medium text-gray-700"></p>
+        <button id="close-custom-alert" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Tutup</button>
+    </div>
+</div>
 
-        <main>
-            <!-- Kontainer untuk tabel data -->
-            <div id="data-container" class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="p-6 text-center" id="loading-indicator">
-                    <p class="text-gray-500 animate-pulse">Memuat data SOP...</p>
+  <!-- Modal Kirim Pesan -->
+  <div id="message-modal" class="modal-overlay fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
+      <form id="message-form">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Kirim Pesan ke Admin</h2>
+            <button type="button" id="close-message-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label for="message-nama" class="text-sm font-medium text-gray-700">Nama Anda</label>
+            <input type="text" id="message-nama" name="Nama" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="message-kontak" class="text-sm font-medium text-gray-700">Email / No. HP</label>
+            <input type="text" id="message-kontak" name="Kontak" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label for="message-pesan" class="text-sm font-medium text-gray-700">Pesan Anda</label>
+            <textarea id="message-pesan" name="Pesan" rows="4" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+          </div>
+        </div>
+        <div id="message-form-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+        <div class="flex items-center gap-4 pt-6 mt-6 border-t">
+          <button type="button" id="cancel-message-form" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+          <button type="submit" id="submit-message-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <span id="send-message-button-text">Kirim Pesan</span>
+            <span id="send-message-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <!-- Modal Login -->
+  <div id="login-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all" id="login-modal-content">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-800">Login Administrator</h1>
+        <p class="text-gray-500">Silakan login untuk melanjutkan</p>
+      </div>
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+          <input type="text" id="username" name="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="password" name="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+        <div class="flex items-center gap-4">
+          <button type="button" id="close-login-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+          <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <span id="login-button-text">Login</span>
+            <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Dataset -->
+  <div id="add-dataset-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden modal-scrollable">
+      <div class="modal-content w-full max-w-2xl bg-white rounded-xl shadow-lg transform transition-all">
+        <form id="add-dataset-form" class="p-8">
+            <div class="flex justify-between items-center pb-4 border-b">
+              <h1 class="text-2xl font-bold text-gray-800">Tambah Dataset Baru</h1>
+              <button type="button" id="close-add-dataset-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-6">
+              <div class="md:col-span-2">
+                <label for="add-judul" class="text-sm font-medium text-gray-700">Judul <span class="text-red-500">*</span></label>
+                <input type="text" id="add-judul" name="Judul" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div class="md:col-span-2">
+                <label for="add-uraian" class="text-sm font-medium text-gray-700">Uraian <span class="text-red-500">*</span></label>
+                <textarea id="add-uraian" name="Uraian" rows="3" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              </div>
+              <div>
+                <label for="add-kategori" class="text-sm font-medium text-gray-700">Kategori <span class="text-red-500">*</span></label>
+                <select id="add-kategori" name="Kategori-select" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+                <input type="text" id="add-kategori-new" name="Kategori" placeholder="Masukkan kategori baru" class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 hidden">
+              </div>
+              <div>
+                <label for="add-sifat" class="text-sm font-medium text-gray-700">Sifat Data <span class="text-red-500">*</span></label>
+                <select id="add-sifat" name="Sifat" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="Terbuka">Terbuka</option>
+                  <option value="Terbatas">Terbatas</option>
+                  <option value="Tertutup">Tertutup</option>
+                </select>
+              </div>
+              <div>
+                <label for="add-produsen-data" class="text-sm font-medium text-gray-700">Produsen Data <span class="text-red-500">*</span></label>
+                <select id="add-produsen-data" name="Produsen Data" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="" disabled selected>Pilih salah satu...</option>
+                </select>
+              </div>
+              <div>
+                <label for="add-penanggung-jawab" class="text-sm font-medium text-gray-700">Penanggung Jawab <span class="text-red-500">*</span></label>
+                <input type="text" id="add-penanggung-jawab" name="Penanggung Jawab" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label for="add-tag" class="text-sm font-medium text-gray-700">Tag <span class="text-red-500">*</span></label>
+                <input type="text" id="add-tag" name="Tag" placeholder="Pisahkan dengan koma" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+               <div class="md:col-span-2">
+                <label for="add-nama-file" class="text-sm font-medium text-gray-700">Nama File <span class="text-red-500">*</span></label>
+                <input type="text" id="add-nama-file" name="Nama File" placeholder="Contoh: data-mahasiswa-2024" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div class="md:col-span-2">
+                <label for="add-file" class="text-sm font-medium text-gray-700">Unggah File <span class="text-red-500">*</span></label>
+                <input type="file" id="add-file" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+              </div>
+              <div class="md:col-span-2">
+                <label class="text-sm font-medium text-gray-700">Format <span class="text-red-500">*</span></label>
+                <div class="flex items-center flex-wrap gap-x-4 gap-y-2 mt-2">
+                    <div class="flex items-center">
+                        <input id="format-csv" name="Format" type="radio" value="csv" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-csv" class="ml-2 block text-sm text-gray-900">CSV</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-xls" name="Format" type="radio" value="xls" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-xls" class="ml-2 block text-sm text-gray-900">XLS</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-xlsx" name="Format" type="radio" value="xlsx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500" checked>
+                        <label for="format-xlsx" class="ml-2 block text-sm text-gray-900">XLSX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-pdf" name="Format" type="radio" value="pdf" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-pdf" class="ml-2 block text-sm text-gray-900">PDF</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-pptx" name="Format" type="radio" value="pptx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-pptx" class="ml-2 block text-sm text-gray-900">PPTX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-docx" name="Format" type="radio" value="docx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-docx" class="ml-2 block text-sm text-gray-900">DOCX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-png" name="Format" type="radio" value="png" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-png" class="ml-2 block text-sm text-gray-900">PNG</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-jpg" name="Format" type="radio" value="jpg" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-jpg" class="ml-2 block text-sm text-gray-900">JPG</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-mp4" name="Format" type="radio" value="mp4" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-mp4" class="ml-2 block text-sm text-gray-900">MP4</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="format-mp3" name="Format" type="radio" value="mp3" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="format-mp3" class="ml-2 block text-sm text-gray-900">MP3</label>
+                    </div>
                 </div>
-                <div class="overflow-x-auto hidden" id="table-wrapper">
-                  <table class="min-w-full divide-y divide-gray-200">
-                      <thead class="bg-gray-50">
-                          <tr>
-                              <!-- Dapatkan header tabel dari Google Sheet -->
-                          </tr>
-                      </thead>
-                      <tbody class="bg-white divide-y divide-gray-200">
-                          <!-- Data akan dimasukkan di sini oleh JavaScript -->
-                      </tbody>
-                  </table>
+              </div>
+              <div>
+                <label for="add-frekuensi" class="text-sm font-medium text-gray-700">Frekuensi Pembaruan <span class="text-red-500">*</span></label>
+                <select id="add-frekuensi" name="Frekuensi" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="" disabled selected>Pilih frekuensi...</option>
+                  <option value="Bulanan">Bulanan</option>
+                  <option value="Triwulan">Triwulan</option>
+                  <option value="Semester">Semester</option>
+                  <option value="Tahunan">Tahunan</option>
+                  <option value="Tahun Akademik">Tahun Akademik</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                  <label class="text-sm font-medium text-gray-700">Tahun Data <span class="text-red-500">*</span></label>
+                  <div class="flex items-center gap-2 mt-1">
+                      <input type="number" name="Tahun Data Start" placeholder="Contoh: 2020" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <span class="text-gray-500">-</span>
+                      <input type="number" name="Tahun Data End" placeholder="Contoh: 2025" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+              </div>
+            </div>
+            <div id="add-dataset-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+            <div id="add-dataset-success" class="mt-4 text-sm text-center text-green-500 font-medium hidden"></div>
+            <div class="flex items-center gap-4 pt-6 border-t mt-6">
+              <button type="button" id="cancel-add-dataset-button" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+              <button type="submit" id="submit-add-dataset-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                <span id="add-dataset-button-text">Simpan Dataset</span>
+                <span id="add-dataset-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+              </button>
+            </div>
+        </form>
+      </div>
+  </div>
+
+  <!-- Modal Edit Dataset -->
+  <div id="edit-dataset-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden modal-scrollable">
+      <div class="modal-content w-full max-w-2xl bg-white rounded-xl shadow-lg transform transition-all">
+        <form id="edit-dataset-form" class="p-8">
+            <input type="hidden" id="edit-rowIndex" name="rowIndex">
+            <div class="flex justify-between items-center pb-4 border-b">
+              <h1 class="text-2xl font-bold text-gray-800">Edit Dataset</h1>
+              <button type="button" id="close-edit-dataset-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-6">
+              <div class="md:col-span-2">
+                <label for="edit-judul" class="text-sm font-medium text-gray-700">Judul <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-judul" name="Judul" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div class="md:col-span-2">
+                <label for="edit-uraian" class="text-sm font-medium text-gray-700">Uraian <span class="text-red-500">*</span></label>
+                <textarea id="edit-uraian" name="Uraian" rows="3" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+              </div>
+              <div>
+                <label for="edit-kategori" class="text-sm font-medium text-gray-700">Kategori <span class="text-red-500">*</span></label>
+                <select id="edit-kategori" name="Kategori" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></select>
+              </div>
+               <div>
+                <label for="edit-sifat" class="text-sm font-medium text-gray-700">Sifat Data <span class="text-red-500">*</span></label>
+                <select id="edit-sifat" name="Sifat" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="Terbuka">Terbuka</option>
+                  <option value="Terbatas">Terbatas</option>
+                  <option value="Tertutup">Tertutup</option>
+                </select>
+              </div>
+              <div>
+                <label for="edit-produsen-data" class="text-sm font-medium text-gray-700">Produsen Data <span class="text-red-500">*</span></label>
+                <select id="edit-produsen-data" name="Produsen Data" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                   <!-- Options populated by JS -->
+                </select>
+              </div>
+              <div>
+                <label for="edit-penanggung-jawab" class="text-sm font-medium text-gray-700">Penanggung Jawab <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-penanggung-jawab" name="Penanggung Jawab" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div>
+                <label for="edit-tag" class="text-sm font-medium text-gray-700">Tag <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-tag" name="Tag" placeholder="Pisahkan dengan koma" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div class="md:col-span-2">
+                <label for="edit-nama-file" class="text-sm font-medium text-gray-700">Nama File <span class="text-red-500">*</span></label>
+                <input type="text" id="edit-nama-file" name="Nama File" placeholder="Contoh: data-mahasiswa-2024" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+              <div class="md:col-span-2">
+                <label for="edit-file" class="text-sm font-medium text-gray-700">Unggah File Baru (Opsional)</label>
+                  <p id="current-file-info" class="text-xs text-gray-500 mt-1"></p>
+                <input type="file" id="edit-file" class="w-full mt-2 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"/>
+              </div>
+              <div class="md:col-span-2">
+                <label class="text-sm font-medium text-gray-700">Format <span class="text-red-500">*</span></label>
+                <div id="edit-format-container" class="flex items-center flex-wrap gap-x-4 gap-y-2 mt-2">
+                    <div class="flex items-center">
+                        <input id="edit-format-csv" name="Format" type="radio" value="csv" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-csv" class="ml-2 block text-sm text-gray-900">CSV</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-xls" name="Format" type="radio" value="xls" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-xls" class="ml-2 block text-sm text-gray-900">XLS</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-xlsx" name="Format" type="radio" value="xlsx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-xlsx" class="ml-2 block text-sm text-gray-900">XLSX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-pdf" name="Format" type="radio" value="pdf" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-pdf" class="ml-2 block text-sm text-gray-900">PDF</label>
+                    </div>
+                     <div class="flex items-center">
+                        <input id="edit-format-pptx" name="Format" type="radio" value="pptx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-pptx" class="ml-2 block text-sm text-gray-900">PPTX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-docx" name="Format" type="radio" value="docx" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-docx" class="ml-2 block text-sm text-gray-900">DOCX</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-png" name="Format" type="radio" value="png" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-png" class="ml-2 block text-sm text-gray-900">PNG</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-jpg" name="Format" type="radio" value="jpg" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-jpg" class="ml-2 block text-sm text-gray-900">JPG</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-mp4" name="Format" type="radio" value="mp4" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-mp4" class="ml-2 block text-sm text-gray-900">MP4</label>
+                    </div>
+                    <div class="flex items-center">
+                        <input id="edit-format-mp3" name="Format" type="radio" value="mp3" class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                        <label for="edit-format-mp3" class="ml-2 block text-sm text-gray-900">MP3</label>
+                    </div>
                 </div>
-                 <div class="p-6 text-center text-red-500 hidden" id="error-message">
-                    <!-- Pesan error akan ditampilkan di sini -->
+              </div>
+              <div>
+                <label for="edit-frekuensi" class="text-sm font-medium text-gray-700">Frekuensi Pembaruan <span class="text-red-500">*</span></label>
+                <select id="edit-frekuensi" name="Frekuensi" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <option value="" disabled>Pilih frekuensi...</option>
+                  <option value="Bulanan">Bulanan</option>
+                  <option value="Triwulan">Triwulan</option>
+                  <option value="Semester">Semester</option>
+                  <option value="Tahunan">Tahunan</option>
+                  <option value="Tahun Akademik">Tahun Akademik</option>
+                </select>
+              </div>
+              <div class="md:col-span-2">
+                  <label class="text-sm font-medium text-gray-700">Tahun Data <span class="text-red-500">*</span></label>
+                  <div class="flex items-center gap-2 mt-1">
+                      <input type="number" id="edit-tahun-data-start" name="Tahun Data Start" placeholder="Contoh: 2020" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <span class="text-gray-500">-</span>
+                      <input type="number" id="edit-tahun-data-end" name="Tahun Data End" placeholder="Contoh: 2025" required class="w-full px-4 py-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+              </div>
+            </div>
+            <div id="edit-dataset-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+            <div id="edit-dataset-success" class="mt-4 text-sm text-center text-green-500 font-medium hidden"></div>
+            <div class="flex items-center gap-4 pt-6 border-t mt-6">
+              <button type="button" id="cancel-edit-dataset-button" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+              <button type="submit" id="submit-edit-dataset-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                <span id="edit-dataset-button-text">Simpan Perubahan</span>
+                <span id="edit-dataset-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+              </button>
+            </div>
+        </form>
+      </div>
+  </div>
+
+  <div id="reset-password-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all" id="reset-password-modal-content">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-800">Reset Password</h1>
+        <p class="text-gray-500">Masukkan password baru Anda.</p>
+      </div>
+      <form id="reset-password-form" class="space-y-4">
+        <div>
+          <label for="new_password" class="text-sm font-medium text-gray-700">Password Baru</label>
+          <input type="password" id="new_password" name="new_password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label for="confirm_password" class="text-sm font-medium text-gray-700">Konfirmasi Password Baru</label>
+          <input type="password" id="confirm_password" name="confirm_password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div id="reset-password-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+        <div id="reset-password-success" class="text-sm text-center text-green-500 font-medium hidden"></div>
+        <div class="flex items-center gap-4 pt-2">
+          <button type="button" id="close-reset-password-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+          <button type="submit" id="reset-submit-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <span id="reset-button-text">Reset Password</span>
+            <span id="reset-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-app">
+    <header class="bg-white shadow-md sticky top-0 z-40">
+      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <button id="hamburger-menu-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100">
+              <i class="fas fa-bars"></i>
+            </button>
+            <a href="#" id="header-title-link" class="text-xl font-bold text-gray-800 ml-4">Satu Data IAIN Bone</a>
+          </div>
+          <div id="user-info" class="flex items-center gap-4">
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="popup-menu" class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg z-50 transform -translate-x-full transition-transform duration-300">
+        <div class="p-4">
+            <h2 class="text-xl font-bold border-b pb-2">Menu</h2>
+            <ul id="main-menu-list" class="mt-4 space-y-2">
+                <li><a href="#" id="home-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-home w-6 mr-2"></i>Beranda</a></li>
+                <li><a href="#" id="about-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-info-circle w-6 mr-2"></i>Tentang</a></li>
+                <li id="stats-menu-item" class="hidden"><a href="#" id="stats-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-chart-bar w-6 mr-2"></i>Statistik</a></li>
+                <li id="admin-list-menu-item" class="hidden"><a href="#" id="admin-list-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-users-cog w-6 mr-2"></i>Daftar Admin</a></li>
+                <li id="request-menu-item" class="hidden"><a href="#" id="request-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-inbox w-6 mr-2"></i>Permintaan Data</a></li>
+                <li id="message-menu-item" class="hidden"><a href="#" id="message-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-envelope w-6 mr-2"></i>Pesan</a></li>
+                <li id="panduan-menu-item" class="hidden"><a href="https://drive.google.com/drive/folders/1LzHczamY7z75UFF2GlYTNLHxNUHi4SLt?usp=sharing" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-book-open w-6 mr-2"></i>Panduan</a></li>
+                <li class="border-t pt-2 mt-2"><a href="https://www.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-globe w-6 mr-2"></i>Web IAIN Bone</a></li>
+                <li><a href="https://s.id/iainbone" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-concierge-bell w-6 mr-2"></i>Informasi Layanan</a></li>
+                <li><a href="https://ppid.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-bullhorn w-6 mr-2"></i>PPID</a></li>
+            </ul>
+        </div>
+    </div>
+    <div id="menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+      
+      <div id="list-view-container">
+    
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg mb-6" role="alert">
+          <div class="flex">
+            <div class="py-1"><i class="fas fa-info-circle mr-3"></i></div>
+            <div>
+              <p class="font-bold">PENGUMUMAN</p>
+              <p class="text-sm">Saat ini sistem masih dalam tahap uji coba. Bila menemukan data yang tidak sesuai atau kendala dalam penggunaan sistem, harap menghubungi Tim Satu Data.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex flex-col lg:flex-row gap-8">
+          <aside class="w-full lg:w-1/4 xl:w-1/5">
+            <div class="p-5 bg-white rounded-lg shadow-md sticky top-20">
+                <div class="mb-5 space-y-3">
+                    <h2 class="text-lg font-bold text-gray-800 border-b pb-3">Informasi Ringkas</h2>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">Total Dataset</span>
+                        <span id="stat-total-dataset" class="font-bold text-gray-800 bg-blue-100 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">Total Produsen</span>
+                        <span id="stat-total-producer" class="font-bold text-gray-800 bg-green-100 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-gray-600">Total Kategori</span>
+                        <span id="stat-total-category" class="font-bold text-gray-800 bg-yellow-100 px-2 py-0.5 rounded-full">0</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center border-b pb-3 mb-5 mt-5">
+                    <h2 class="text-lg font-bold text-gray-800">Filter Data</h2>
+                    <button id="toggle-filter-btn" class="p-1 rounded-md lg:hidden hover:bg-gray-100">
+                        <i class="fas fa-chevron-down text-gray-600 transition-transform"></i>
+                    </button>
+                </div>
+                
+                <div id="filter-content" class="hidden lg:block space-y-5">
+                    <div>
+                        <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                        <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Kategori</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Sifat Data</label>
+                        <div id="filter-sifat-container" class="flex flex-wrap gap-2">
+                            <input type="radio" id="sifat-semua" name="filter-sifat" value="" class="sr-only" checked>
+                            <label for="sifat-semua" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">All</label>
+
+                            <input type="radio" id="sifat-terbuka" name="filter-sifat" value="Terbuka" class="sr-only">
+                            <label for="sifat-terbuka" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">Terbuka</label>
+
+                            <input type="radio" id="sifat-terbatas" name="filter-sifat" value="Terbatas" class="sr-only">
+                            <label for="sifat-terbatas" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">Terbatas</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="filter-producer" class="block text-sm font-medium text-gray-700 mb-1">Produsen Data</label>
+                        <select id="filter-producer" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Produsen</option></select>
+                    </div>
+                    <div>
+                        <label for="filter-tag" class="block text-sm font-medium text-gray-700 mb-1">Tag</label>
+                        <select id="filter-tag" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Tag</option></select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Filter Tahun Data</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="filter-data-start-year" placeholder="Dari" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <span class="text-gray-500">-</span>
+                            <input type="number" id="filter-data-end-year" placeholder="Sampai" class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <button id="reset-filter-button" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Reset Filter</button>
+                    
+                    <div class="mt-5 pt-5 border-t">
+                        <h2 class="text-lg font-bold text-gray-800 mb-3">Dataset Populer</h2>
+                        <ol id="popular-datasets-list" class="space-y-2 text-sm">
+                            <!-- Popular datasets will be injected here -->
+                        </ol>
+                        <p id="no-popular-datasets" class="text-sm text-gray-500 hidden">Belum ada data kunjungan.</p>
+                    </div>
+
                 </div>
             </div>
-        </main>
+          </aside>
+          <section class="w-full lg:w-3/4 xl:w-4/5">
+            <div class="flex flex-wrap items-center justify-between mb-4 gap-4">
+                <h3 id="dataset-count" class="text-lg font-semibold text-gray-700 w-full sm:w-auto"><i class="fa fa-spinner fa-spin"></i> Memuat data...</h3>
+                <div class="flex items-center gap-4 flex-wrap justify-end flex-grow">
+                    <div class="flex items-center gap-2">
+                        <div id="add-dataset-button-container" class="hidden">
+                            <button id="add-dataset-trigger-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm flex items-center whitespace-nowrap">
+                                <i class="fas fa-plus mr-2"></i>Tambah
+                            </button>
+                        </div>
+                        <button id="reload-dataset-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm flex items-center whitespace-nowrap" title="Muat Ulang Data">
+                            <i id="reload-icon" class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <select id="sort-dataset-select" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="default">Urut</option>
+                            <option value="no-desc">No Terbaru</option>
+                            <option value="no-asc">No Terlama</option>
+                            <option value="tanggal-desc">Tgl Terbaru</option>
+                            <option value="tanggal-asc">Tgl Terlama</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="filter-year" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Tahun</option>
+                        </select>
+                    </div>
+                    <div class="relative flex-grow sm:flex-grow-0">
+                        <input type="text" id="search-input" placeholder="Cari dataset..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                    </div>
+                </div>
+            </div>
+            <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat dataset...</p></div>
+            <div id="dataset-list" class="space-y-4"></div>
+            <!-- Pagination Container -->
+            <div id="pagination-container" class="flex justify-center items-center mt-8 space-x-2"></div>
+            <div id="no-data-message" class="hidden text-center py-10 bg-white rounded-lg shadow-md"><i class="fa-solid fa-database fa-3x text-gray-400"></i><p class="mt-4 text-lg font-semibold text-gray-700">Data Tidak Ditemukan</p><p class="mt-1 text-gray-500">Coba ubah kata kunci pencarian atau filter Anda.</p></div>
+          </section>
+        </div>
 
-        <footer class="text-center mt-8 text-gray-500 text-sm">
-            <p>&copy; 2025 IAIN Bone. All rights reserved.</p>
-        </footer>
-    </div>
+      </div>
+      
+      <div id="detail-view-container" class="hidden">
+        <div class="flex items-center justify-between mb-4">
+            <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Beranda</button>
+            <div id="detail-action-buttons" class="flex items-center gap-2"></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-8">
+                <section>
+                    <div class="bg-white p-6 sm:p-8 rounded-lg shadow-md space-y-6">
+                        <div class="flex justify-between items-start pb-4">
+                            <h2 id="detail-title" class="text-2xl font-bold text-gray-800"></h2>
+                            <span id="detail-sifat" class="text-sm font-bold px-3 py-1 rounded-full flex-shrink-0 ml-4"></span>
+                        </div>
+                        <p id="detail-uraian" class="text-gray-700"></p>
+                        <div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Data dan Sumber Daya</h3>
+                            <div id="resource-container" class="border rounded-lg p-4">
+                                <div class="flex items-center justify-between gap-4">
+                                    <div class="flex-grow">
+                                        <div class="flex items-start">
+                                            <i class="fas fa-file-alt text-gray-500 text-xl mr-3 mt-1"></i>
+                                            <div>
+                                                <p id="detail-file-title" class="font-semibold text-gray-800"></p>
+                                                <div class="flex items-center gap-2 mt-1 text-sm text-gray-600">
+                                                    <span id="detail-filename-display"></span>
+                                                    <span id="detail-file-format" class="font-semibold px-2 py-0.5 rounded-full text-xs"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh</a>
+                                </div>
+                                <div id="request-button-container" class="mt-4"></div>
+                            </div>
+                            <div id="table-preview-container" class="mt-6 hidden">
+                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Preview Data</h3>
+                                <div id="table-preview-content" class="border rounded-lg overflow-x-auto">
+                                    <!-- Konten pratinjau (iframe atau tabel) akan dimasukkan di sini oleh JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <section id="history-section">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">Riwayat Perubahan :</h3>
+                        <div id="history-list" class="space-y-4">
+                            <!-- History items will be injected here -->
+                        </div>
+                        <p id="no-history-message" class="text-gray-500 hidden">Tidak ada riwayat perubahan untuk dataset ini.</p>
+                    </div>
+                </section>
+            </div>
+            <div class="lg:col-span-1 space-y-8">
+                <section>
+                    <div class="bg-white p-6 rounded-lg shadow-md sticky top-20">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-3">Metadata</h3>
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <tbody>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Produsen Data</td><td id="meta-produsen" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Penanggung Jawab</td><td id="meta-penanggung-jawab" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Dibuat</td><td id="meta-tanggal" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Diperbaharui</td><td id="meta-diperbaharui" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Frekuensi</td><td id="meta-frekuensi" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tahun Data</td><td id="meta-tahun-data" class="py-3 px-2"></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+      </div>
 
-    <script>
-        // PENTING: Ganti URL ini dengan URL Web App dari Google Apps Script Anda setelah di-deploy.
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlVPxKvuNhgBh5YmZwY9whjmPwxhsm7LEUaenQ3hVHQv_FMcxIudzzqpwxaldDTTvI/exec';
+      <div id="about-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Satu Data IAIN Bone</h2>
+        <p class="text-gray-700 leading-relaxed">
+            Sistem Satu Data IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola, mengintegrasikan, dan menyajikan data dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola data yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
+        </p>
+        <p class="text-gray-700 mt-4 leading-relaxed">
+            Dengan adanya platform ini, diharapkan pengambilan keputusan di semua tingkatan dapat didasarkan pada data yang valid dan reliabel, sehingga meningkatkan efisiensi, transparansi, dan akuntabilitas institusi.
+        </p>
+        <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-2">Tim Pengembang</h3>
+        <p class="text-gray-700">Dikelola oleh Tim Kerja Satu Data IAIN Bone dan didukung penuh oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
+      </div>
+      
+      <div id="stats-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Statistik Penggunaan</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-blue-100 p-6 rounded-lg flex items-center">
+                <i class="fas fa-users fa-3x text-blue-500"></i>
+                <div class="ml-4">
+                    <div id="stats-total-visitors" class="text-3xl font-bold text-blue-800">0</div>
+                    <div class="text-blue-700">Total Pengunjung</div>
+                </div>
+            </div>
+            <div class="bg-green-100 p-6 rounded-lg flex items-center">
+                <i class="fas fa-download fa-3x text-green-500"></i>
+                <div class="ml-4">
+                    <div id="stats-total-downloads" class="text-3xl font-bold text-green-800">0</div>
+                    <div class="text-green-700">Total Unduhan</div>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Pengunjung per Bulan (12 Bulan Terakhir)</h3>
+                <div class="h-64"><canvas id="monthly-visits-chart"></canvas></div>
+            </div>
+            <div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Pengunjung per Tahun</h3>
+                <div class="h-64"><canvas id="yearly-visits-chart"></canvas></div>
+            </div>
+        </div>
+        <div id="admin-login-stats-container" class="mt-8">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Rekapitulasi Login Admin</h3>
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="min-w-full">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="py-3 px-6 text-left font-semibold text-gray-600">Username</th>
+                            <th class="py-3 px-6 text-left font-semibold text-gray-600">Jumlah Login Berhasil</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-logins-table-body">
+                        <!-- Data rekapitulasi akan dimasukkan di sini -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+      
+      <div id="admin-list-view-container" class="hidden p-4 md:p-8 bg-white rounded-lg shadow-md">
+          <div class="flex justify-between items-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-800">Daftar Admin</h2>
+              <button id="add-user-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 flex items-center">
+                  <i class="fas fa-plus mr-2"></i>Tambah Admin
+              </button>
+          </div>
+          <!-- Mobile/Card View -->
+          <div id="admin-list-cards" class="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Admin cards will be injected here -->
+          </div>
+          <!-- Desktop/Table View -->
+          <div class="overflow-x-auto hidden md:block">
+              <table class="min-w-full bg-white">
+                  <thead class="bg-gray-50 text-xs uppercase text-gray-700">
+                      <tr>
+                          <th class="py-3 px-4 text-left">Pengguna</th>
+                          <th class="py-3 px-4 text-left">Username</th>
+                          <th class="py-3 px-4 text-left">Unit</th>
+                          <th class="py-3 px-4 text-left">Role</th>
+                          <th class="py-3 px-4 text-left">Aksi</th>
+                      </tr>
+                  </thead>
+                  <tbody id="admin-list-table-body" class="divide-y">
+                      <!-- Admin rows will be injected here -->
+                  </tbody>
+              </table>
+          </div>
+      </div>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchData();
+      <!-- Request View Container -->
+      <div id="request-view-container" class="hidden p-4 md:p-8 bg-white rounded-lg shadow-md">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">Daftar Permintaan Data</h2>
+          <!-- Mobile/Card View -->
+          <div id="request-list-cards" class="md:hidden space-y-4">
+            <!-- Request cards will be injected here -->
+          </div>
+          <!-- Desktop/Table View -->
+          <div class="overflow-x-auto hidden md:block">
+              <table class="min-w-full bg-white">
+                  <thead class="bg-gray-100">
+                      <tr>
+                          <th class="py-2 px-4 text-left">Timestamp</th>
+                          <th class="py-2 px-4 text-left">Dataset</th>
+                          <th class="py-2 px-4 text-left">Pemohon</th>
+                          <th class="py-2 px-4 text-left">Keperluan</th>
+                          <th class="py-2 px-4 text-left">Tgl Respon</th>
+                          <th class="py-2 px-4 text-left">Status</th>
+                          <th class="py-2 px-4 text-left">Aksi</th>
+                      </tr>
+                  </thead>
+                  <tbody id="request-list-table-body">
+                      <!-- Request rows will be injected here -->
+                  </tbody>
+              </table>
+          </div>
+      </div>
+      
+      <!-- Messages View Container -->
+      <div id="message-view-container" class="hidden bg-white rounded-lg shadow-md">
+          <div class="p-6 border-b">
+              <h2 class="text-2xl font-bold text-gray-800">Kotak Masuk</h2>
+          </div>
+          <div id="message-list-container" class="divide-y divide-gray-200">
+              <!-- Messages will be injected here -->
+          </div>
+      </div>
+
+
+      <!-- Modal Minta Data -->
+      <div id="request-data-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+          <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+              <form id="request-data-form">
+                  <input type="hidden" id="request-dataset-title">
+                  <input type="hidden" id="request-dataset-file">
+                  <input type="hidden" id="request-dataset-user">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-6">Form Permintaan Data</h2>
+                  <p class="text-sm text-gray-600 mb-4">Anda akan meminta akses untuk dataset: <strong id="request-modal-dataset-title" class="text-gray-800"></strong></p>
+                  <div class="space-y-4">
+                      <div>
+                          <label for="request-nama" class="text-sm font-medium text-gray-700">Nama Lengkap</label>
+                          <input type="text" id="request-nama" name="namaPemohon" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="request-email" class="text-sm font-medium text-gray-700">Email Aktif</label>
+                          <input type="email" id="request-email" name="emailPemohon" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="request-keperluan" class="text-sm font-medium text-gray-700">Keperluan</label>
+                          <textarea id="request-keperluan" name="keperluan" rows="3" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                      </div>
+                  </div>
+                  <div id="request-form-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+                  <div class="flex items-center gap-4 pt-6 mt-6 border-t">
+                      <button type="button" id="cancel-request-form" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+                      <button type="submit" id="submit-request-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Kirim Permintaan</button>
+                  </div>
+                  <p class="text-xs text-gray-500 text-center mt-4">Permohonan data anda akan diproses bekerjasama dengan Tim PPID IAIN Bone</p>
+              </form>
+          </div>
+      </div>
+      
+      <!-- Modal Tambah/Edit User -->
+      <div id="user-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+          <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+              <form id="user-form">
+                  <input type="hidden" id="user-rowIndex" name="rowIndex">
+                  <h2 id="user-modal-title" class="text-2xl font-bold text-gray-800 mb-6"></h2>
+                  <div class="space-y-4">
+                      <div>
+                          <label for="user-nama" class="text-sm font-medium text-gray-700">Nama</label>
+                          <input type="text" id="user-nama" name="Nama" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="user-username" class="text-sm font-medium text-gray-700">Username</label>
+                          <input type="text" id="user-username" name="Username" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="user-password" class="text-sm font-medium text-gray-700">Password</label>
+                          <input type="password" id="user-password" name="Password" class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Kosongkan jika tidak ingin mengubah">
+                      </div>
+                      <div>
+                          <label for="user-unit" class="text-sm font-medium text-gray-700">Unit</label>
+                          <input type="text" id="user-unit" name="Unit" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="user-jabatan" class="text-sm font-medium text-gray-700">Jabatan</label>
+                          <input type="text" id="user-jabatan" name="Jabatan" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="user-role" class="text-sm font-medium text-gray-700">Role</label>
+                          <select id="user-role" name="Role" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                              <option value="Admin">Admin</option>
+                              <option value="Terbatas">Terbatas</option>
+                              <option value="Tertutup">Tertutup</option>
+                              <option value="Super Admin">Super Admin</option>
+                          </select>
+                      </div>
+                  </div>
+                  <div id="user-form-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+                  <div class="flex items-center gap-4 pt-6 mt-6 border-t">
+                      <button type="button" id="cancel-user-form" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+                      <button type="submit" id="save-user-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+      
+      <!-- Modal Profil Pengguna -->
+      <div id="profile-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+          <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+              <form id="profile-form">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-6">Profil Pengguna</h2>
+                  <div class="space-y-4">
+                      <div>
+                          <label for="profile-nama" class="text-sm font-medium text-gray-700">Nama</label>
+                          <input type="text" id="profile-nama" name="Nama" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label for="profile-jabatan" class="text-sm font-medium text-gray-700">Jabatan</label>
+                          <input type="text" id="profile-jabatan" name="Jabatan" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      </div>
+                      <div>
+                          <label class="text-sm font-medium text-gray-700">Username</label>
+                          <input type="text" id="profile-username" name="Username" disabled class="w-full px-4 py-2 mt-1 text-gray-500 bg-gray-200 border border-gray-300 rounded-lg">
+                      </div>
+                      <div>
+                          <label class="text-sm font-medium text-gray-700">Role</label>
+                          <input type="text" id="profile-role" name="Role" disabled class="w-full px-4 py-2 mt-1 text-gray-500 bg-gray-200 border border-gray-300 rounded-lg">
+                      </div>
+                  </div>
+                  <div id="profile-form-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
+                  <div id="profile-form-success" class="mt-4 text-sm text-center text-green-500 font-medium hidden"></div>
+                  <div class="flex items-center gap-4 pt-6 mt-6 border-t">
+                      <button type="button" id="cancel-profile-form" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Tutup</button>
+                      <button type="submit" id="save-profile-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Simpan Perubahan</button>
+                  </div>
+                  <div class="mt-4">
+                    <a href="#" id="profile-open-reset-password" class="text-sm text-blue-600 hover:underline">Reset Password</a>
+                  </div>
+              </form>
+          </div>
+      </div>
+
+    </main>
+  </div>
+
+  <footer class="bg-white text-slate-600 text-sm text-center py-6 border-t">
+    <p>&copy; 2025 - Dikelola oleh Tim Kerja Satu Data IAIN Bone. Didukung oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
+  </footer>
+ 
+  <!-- Tombol Chat Sticky -->
+  <button id="chat-button" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform transform hover:scale-110 z-50">
+    <i class="fas fa-comments text-2xl"></i>
+  </button>
+
+  <script>
+    // --- KONFIGURASI APLIKASI ---
+    // PENTING: Ganti URL ini dengan URL Web App dari Google Apps Script Anda setelah di-deploy.
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxlVPxKvuNhgBh5YmZwY9whjmPwxhsm7LEUaenQ3hVHQv_FMcxIudzzqpwxaldDTTvI/exec';
+
+    // --- STATE MANAGEMENT ---
+    // Objek untuk menyimpan semua data aplikasi
+    const state = {
+      allDatasets: [],
+      filteredDatasets: [],
+      users: [],
+      requests: [],
+      messages: [],
+      logs: [],
+      history: [],
+      currentUser: null,
+      currentPage: 1,
+      itemsPerPage: 10,
+      filters: {
+        search: '',
+        category: '',
+        sifat: '',
+        producer: '',
+        tag: '',
+        year: '',
+        startYear: '',
+        endYear: ''
+      },
+      sort: 'no-desc'
+    };
+
+    // --- ELEMEN DOM CACHING ---
+    // Untuk mempercepat akses ke elemen yang sering digunakan
+    const DOM = {};
+
+    // --- FUNGSI UTAMA ---
+
+    /**
+     * Inisialisasi aplikasi saat halaman selesai dimuat.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      // Caching elemen DOM
+      cacheDOMElements();
+      // Menyiapkan semua event listener
+      setupEventListeners();
+      // Memulai proses pemuatan data
+      initializeApp();
+    });
+
+    /**
+     * Fungsi utama untuk memulai aplikasi.
+     * Memeriksa sesi login dan memuat data awal.
+     */
+    async function initializeApp() {
+      if (WEB_APP_URL === 'GANTI_DENGAN_URL_WEB_APP_ANDA') {
+          showErrorState('Konfigurasi Error', 'Harap ganti "GANTI_DENGAN_URL_WEB_APP_ANDA" dengan URL Web App Anda yang valid di dalam file index.html.');
+          return;
+      }
+      checkLoginSession();
+      await loadInitialData();
+      populateProdusenDataOptions();
+    }
+
+    /**
+     * Memuat semua data awal yang dibutuhkan aplikasi dari backend.
+     */
+    async function loadInitialData() {
+      DOM.loadingIndicator.classList.remove('hidden');
+      DOM.datasetList.innerHTML = '';
+      
+      try {
+        const datasetsPromise = apiCall('getData', { sheetName: 'datasets' });
+        const usersPromise = apiCall('getData', { sheetName: 'users' });
+        const historyPromise = apiCall('getData', { sheetName: 'history' });
+        const logsPromise = apiCall('getData', { sheetName: 'logs' });
+
+        const [datasetsRes, usersRes, historyRes, logsRes] = await Promise.all([datasetsPromise, usersPromise, historyPromise, logsPromise]);
+
+        if (datasetsRes.status === 'success') {
+          state.allDatasets = datasetsRes.data.sort((a,b) => b.No - a.No); // Default sort
+        } else {
+          throw new Error(datasetsRes.message || 'Gagal memuat dataset.');
+        }
+
+        if(usersRes.status === 'success') state.users = usersRes.data;
+        if(historyRes.status === 'success') state.history = historyRes.data;
+        if(logsRes.status === 'success') state.logs = logsRes.data;
+
+        // Jika user adalah admin, muat data tambahan
+        if (state.currentUser) {
+            const requestsPromise = apiCall('getData', { sheetName: 'requests' });
+            const messagesPromise = apiCall('getData', { sheetName: 'messages' });
+            const [requestsRes, messagesRes] = await Promise.all([requestsPromise, messagesPromise]);
+            if(requestsRes.status === 'success') state.requests = requestsRes.data;
+            if(messagesRes.status === 'success') state.messages = messagesRes.data;
+        }
+
+        applyFiltersAndRender();
+        populateAllFilters();
+        updateSummaryStats();
+        
+      } catch (error) {
+        console.error('Initialization error:', error);
+        showErrorState('Gagal Memuat', `Terjadi kesalahan saat memuat data awal: ${error.message}`);
+      } finally {
+        DOM.loadingIndicator.classList.add('hidden');
+      }
+    }
+
+    /**
+     * Menampilkan pesan error di area utama jika data gagal dimuat.
+     */
+    function showErrorState(title, message) {
+        DOM.loadingIndicator.classList.add('hidden');
+        DOM.noDataMessage.classList.remove('hidden');
+        DOM.noDataMessage.querySelector('p:nth-child(2)').textContent = title;
+        DOM.noDataMessage.querySelector('p:nth-child(3)').textContent = message;
+    }
+
+
+    // --- RENDERING & DOM MANIPULATION ---
+
+    /**
+     * Menerapkan semua filter dan sorting, lalu me-render ulang daftar dataset.
+     */
+    function applyFiltersAndRender() {
+      let datasets = [...state.allDatasets];
+
+      // Filtering logic
+      if (state.filters.search) {
+        const searchTerm = state.filters.search.toLowerCase();
+        datasets = datasets.filter(d => 
+          Object.values(d).some(val => String(val).toLowerCase().includes(searchTerm))
+        );
+      }
+      if (state.filters.category) {
+        datasets = datasets.filter(d => d.Kategori === state.filters.category);
+      }
+       if (state.filters.sifat) {
+        if (state.filters.sifat === 'Terbuka') {
+           datasets = datasets.filter(d => d.Sifat === 'Terbuka');
+        } else if (state.filters.sifat === 'Terbatas' && state.currentUser) {
+           datasets = datasets.filter(d => ['Terbuka', 'Terbatas'].includes(d.Sifat));
+        } else if (!state.currentUser) {
+           datasets = datasets.filter(d => d.Sifat === 'Terbuka');
+        }
+      } else if (!state.currentUser) {
+        datasets = datasets.filter(d => d.Sifat === 'Terbuka');
+      }
+
+      if (state.filters.producer) {
+        datasets = datasets.filter(d => d['Produsen Data'] === state.filters.producer);
+      }
+      if (state.filters.tag) {
+        datasets = datasets.filter(d => (d.Tag || '').split(',').map(t => t.trim()).includes(state.filters.tag));
+      }
+      if (state.filters.year) {
+        datasets = datasets.filter(d => d['Tahun Data Start'] == state.filters.year || d['Tahun Data End'] == state.filters.year);
+      }
+      if (state.filters.startYear) {
+         datasets = datasets.filter(d => d['Tahun Data End'] >= state.filters.startYear);
+      }
+      if (state.filters.endYear) {
+         datasets = datasets.filter(d => d['Tahun Data Start'] <= state.filters.endYear);
+      }
+
+      // Sorting logic
+      switch(state.sort) {
+        case 'no-desc': datasets.sort((a, b) => (b.No || 0) - (a.No || 0)); break;
+        case 'no-asc': datasets.sort((a, b) => (a.No || 0) - (b.No || 0)); break;
+        case 'tanggal-desc': datasets.sort((a, b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui'])); break;
+        case 'tanggal-asc': datasets.sort((a, b) => new Date(a['Tanggal Diperbaharui']) - new Date(b['Tanggal Diperbaharui'])); break;
+      }
+      
+      state.filteredDatasets = datasets;
+      state.currentPage = 1;
+      renderDatasetList();
+      renderPagination();
+      updateDatasetCount();
+    }
+
+    /**
+     * Merender daftar dataset ke dalam DOM.
+     */
+    function renderDatasetList() {
+      DOM.datasetList.innerHTML = '';
+      if (state.filteredDatasets.length === 0) {
+        DOM.noDataMessage.classList.remove('hidden');
+        DOM.paginationContainer.classList.add('hidden');
+        return;
+      }
+
+      DOM.noDataMessage.classList.add('hidden');
+      DOM.paginationContainer.classList.remove('hidden');
+
+      const startIndex = (state.currentPage - 1) * state.itemsPerPage;
+      const endIndex = startIndex + state.itemsPerPage;
+      const paginatedItems = state.filteredDatasets.slice(startIndex, endIndex);
+
+      paginatedItems.forEach(dataset => {
+        const card = createDatasetCard(dataset);
+        DOM.datasetList.appendChild(card);
+      });
+    }
+    
+    /**
+     * Membuat satu elemen kartu dataset.
+     * @param {Object} dataset - Objek data untuk satu dataset.
+     * @returns {HTMLElement} - Elemen div kartu.
+     */
+    function createDatasetCard(dataset) {
+        const card = document.createElement('div');
+        card.className = 'dataset-card bg-white p-5 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300';
+        card.dataset.rowIndex = dataset.rowIndex;
+
+        const formatDate = (dateString) => {
+            if (!dateString) return 'N/A';
+            return new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        };
+
+        const getSifatClass = (sifat) => {
+            switch(sifat) {
+                case 'Terbuka': return 'bg-green-100 text-green-800';
+                case 'Terbatas': return 'bg-yellow-100 text-yellow-800';
+                case 'Tertutup': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        };
+
+        card.innerHTML = `
+            <div class="flex justify-between items-start">
+                <h3 class="text-lg font-bold text-gray-800 mb-2 pr-4">${dataset.Judul || 'Tanpa Judul'}</h3>
+                <span class="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0 ${getSifatClass(dataset.Sifat)}">${dataset.Sifat || 'N/A'}</span>
+            </div>
+            <p class="text-sm text-gray-600 mb-4 line-clamp-2">${dataset.Uraian || 'Tidak ada uraian.'}</p>
+            <div class="flex flex-wrap items-center text-xs text-gray-500 gap-x-4 gap-y-2">
+                <span class="flex items-center"><i class="fas fa-building mr-2 text-gray-400"></i>${dataset['Produsen Data'] || 'N/A'}</span>
+                <span class="flex items-center"><i class="fas fa-folder-open mr-2 text-gray-400"></i>${dataset.Kategori || 'N/A'}</span>
+                <span class="flex items-center"><i class="fas fa-calendar-alt mr-2 text-gray-400"></i>Diperbarui: ${formatDate(dataset['Tanggal Diperbaharui'])}</span>
+            </div>
+        `;
+
+        card.addEventListener('click', () => showDetailView(dataset.rowIndex));
+        return card;
+    }
+    
+    /**
+     * Merender kontrol paginasi.
+     */
+    function renderPagination() {
+      const pageCount = Math.ceil(state.filteredDatasets.length / state.itemsPerPage);
+      DOM.paginationContainer.innerHTML = '';
+      if (pageCount <= 1) return;
+
+      const createButton = (text, pageNum, isActive = false, isDisabled = false) => {
+          const button = document.createElement('button');
+          button.innerHTML = text;
+          button.disabled = isDisabled;
+          button.className = `px-3 py-1 rounded-md text-sm font-medium ${isActive ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-100'} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`;
+          if (!isDisabled) {
+              button.onclick = () => {
+                  state.currentPage = pageNum;
+                  renderDatasetList();
+                  renderPagination();
+                  window.scrollTo(0,0);
+              };
+          }
+          return button;
+      };
+
+      // Previous button
+      DOM.paginationContainer.appendChild(createButton('<i class="fas fa-chevron-left"></i>', state.currentPage - 1, false, state.currentPage === 1));
+
+      // Page numbers
+      for (let i = 1; i <= pageCount; i++) {
+        DOM.paginationContainer.appendChild(createButton(i, i, i === state.currentPage));
+      }
+
+      // Next button
+      DOM.paginationContainer.appendChild(createButton('<i class="fas fa-chevron-right"></i>', state.currentPage + 1, false, state.currentPage === pageCount));
+    }
+
+    /**
+     * Memperbarui tampilan jumlah dataset yang ditemukan.
+     */
+    function updateDatasetCount() {
+        DOM.datasetCount.innerHTML = `<i class="fa fa-database mr-2"></i>Ditemukan <strong>${state.filteredDatasets.length}</strong> dataset`;
+    }
+
+    /**
+     * Memperbarui statistik ringkas di sidebar.
+     */
+    function updateSummaryStats() {
+      const uniqueProducers = new Set(state.allDatasets.map(d => d['Produsen Data']));
+      const uniqueCategories = new Set(state.allDatasets.map(d => d.Kategori));
+      DOM.statTotalDataset.textContent = state.allDatasets.length;
+      DOM.statTotalProducer.textContent = uniqueProducers.size;
+      DOM.statTotalCategory.textContent = uniqueCategories.size;
+    }
+    
+    /**
+     * Mengisi semua dropdown filter berdasarkan data yang ada.
+     */
+    function populateAllFilters() {
+      const categories = [...new Set(state.allDatasets.map(d => d.Kategori).filter(Boolean))].sort();
+      const producers = [...new Set(state.allDatasets.map(d => d['Produsen Data']).filter(Boolean))].sort();
+      const allTags = state.allDatasets.flatMap(d => (d.Tag || '').split(',')).map(t => t.trim()).filter(Boolean);
+      const tags = [...new Set(allTags)].sort();
+      const years = [...new Set(state.allDatasets.flatMap(d => [d['Tahun Data Start'], d['Tahun Data End']]).filter(Boolean))].sort((a,b) => b-a);
+
+      populateSelect(DOM.filterCategory, categories);
+      populateSelect(DOM.filterProducer, producers);
+      populateSelect(DOM.filterTag, tags);
+      populateSelect(DOM.filterYear, years);
+    }
+
+    function populateSelect(selectElement, options) {
+      const currentValue = selectElement.value;
+      selectElement.innerHTML = `<option value="">Semua ${selectElement.id.split('-')[1]}</option>`;
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        selectElement.appendChild(option);
+      });
+      selectElement.value = currentValue;
+    }
+    
+    function populateProdusenDataOptions() {
+        const producers = ["IAIN Bone", "Biro AUAK", "Kepegawaian", "Perencanaan", "Keuangan", "Bagian ULA", "TUPR", "Layanan Akademik", "LPPM", "LPM", "SPI", "FSHI", "FEBI", "FUD", "FT", "Pascasarjana", "UPT TIPD", "UPT Perpustakaan", "UPT Bahasa", "UPT Mahad Al Jamiah"];
+        const selects = [DOM.addProdusenData, DOM.editProdusenData];
+        selects.forEach(select => {
+            producers.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                option.textContent = p;
+                select.appendChild(option);
+            });
         });
+    }
 
-        async function fetchData() {
-            const loadingIndicator = document.getElementById('loading-indicator');
-            const tableWrapper = document.getElementById('table-wrapper');
-            const errorMessage = document.getElementById('error-message');
+    /**
+     * Menampilkan atau menyembunyikan kontainer utama (views).
+     * @param {string} viewId - ID kontainer yang akan ditampilkan.
+     */
+    function showView(viewToShow) {
+        document.querySelectorAll('main > div').forEach(view => {
+            view.classList.add('hidden');
+        });
+        document.getElementById(viewToShow).classList.remove('hidden');
+        window.scrollTo(0,0);
+    }
+    
+    /**
+     * Menampilkan detail dari sebuah dataset.
+     * @param {number} rowIndex - Index baris dataset yang akan ditampilkan.
+     */
+    function showDetailView(rowIndex) {
+      const dataset = state.allDatasets.find(d => d.rowIndex == rowIndex);
+      if (!dataset) {
+        showCustomAlert('Data tidak ditemukan.', 'error');
+        return;
+      }
+      
+      // Update metadata
+      DOM.detailTitle.textContent = dataset.Judul || '';
+      DOM.detailUraian.textContent = dataset.Uraian || '';
+      DOM.metaProdusen.textContent = dataset['Produsen Data'] || '-';
+      DOM.metaPenanggungJawab.textContent = dataset['Penanggung Jawab'] || '-';
+      DOM.metaTanggal.textContent = new Date(dataset['Tanggal Dibuat']).toLocaleString('id-ID') || '-';
+      DOM.metaDiperbaharui.textContent = new Date(dataset['Tanggal Diperbaharui']).toLocaleString('id-ID') || '-';
+      DOM.metaFrekuensi.textContent = dataset.Frekuensi || '-';
+      DOM.metaTahunData.textContent = `${dataset['Tahun Data Start']} - ${dataset['Tahun Data End']}` || '-';
 
-            if (WEB_APP_URL === 'URL_WEB_APP_ANDA_DISINI') {
-                loadingIndicator.classList.add('hidden');
-                errorMessage.classList.remove('hidden');
-                errorMessage.textContent = 'Error: Harap ganti "URL_WEB_APP_ANDA_DISINI" dengan URL Web App Anda yang valid di dalam file index.html.';
+      // Update file info
+      DOM.detailFileTitle.textContent = dataset['Nama File'] || 'File Data';
+      DOM.detailFilenameDisplay.textContent = `${dataset['Nama File']}.${dataset.Format}`
+      DOM.detailDownloadLink.href = dataset['File URL'] || '#';
+      DOM.detailDownloadLink.dataset.rowIndex = dataset.rowIndex;
+      
+      const format = (dataset.Format || '').toLowerCase();
+      DOM.detailFileFormat.textContent = format.toUpperCase();
+      // Logic warna format bisa ditambahkan di sini
+      
+      // Update Sifat
+      const sifatClass = {
+        'Terbuka': 'bg-green-100 text-green-800',
+        'Terbatas': 'bg-yellow-100 text-yellow-800',
+        'Tertutup': 'bg-red-100 text-red-800'
+      }[dataset.Sifat] || 'bg-gray-100 text-gray-800';
+      DOM.detailSifat.className = `text-sm font-bold px-3 py-1 rounded-full flex-shrink-0 ml-4 ${sifatClass}`;
+      DOM.detailSifat.textContent = dataset.Sifat || 'N/A';
+
+      // Tombol Aksi
+      updateDetailActionButtons(dataset);
+      updateRequestButton(dataset);
+      
+      // History
+      renderHistory(dataset.Judul);
+
+      showView('detail-view-container');
+      logAction('view_detail', { title: dataset.Judul });
+    }
+
+    function renderHistory(datasetTitle) {
+      const historyForDataset = state.history.filter(h => h['Dataset Title'] === datasetTitle).sort((a,b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+      DOM.historyList.innerHTML = '';
+      if(historyForDataset.length > 0) {
+        DOM.noHistoryMessage.classList.add('hidden');
+        historyForDataset.forEach(h => {
+          const item = document.createElement('div');
+          item.className = 'flex items-start';
+          const actionInfo = {
+            'add': {icon: 'fa-plus-circle', color: 'text-green-500', text: 'dibuat'},
+            'edit': {icon: 'fa-pencil-alt', color: 'text-yellow-500', text: 'diperbarui'},
+            'delete': {icon: 'fa-trash-alt', color: 'text-red-500', text: 'dihapus'}
+          }[h.Action] || {icon: 'fa-info-circle', color: 'text-gray-500', text: h.Action};
+
+          item.innerHTML = `
+            <i class="fas ${actionInfo.icon} ${actionInfo.color} mt-1 mr-3"></i>
+            <div>
+              <p class="text-sm text-gray-800">Dataset ${actionInfo.text} oleh <strong>${h.User}</strong></p>
+              <p class="text-xs text-gray-500">${new Date(h.Timestamp).toLocaleString('id-ID')}</p>
+            </div>
+          `;
+          DOM.historyList.appendChild(item);
+        });
+      } else {
+        DOM.noHistoryMessage.classList.remove('hidden');
+      }
+    }
+    
+    function updateDetailActionButtons(dataset) {
+      DOM.detailActionButtons.innerHTML = '';
+      if(state.currentUser && (state.currentUser.Role === 'Super Admin' || state.currentUser.Username === dataset['Penanggung Jawab'])) {
+        const editButton = document.createElement('button');
+        editButton.innerHTML = '<i class="fas fa-edit mr-2"></i> Edit';
+        editButton.className = 'bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 text-sm';
+        editButton.onclick = () => openEditDatasetModal(dataset.rowIndex);
+        
+        const deleteButton = document.createElement('button');
+        deleteButton.innerHTML = '<i class="fas fa-trash-alt mr-2"></i> Hapus';
+        deleteButton.className = 'bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 text-sm';
+        deleteButton.onclick = () => deleteDataset(dataset.rowIndex);
+
+        DOM.detailActionButtons.appendChild(editButton);
+        DOM.detailActionButtons.appendChild(deleteButton);
+      }
+    }
+
+    function updateRequestButton(dataset) {
+      DOM.requestButtonContainer.innerHTML = '';
+      if (dataset.Sifat === 'Terbatas' || dataset.Sifat === 'Tertutup') {
+        const requestButton = document.createElement('button');
+        requestButton.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Minta Akses Data';
+        requestButton.className = 'w-full mt-4 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700 text-sm';
+        requestButton.onclick = () => openRequestDataModal(dataset);
+        DOM.requestButtonContainer.appendChild(requestButton);
+      }
+    }
+
+
+    // --- AUTHENTICATION & SESSION ---
+
+    /**
+     * Memeriksa apakah ada sesi login yang tersimpan di sessionStorage.
+     */
+    function checkLoginSession() {
+      const user = sessionStorage.getItem('currentUser');
+      if (user) {
+        state.currentUser = JSON.parse(user);
+        updateUIAfterLogin();
+      } else {
+        updateUIAfterLogout();
+      }
+    }
+    
+    /**
+     * Menangani proses login.
+     * @param {Event} e - Event dari form submission.
+     */
+    async function handleLogin(e) {
+      e.preventDefault();
+      const form = e.target;
+      const username = form.username.value;
+      const password = form.password.value;
+      
+      setButtonLoading(DOM.loginButton, true);
+      DOM.loginError.classList.add('hidden');
+
+      try {
+        const res = await apiCall('login', { username, password });
+        if (res.status === 'success') {
+          state.currentUser = res.user;
+          sessionStorage.setItem('currentUser', JSON.stringify(res.user));
+          closeModal('login-modal');
+          updateUIAfterLogin();
+          location.reload(); // Reload untuk memuat data admin
+        } else {
+          DOM.loginError.textContent = res.message || 'Login gagal.';
+          DOM.loginError.classList.remove('hidden');
+        }
+      } catch (error) {
+        DOM.loginError.textContent = 'Terjadi kesalahan jaringan.';
+        DOM.loginError.classList.remove('hidden');
+      } finally {
+        setButtonLoading(DOM.loginButton, false);
+      }
+    }
+    
+    /**
+     * Menangani proses logout.
+     */
+    function handleLogout() {
+      sessionStorage.removeItem('currentUser');
+      state.currentUser = null;
+      updateUIAfterLogout();
+      location.reload(); // Reload untuk kembali ke tampilan publik
+    }
+    
+    /**
+     * Memperbarui UI setelah user berhasil login.
+     */
+    function updateUIAfterLogin() {
+      DOM.userInfo.innerHTML = `
+        <div class="relative">
+            <button id="admin-menu-trigger" class="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-blue-600">
+                <i class="fas fa-user-circle text-2xl"></i>
+                <span>${state.currentUser.Nama}</span>
+                <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            <div id="admin-popup" class="admin-popup hidden w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                <div class="py-1">
+                    <a href="#" id="profile-button" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profil</a>
+                    <a href="#" id="logout-button" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                </div>
+            </div>
+        </div>
+      `;
+      document.getElementById('logout-button').onclick = handleLogout;
+      document.getElementById('profile-button').onclick = () => openProfileModal();
+      document.getElementById('admin-menu-trigger').onclick = (e) => {
+        e.stopPropagation();
+        document.getElementById('admin-popup').classList.toggle('hidden');
+      };
+      
+      // Tampilkan elemen-elemen admin
+      DOM.addDatasetButtonContainer.classList.remove('hidden');
+      DOM.statsMenuItem.classList.remove('hidden');
+      DOM.panduanMenuItem.classList.remove('hidden');
+      if(state.currentUser.Role === 'Super Admin') {
+          DOM.adminListMenuItem.classList.remove('hidden');
+          DOM.requestMenuItem.classList.remove('hidden');
+          DOM.messageMenuItem.classList.remove('hidden');
+      }
+    }
+
+    /**
+     * Memperbarui UI setelah user logout atau saat tidak ada sesi.
+     */
+    function updateUIAfterLogout() {
+        DOM.userInfo.innerHTML = `
+            <button id="login-trigger-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm">
+                Login
+            </button>
+        `;
+        document.getElementById('login-trigger-button').onclick = () => openModal('login-modal');
+        
+        // Sembunyikan elemen admin
+        DOM.addDatasetButtonContainer.classList.add('hidden');
+        DOM.statsMenuItem.classList.add('hidden');
+        DOM.adminListMenuItem.classList.add('hidden');
+        DOM.requestMenuItem.classList.add('hidden');
+        DOM.messageMenuItem.classList.add('hidden');
+        DOM.panduanMenuItem.classList.add('hidden');
+    }
+
+    // --- MODALS & FORMS ---
+    
+    function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+    function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    
+    function openAddDatasetModal() {
+        DOM.addDatasetForm.reset();
+        DOM.addKategoriNew.classList.add('hidden');
+        const categories = [...new Set(state.allDatasets.map(d => d.Kategori).filter(Boolean))].sort();
+        populateSelect(DOM.addKategori, categories);
+        DOM.addKategori.innerHTML += '<option value="new">-- Tambah Kategori Baru --</option>';
+        openModal('add-dataset-modal');
+    }
+
+    function openEditDatasetModal(rowIndex) {
+        const dataset = state.allDatasets.find(d => d.rowIndex == rowIndex);
+        if(!dataset) return;
+
+        const form = DOM.editDatasetForm;
+        form.reset();
+        form.rowIndex.value = dataset.rowIndex;
+        form.Judul.value = dataset.Judul || '';
+        form.Uraian.value = dataset.Uraian || '';
+        form['Penanggung Jawab'].value = dataset['Penanggung Jawab'] || '';
+        form.Tag.value = dataset.Tag || '';
+        form['Nama File'].value = dataset['Nama File'] || '';
+        form.Sifat.value = dataset.Sifat || 'Terbuka';
+        form.Frekuensi.value = dataset.Frekuensi || '';
+        form['Tahun Data Start'].value = dataset['Tahun Data Start'] || '';
+        form['Tahun Data End'].value = dataset['Tahun Data End'] || '';
+
+        const categories = [...new Set(state.allDatasets.map(d => d.Kategori).filter(Boolean))].sort();
+        populateSelect(DOM.editKategori, categories);
+        DOM.editKategori.value = dataset.Kategori || '';
+
+        DOM.editProdusenData.value = dataset['Produsen Data'] || '';
+        
+        document.querySelector(`#edit-format-container input[value="${dataset.Format.toLowerCase()}"]`).checked = true;
+
+        DOM.currentFileInfo.textContent = `File saat ini: ${dataset['Nama File']}.${dataset.Format}`;
+        
+        openModal('edit-dataset-modal');
+    }
+
+    function openRequestDataModal(dataset) {
+      DOM.requestDataForm.reset();
+      DOM.requestModalDatasetTitle.textContent = dataset.Judul;
+      document.getElementById('request-dataset-title').value = dataset.Judul;
+      document.getElementById('request-dataset-file').value = `${dataset['Nama File']}.${dataset.Format}`;
+      document.getElementById('request-dataset-user').value = dataset['Penanggung Jawab'];
+      openModal('request-data-modal');
+    }
+
+    function openProfileModal() {
+        const user = state.currentUser;
+        DOM.profileForm.Nama.value = user.Nama;
+        DOM.profileForm.Jabatan.value = user.Jabatan;
+        DOM.profileForm.Username.value = user.Username;
+        DOM.profileForm.Role.value = user.Role;
+        openModal('profile-modal');
+    }
+
+    async function handleAddOrEditDataset(e, mode) {
+        e.preventDefault();
+        const form = e.target;
+        const button = form.querySelector('button[type="submit"]');
+        setButtonLoading(button, true);
+
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Handle new category
+        if(data['Kategori-select'] === 'new') {
+          data.Kategori = data.Kategori;
+        } else {
+          data.Kategori = data['Kategori-select'];
+        }
+        delete data['Kategori-select'];
+
+        // File handling
+        const fileInput = form.querySelector('input[type="file"]');
+        let filePayload = null;
+        if (fileInput.files.length > 0) {
+            try {
+                filePayload = await fileToBase64(fileInput.files[0]);
+            } catch (error) {
+                showCustomAlert('Gagal membaca file.', 'error');
+                setButtonLoading(button, false);
                 return;
             }
+        }
 
-            try {
-                const response = await fetch(WEB_APP_URL);
-                const result = await response.json();
+        const payload = {
+            action: mode === 'add' ? 'addDataset' : 'editDataset',
+            data: data,
+            file: filePayload,
+            user: state.currentUser.Username
+        };
 
-                if (result.status === 'success' && result.data.length > 0) {
-                    displayData(result.data);
-                    loadingIndicator.classList.add('hidden');
-                    tableWrapper.classList.remove('hidden');
-                } else if (result.status === 'error') {
-                    throw new Error(result.message);
-                } else {
-                    throw new Error('Data tidak ditemukan atau format tidak sesuai.');
-                }
-
-            } catch (error) {
-                console.error('Gagal mengambil data:', error);
-                loadingIndicator.classList.add('hidden');
-                errorMessage.classList.remove('hidden');
-                errorMessage.textContent = `Gagal memuat data. Error: ${error.message}`;
+        if (mode === 'edit') {
+          payload.rowIndex = form.rowIndex.value;
+          // If no new file, retain old file info
+          if (!filePayload) {
+            const oldDataset = state.allDatasets.find(d => d.rowIndex == payload.rowIndex);
+            payload.data['File URL'] = oldDataset['File URL'];
+            payload.data['File ID'] = oldDataset['File ID'];
+          }
+        }
+        
+        try {
+            const res = await apiCall(payload.action, payload);
+            if (res.status === 'success') {
+                showCustomAlert(res.message, 'success');
+                closeModal(mode === 'add' ? 'add-dataset-modal' : 'edit-dataset-modal');
+                await loadInitialData();
+            } else {
+                showCustomAlert(res.message || 'Terjadi kesalahan.', 'error');
             }
+        } catch (error) {
+            showCustomAlert('Kesalahan jaringan.', 'error');
+        } finally {
+            setButtonLoading(button, false);
         }
+    }
 
-        function displayData(data) {
-            const tableHead = document.querySelector('table thead tr');
-            const tableBody = document.querySelector('table tbody');
-            
-            tableHead.innerHTML = '';
-            tableBody.innerHTML = '';
-
-            // Membuat header tabel dari keys object pertama
-            const headers = Object.keys(data[0]);
-            headers.forEach(headerText => {
-                const header = document.createElement('th');
-                header.scope = 'col';
-                header.className = 'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider';
-                header.textContent = headerText;
-                tableHead.appendChild(header);
-            });
-
-            // Mengisi baris data
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors duration-200';
-                
-                headers.forEach(header => {
-                    const cell = document.createElement('td');
-                    cell.className = 'px-6 py-4 whitespace-nowrap text-sm text-gray-700';
-                    
-                    let cellData = item[header] || '';
-
-                    // Jika data adalah link, buat menjadi tautan yang bisa diklik
-                    if (typeof cellData === 'string' && (cellData.startsWith('http://') || cellData.startsWith('https://'))) {
-                        const link = document.createElement('a');
-                        link.href = cellData;
-                        link.textContent = 'Lihat Dokumen'; // Teks link yang lebih deskriptif
-                        link.target = '_blank'; // Buka di tab baru
-                        link.rel = 'noopener noreferrer';
-                        link.className = 'text-indigo-600 hover:text-indigo-900 font-medium';
-                        cell.appendChild(link);
-                    } else {
-                        cell.textContent = cellData;
-                    }
-                    row.appendChild(cell);
-                });
-
-                tableBody.appendChild(row);
-            });
+    async function deleteDataset(rowIndex) {
+      if (confirm('Apakah Anda yakin ingin menghapus dataset ini? Tindakan ini tidak dapat dibatalkan.')) {
+        try {
+          const res = await apiCall('deleteDataset', { rowIndex, user: state.currentUser.Username });
+          if (res.status === 'success') {
+            showCustomAlert('Dataset berhasil dihapus.', 'success');
+            showView('list-view-container');
+            await loadInitialData();
+          } else {
+            showCustomAlert(res.message || 'Gagal menghapus dataset.', 'error');
+          }
+        } catch (error) {
+          showCustomAlert('Kesalahan jaringan saat menghapus.', 'error');
         }
-    </script>
+      }
+    }
 
+
+    // --- API & HELPERS ---
+
+    /**
+     * Fungsi generik untuk berkomunikasi dengan backend Google Apps Script.
+     * @param {string} action - Aksi yang akan dipanggil di backend.
+     * @param {Object} payload - Data yang akan dikirim.
+     * @returns {Promise<Object>} - Respon dari backend.
+     */
+    async function apiCall(action, payload = {}) {
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                redirect: "follow",
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action, ...payload })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error(`API call failed for action "${action}":`, error);
+            throw new Error(`Network error or failed to parse JSON for action: ${action}`);
+        }
+    }
+
+    /**
+     * Mengubah status loading pada tombol.
+     * @param {HTMLElement} button - Elemen tombol.
+     * @param {boolean} isLoading - Status loading.
+     */
+    function setButtonLoading(button, isLoading) {
+        const textSpan = button.querySelector('span:not([class*="fa-"])');
+        const spinnerSpan = button.querySelector('span[class*="fa-"]');
+        button.disabled = isLoading;
+        if (isLoading) {
+            textSpan.classList.add('hidden');
+            spinnerSpan.classList.remove('hidden');
+        } else {
+            textSpan.classList.remove('hidden');
+            spinnerSpan.classList.add('hidden');
+        }
+    }
+    
+    /**
+     * Menampilkan modal notifikasi kustom.
+     * @param {string} message - Pesan yang akan ditampilkan.
+     * @param {string} type - Tipe notifikasi ('success' atau 'error').
+     */
+    function showCustomAlert(message, type = 'success') {
+        const modal = DOM.customAlertModal;
+        const msgElement = DOM.customAlertMessage;
+        const iconContainer = DOM.customAlertIconContainer;
+
+        msgElement.textContent = message;
+
+        if (type === 'success') {
+            iconContainer.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100';
+            iconContainer.innerHTML = '<i class="fas fa-check text-green-600 text-xl"></i>';
+        } else { // error
+            iconContainer.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
+            iconContainer.innerHTML = '<i class="fas fa-times text-red-600 text-xl"></i>';
+        }
+        
+        openModal('custom-alert-modal');
+    }
+    
+    /**
+     * Mengonversi file menjadi format Base64.
+     * @param {File} file - File dari input.
+     * @returns {Promise<Object>} - Objek berisi data Base64, tipe, dan nama file.
+     */
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result;
+          resolve({
+            base64: result.substr(result.indexOf(',') + 1),
+            type: file.type,
+            name: file.name
+          });
+        };
+        reader.onerror = error => reject(error);
+      });
+    }
+
+    function logAction(type, details) {
+        apiCall('logAction', { type, details, user: state.currentUser ? state.currentUser.Username : 'Guest' });
+    }
+
+    // --- EVENT LISTENERS SETUP ---
+
+    function setupEventListeners() {
+      // Navigasi & Menu
+      DOM.hamburgerMenuButton.addEventListener('click', () => {
+        DOM.popupMenu.classList.toggle('-translate-x-full');
+        DOM.menuOverlay.classList.toggle('hidden');
+      });
+      DOM.menuOverlay.addEventListener('click', () => {
+         DOM.popupMenu.classList.add('-translate-x-full');
+         DOM.menuOverlay.classList.add('hidden');
+      });
+      DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
+      DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
+      DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container'); });
+      DOM.statsLink.addEventListener('click', (e) => { e.preventDefault(); showView('stats-view-container'); renderStats(); });
+      DOM.adminListLink.addEventListener('click', (e) => { e.preventDefault(); showView('admin-list-view-container'); renderAdminList(); });
+      DOM.requestLink.addEventListener('click', (e) => { e.preventDefault(); showView('request-view-container'); renderRequestsList(); });
+      DOM.messageLink.addEventListener('click', (e) => { e.preventDefault(); showView('message-view-container'); renderMessagesList(); });
+      
+      // Tombol Aksi Utama
+      DOM.reloadDatasetButton.addEventListener('click', loadInitialData);
+      DOM.addDatasetTriggerButton.addEventListener('click', openAddDatasetModal);
+      DOM.chatButton.addEventListener('click', () => openModal('message-modal'));
+      DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
+      
+      // Forms
+      DOM.loginForm.addEventListener('submit', handleLogin);
+      DOM.addDatasetForm.addEventListener('submit', (e) => handleAddOrEditDataset(e, 'add'));
+      DOM.editDatasetForm.addEventListener('submit', (e) => handleAddOrEditDataset(e, 'edit'));
+      // ... (form listeners lainnya)
+
+      // Filtering and Sorting
+      DOM.searchInput.addEventListener('input', () => { state.filters.search = DOM.searchInput.value; applyFiltersAndRender(); });
+      DOM.filterCategory.addEventListener('change', () => { state.filters.category = DOM.filterCategory.value; applyFiltersAndRender(); });
+      DOM.filterProducer.addEventListener('change', () => { state.filters.producer = DOM.filterProducer.value; applyFiltersAndRender(); });
+      DOM.filterTag.addEventListener('change', () => { state.filters.tag = DOM.filterTag.value; applyFiltersAndRender(); });
+      DOM.filterYear.addEventListener('change', () => { state.filters.year = DOM.filterYear.value; applyFiltersAndRender(); });
+      DOM.filterDataStartYear.addEventListener('input', () => { state.filters.startYear = DOM.filterDataStartYear.value; applyFiltersAndRender(); });
+      DOM.filterDataEndYear.addEventListener('input', () => { state.filters.endYear = DOM.filterDataEndYear.value; applyFiltersAndRender(); });
+      DOM.sortDatasetSelect.addEventListener('change', () => { state.sort = DOM.sortDatasetSelect.value; applyFiltersAndRender(); });
+      DOM.resetFilterButton.addEventListener('click', () => {
+          state.filters = { search: '', category: '', sifat: '', producer: '', tag: '', year: '', startYear: '', endYear: '' };
+          document.querySelectorAll('#filter-content select, #filter-content input').forEach(el => el.value = '');
+          document.getElementById('sifat-semua').checked = true;
+          applyFiltersAndRender();
+      });
+      DOM.filterSifatContainer.addEventListener('change', (e) => {
+          if (e.target.name === 'filter-sifat') {
+              state.filters.sifat = e.target.value;
+              applyFiltersAndRender();
+          }
+      });
+      DOM.addKategori.addEventListener('change', (e) => {
+          DOM.addKategoriNew.classList.toggle('hidden', e.target.value !== 'new');
+      });
+
+      // Modal Close Buttons
+      document.querySelectorAll('[id^="close-"], [id^="cancel-"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          btn.closest('.modal-overlay').classList.add('hidden');
+        });
+      });
+      
+      // Close admin popup when clicking outside
+      document.addEventListener('click', (e) => {
+          const popup = document.getElementById('admin-popup');
+          const trigger = document.getElementById('admin-menu-trigger');
+          if(popup && !popup.classList.contains('hidden') && !popup.contains(e.target) && !trigger.contains(e.target)) {
+            popup.classList.add('hidden');
+          }
+      });
+    }
+
+    /**
+     * Meng-cache elemen-elemen DOM yang sering diakses ke dalam objek DOM.
+     */
+    function cacheDOMElements() {
+      // Views
+      DOM.listViewContainer = document.getElementById('list-view-container');
+      DOM.detailViewContainer = document.getElementById('detail-view-container');
+      DOM.aboutViewContainer = document.getElementById('about-view-container');
+      // ... (cache all other view containers)
+
+      // Main list elements
+      DOM.loadingIndicator = document.getElementById('loading-indicator');
+      DOM.datasetList = document.getElementById('dataset-list');
+      DOM.noDataMessage = document.getElementById('no-data-message');
+      DOM.paginationContainer = document.getElementById('pagination-container');
+      DOM.datasetCount = document.getElementById('dataset-count');
+
+      // Sidebar & Filters
+      DOM.statTotalDataset = document.getElementById('stat-total-dataset');
+      DOM.statTotalProducer = document.getElementById('stat-total-producer');
+      DOM.statTotalCategory = document.getElementById('stat-total-category');
+      DOM.searchInput = document.getElementById('search-input');
+      DOM.filterCategory = document.getElementById('filter-category');
+      DOM.filterSifatContainer = document.getElementById('filter-sifat-container');
+      DOM.filterProducer = document.getElementById('filter-producer');
+      DOM.filterTag = document.getElementById('filter-tag');
+      DOM.filterYear = document.getElementById('filter-year');
+      DOM.filterDataStartYear = document.getElementById('filter-data-start-year');
+      DOM.filterDataEndYear = document.getElementById('filter-data-end-year');
+      DOM.sortDatasetSelect = document.getElementById('sort-dataset-select');
+      DOM.resetFilterButton = document.getElementById('reset-filter-button');
+
+      // Detail View Elements
+      DOM.detailTitle = document.getElementById('detail-title');
+      DOM.detailUraian = document.getElementById('detail-uraian');
+      DOM.detailSifat = document.getElementById('detail-sifat');
+      DOM.detailFileTitle = document.getElementById('detail-file-title');
+      DOM.detailFilenameDisplay = document.getElementById('detail-filename-display');
+      DOM.detailFileFormat = document.getElementById('detail-file-format');
+      DOM.detailDownloadLink = document.getElementById('detail-download-link');
+      DOM.metaProdusen = document.getElementById('meta-produsen');
+      DOM.metaPenanggungJawab = document.getElementById('meta-penanggung-jawab');
+      DOM.metaTanggal = document.getElementById('meta-tanggal');
+      DOM.metaDiperbaharui = document.getElementById('meta-diperbaharui');
+      DOM.metaFrekuensi = document.getElementById('meta-frekuensi');
+      DOM.metaTahunData = document.getElementById('meta-tahun-data');
+      DOM.detailActionButtons = document.getElementById('detail-action-buttons');
+      DOM.requestButtonContainer = document.getElementById('request-button-container');
+      DOM.historyList = document.getElementById('history-list');
+      DOM.noHistoryMessage = document.getElementById('no-history-message');
+
+      // Header & Menu
+      DOM.userInfo = document.getElementById('user-info');
+      DOM.hamburgerMenuButton = document.getElementById('hamburger-menu-button');
+      DOM.popupMenu = document.getElementById('popup-menu');
+      DOM.menuOverlay = document.getElementById('menu-overlay');
+      DOM.headerTitleLink = document.getElementById('header-title-link');
+      DOM.homeLink = document.getElementById('home-link');
+      DOM.aboutLink = document.getElementById('about-link');
+      DOM.statsLink = document.getElementById('stats-link');
+      DOM.adminListLink = document.getElementById('admin-list-link');
+      DOM.requestLink = document.getElementById('request-link');
+      DOM.messageLink = document.getElementById('message-link');
+      DOM.statsMenuItem = document.getElementById('stats-menu-item');
+      DOM.adminListMenuItem = document.getElementById('admin-list-menu-item');
+      DOM.requestMenuItem = document.getElementById('request-menu-item');
+      DOM.messageMenuItem = document.getElementById('message-menu-item');
+      DOM.panduanMenuItem = document.getElementById('panduan-menu-item');
+      
+      // Buttons
+      DOM.reloadDatasetButton = document.getElementById('reload-dataset-button');
+      DOM.addDatasetTriggerButton = document.getElementById('add-dataset-trigger-button');
+      DOM.addDatasetButtonContainer = document.getElementById('add-dataset-button-container');
+      DOM.chatButton = document.getElementById('chat-button');
+      DOM.backToListButton = document.getElementById('back-to-list-button');
+
+      // Modals & Forms
+      DOM.loginModal = document.getElementById('login-modal');
+      DOM.loginForm = document.getElementById('login-form');
+      DOM.loginButton = document.getElementById('login-button');
+      DOM.loginError = document.getElementById('login-error');
+      
+      DOM.addDatasetModal = document.getElementById('add-dataset-modal');
+      DOM.addDatasetForm = document.getElementById('add-dataset-form');
+      DOM.addKategori = document.getElementById('add-kategori');
+      DOM.addKategoriNew = document.getElementById('add-kategori-new');
+      DOM.addProdusenData = document.getElementById('add-produsen-data');
+      
+      DOM.editDatasetModal = document.getElementById('edit-dataset-modal');
+      DOM.editDatasetForm = document.getElementById('edit-dataset-form');
+      DOM.editKategori = document.getElementById('edit-kategori');
+      DOM.editProdusenData = document.getElementById('edit-produsen-data');
+      DOM.currentFileInfo = document.getElementById('current-file-info');
+
+      DOM.requestDataModal = document.getElementById('request-data-modal');
+      DOM.requestDataForm = document.getElementById('request-data-form');
+      DOM.requestModalDatasetTitle = document.getElementById('request-modal-dataset-title');
+
+      DOM.profileModal = document.getElementById('profile-modal');
+      DOM.profileForm = document.getElementById('profile-form');
+
+      DOM.customAlertModal = document.getElementById('custom-alert-modal');
+      DOM.customAlertMessage = document.getElementById('custom-alert-message');
+      DOM.customAlertIconContainer = document.getElementById('custom-alert-icon-container');
+    }
+
+    // Placeholder functions for admin views to be implemented
+    function renderStats() { console.log("Rendering stats view..."); }
+    function renderAdminList() { console.log("Rendering admin list view..."); }
+    function renderRequestsList() { console.log("Rendering requests list view..."); }
+    function renderMessagesList() { console.log("Rendering messages list view..."); }
+  </script>
 </body>
 </html>
+
