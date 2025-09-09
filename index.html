@@ -979,7 +979,7 @@
       DOM.datasetList.innerHTML = '';
       
       try {
-        const datasetsPromise = apiCall('getData', { sheetName: 'datasets' });
+        const datasetsPromise = apiCall('getData', { sheetName: 'SOP' });
         const usersPromise = apiCall('getData', { sheetName: 'users' });
         const historyPromise = apiCall('getData', { sheetName: 'history' });
         const logsPromise = apiCall('getData', { sheetName: 'logs' });
