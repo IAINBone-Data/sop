@@ -4,10 +4,12 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - Menambahkan detail (Nomor, Unit, Fungsi) pada kartu SOP di tampilan mobile.
+ * - Menambahkan modal konfirmasi saat tombol reload data ditekan.
+ * - Merombak UI Mobile: Tombol login ikon, filter dalam modal, tata letak baru.
  * - Memperbaiki SyntaxError pada Regular Expression untuk Google Drive link.
  * - Menghapus fungsi formatDate untuk optimalisasi.
  * - Menghapus pengecekan kolom 'Format', mengasumsikan semua file adalah PDF.
- * - Merombak UI Mobile: Tombol login ikon, filter dalam modal, tata letak baru.
  */
 
 // --- KONFIGURASI APLIKASI ---
@@ -29,8 +31,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
     'resetFilterButton',
-    // [BARU] Elemen untuk UI Mobile baru
-    'filterModal', 'openFilterButton', 'closeFilterModal'
+    'filterModal', 'openFilterButton', 'closeFilterModal',
+    // [BARU] Elemen untuk modal konfirmasi reload
+    'confirmReloadModal', 'confirmReloadButton', 'cancelReloadButton'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -126,9 +129,15 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
 
-   // [BARU] Event listener untuk modal filter
    DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
    DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
+
+   // [BARU] Event listener untuk konfirmasi reload
+   DOM.cancelReloadButton.addEventListener('click', () => toggleModal('confirm-reload-modal', false));
+   DOM.confirmReloadButton.addEventListener('click', () => {
+       toggleModal('confirm-reload-modal', false);
+       loadInitialData();
+   });
  };
 
 //==================================================
@@ -136,7 +145,6 @@ document.addEventListener('DOMContentLoaded', function () {
 //==================================================
 
 function updateUIForLoginStatus() {
-  // [DIUBAH] Tombol login menjadi ikon user
   DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center" title="Login Administrator"><i class="fas fa-user text-lg"></i></button>`;
 }
 
@@ -188,19 +196,22 @@ function renderPageContent() {
      paginatedItems.forEach(item => {
          const unitText = item.Unit || 'N/A';
          const fungsiText = item.Fungsi || 'N/A';
+         const nomorSOP = item['Nomor SOP'] || 'N/A';
          const safeIDSOP = (item.IDSOP || '').trim();
          
          const tableRowHTML = `
              <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
-                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${item['Nomor SOP'] || ''}</td>
+                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${nomorSOP}</td>
                  <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
                  <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
                  <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${fungsiText}</td>
              </tr>`;
          
+         // [DIUBAH] Menambahkan detail pada kartu mobile
          const cardHTML = `
              <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
                  <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
+                 <p class="text-xs text-gray-500 mt-1">${nomorSOP} / ${unitText} - ${fungsiText}</p>
              </div>
          `;
 
@@ -311,6 +322,11 @@ function handleDownload() {
      console.log("Tombol unduh diklik.");
 }
 
+// [DIUBAH] Logika reload sekarang menampilkan modal konfirmasi
+function handleReload() {
+    toggleModal('confirm-reload-modal', true);
+}
+
 //==================================================
 // HELPER & UTILITY FUNCTIONS
 //==================================================
@@ -387,10 +403,6 @@ function populateFilterOptions() {
 function toggleSideMenu(show) {
      if(DOM.popupMenu) DOM.popupMenu.classList.toggle('-translate-x-full', !show);
      if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
-}
-
-function handleReload() {
-     loadInitialData();
 }
 
 function resetFilters() {
