@@ -4,6 +4,7 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - Memperbaiki SyntaxError pada Regular Expression untuk Google Drive link.
  * - Menghapus fungsi formatDate untuk optimalisasi. Tanggal kini ditampilkan sebagai teks murni dari Google Sheet.
  * - Menghapus pengecekan kolom 'Format'. Aplikasi kini mengasumsikan semua file adalah PDF dan akan langsung menampilkan pratinjau.
  */
@@ -222,9 +223,6 @@ function renderPaginationControls() {
      }));
 }
 
-// [OPTIMISASI] Fungsi formatDate dihapus karena format tanggal sekarang dikelola langsung di Google Sheet sebagai teks.
-// function formatDate(dateString) { ... }
-
 function showDetailView(idsop) {
      const trimmedIdsop = idsop ? idsop.trim() : '';
      const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
@@ -241,11 +239,9 @@ function showDetailView(idsop) {
      DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
      DOM.metaUnit.textContent = item.Unit || 'N/A';
      DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
-     // [OPTIMISASI] Menampilkan tanggal sebagai teks langsung dari data.
      DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] || 'N/A';
      DOM.metaEfektif.textContent = item['Tanggal Efektif'] || 'N/A';
      
-     // [OPTIMISASI] Mengambil tanggal revisi sebagai teks langsung.
      const tanggalRevisi = item['Tanggal Revisi'] || 'N/A';
      if (tanggalRevisi !== "N/A" && tanggalRevisi.trim() !== "") {
          DOM.metaDiperbaharui.textContent = tanggalRevisi;
@@ -269,7 +265,8 @@ function showDetailView(idsop) {
      DOM.detailDownloadLink.style.display = 'inline-block';
 
      const fileUrl = item.File || '';
-     const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/;
+     // [PERBAIKAN] Memperbaiki kesalahan 'invalid range in character class' pada RegEx.
+     const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
      const match = fileUrl.match(driveRegex);
      const fileId = match ? match[1] : null;
 
@@ -277,7 +274,6 @@ function showDetailView(idsop) {
      DOM.tablePreviewContent.innerHTML = '';
      if (fileId) {
          DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
-         // [OPTIMISASI] Langsung tampilkan pratinjau karena semua file diasumsikan PDF.
          DOM.tablePreviewContainer.classList.remove('hidden');
          DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
      } else {
