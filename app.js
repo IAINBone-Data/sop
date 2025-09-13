@@ -177,9 +177,10 @@ function renderPageContent() {
     paginatedItems.forEach(item => {
         const unitText = item.Unit || 'N/A';
         const fungsiText = item.Fungsi || 'N/A';
+        const safeIDSOP = (item.IDSOP || '').trim();
         
         const tableRowHTML = `
-            <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${item.IDSOP}">
+            <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${item['Nomor SOP'] || ''}</td>
                 <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
@@ -187,7 +188,7 @@ function renderPageContent() {
             </tr>`;
         
         const cardHTML = `
-            <div class="view-detail-trigger cursor-pointer p-4" data-id="${item.IDSOP}">
+            <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
                 <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
             </div>
         `;
@@ -231,7 +232,10 @@ function formatDate(dateString) {
 
 
 function showDetailView(idsop) {
-    const item = allDatasets.find(d => d.IDSOP === idsop);
+    // [PERBAIKAN] Membersihkan spasi dari IDSOP untuk pencocokan yang akurat
+    const trimmedIdsop = idsop ? idsop.trim() : '';
+    const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
+
     if (!item) {
         showCustomAlert('Data tidak ditemukan.', 'error');
         showView('list-view-container');
