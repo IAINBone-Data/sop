@@ -2,7 +2,7 @@
  * =================================================================================
  * SCRIPT APLIKASI UTAMA - SATU DATA IAIN BONE
  * =================================================================================
- * Versi ini telah disederhanakan tanpa fungsionalitas filter.
+ * Versi ini telah disederhanakan dan menggunakan tampilan tabel.
  */
 
 // --- KONFIGURASI APLIKASI ---
@@ -153,7 +153,7 @@ function applyFiltersAndRender() {
 }
 
 function renderPageContent() {
-    DOM.datasetList.innerHTML = '';
+    DOM.datasetList.innerHTML = ''; // Ini menargetkan <tbody>
     DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
     if (currentFilteredData.length === 0) {
         if(DOM.paginationContainer) DOM.paginationContainer.innerHTML = '';
@@ -164,22 +164,17 @@ function renderPageContent() {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
 
+    // [PERUBAHAN] Mengubah dari card menjadi baris tabel (<tr>)
     paginatedItems.forEach(item => {
-        const producerText = (item.Unit && item.Fungsi) ? `${item.Unit} - ${item.Fungsi}` : (item.Unit || item.Fungsi || 'N/A');
+        const unitText = item.Unit || 'N/A';
+        const fungsiText = item.Fungsi || 'N/A';
         DOM.datasetList.innerHTML += `
-            <div class="dataset-card bg-white p-5 rounded-lg shadow-md border hover:shadow-lg hover:border-blue-500 transition-all">
-                <div class="flex justify-between items-start">
-                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex-grow cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item['Nama SOP'] || 'Tanpa Judul'}</h3>
-                </div>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item['Nomor SOP'] || 'Tidak ada nomor SOP.'}</p>
-                <div class="flex flex-wrap items-center justify-between gap-y-2">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">${item.Format || 'N/A'}</span>
-                        ${item.Kategori ? `<span class="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-1 rounded-full"><i class="fas fa-folder-open mr-1"></i> ${item.Kategori}</span>` : ''}
-                    </div>
-                    <div class="text-right flex-shrink-0"><span class="text-sm font-semibold text-blue-600">${producerText}</span></div>
-                </div>
-            </div>`;
+            <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${item.IDSOP}">
+                <td class="p-4 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
+                <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
+                <td class="p-4 text-sm text-gray-700">${unitText}</td>
+                <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
+            </tr>`;
     });
 
     renderPaginationControls();
@@ -309,7 +304,8 @@ function showCustomAlert(message, type = 'success') {
 }
 
 function showErrorState(title, message) {
-    DOM.listViewContainer.innerHTML = `
+    const container = DOM.listViewContainer || document.body;
+    container.innerHTML = `
         <div class="text-center py-10 bg-red-50 rounded-lg">
             <i class="fas fa-exclamation-triangle fa-3x text-red-500"></i>
             <h2 class="mt-4 text-xl font-bold text-red-800">${title}</h2>
