@@ -4,6 +4,8 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - [PERBAIKAN] Memberikan warna latar pada tombol login admin.
+ * - Sinkronisasi input filter antara tampilan mobile dan desktop.
  * - Memberikan warna latar pada label Unit di tampilan desktop dan mobile.
  * - Menambahkan detail (Nomor, Unit, Fungsi) pada kartu SOP di tampilan mobile.
  * - Menambahkan modal konfirmasi saat tombol reload data ditekan.
@@ -30,10 +32,14 @@ document.addEventListener('DOMContentLoaded', function () {
     'reloadDatasetButton', 'detailTitle', 'detailUraian', 'detailDownloadLink', 
     'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
-    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
+    'tablePreviewContent', 'loginModal', 'closeLoginModal', 
     'resetFilterButton',
     'filterModal', 'openFilterButton', 'closeFilterModal',
-    'confirmReloadModal', 'confirmReloadButton', 'cancelReloadButton'
+    'confirmReloadModal', 'confirmReloadButton', 'cancelReloadButton',
+    // Elemen duplikat untuk filter desktop dan mobile
+    'searchInputMobile', 'resetFilterButtonMobile',
+    'filterUnit', 'filterFungsi',
+    'filterUnitModal', 'filterFungsiModal'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -118,11 +124,19 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container', true); });
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
-   DOM.searchInput.addEventListener('input', applyFiltersAndRender);
-   DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
-   DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
+   
+   // [DIUBAH] Event listener untuk filter
+   DOM.searchInput.addEventListener('input', syncAndFilter);
+   DOM.searchInputMobile.addEventListener('input', syncAndFilter);
+   DOM.filterUnit.addEventListener('change', syncAndFilter);
+   DOM.filterFungsi.addEventListener('change', syncAndFilter);
+   DOM.filterUnitModal.addEventListener('change', syncAndFilter);
+   DOM.filterFungsiModal.addEventListener('change', syncAndFilter);
+
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.resetFilterButton.addEventListener('click', resetFilters);
+   DOM.resetFilterButtonMobile.addEventListener('click', resetFilters);
+
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
    DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
@@ -144,16 +158,46 @@ document.addEventListener('DOMContentLoaded', function () {
 //==================================================
 
 function updateUIForLoginStatus() {
-  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center" title="Login Administrator"><i class="fas fa-user text-lg"></i></button>`;
+  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white hover:bg-blue-700 p-2 rounded-full w-10 h-10 flex items-center justify-center" title="Login Administrator"><i class="fas fa-user text-lg"></i></button>`;
 }
 
 //==================================================
 // DATA RENDERING & FILTERING
 //==================================================
 
+// [BARU] Fungsi untuk sinkronisasi nilai filter sebelum filtering
+function syncAndFilter(event) {
+    const sourceElement = event.target;
+
+    // Sinkronisasi nilai search
+    if (sourceElement.id === 'search-input') {
+        DOM.searchInputMobile.value = sourceElement.value;
+    } else if (sourceElement.id === 'search-input-mobile') {
+        DOM.searchInput.value = sourceElement.value;
+    }
+
+    // Sinkronisasi nilai unit
+    if (sourceElement.id === 'filter-unit') {
+        DOM.filterUnitModal.value = sourceElement.value;
+    } else if (sourceElement.id === 'filter-unit-modal') {
+        DOM.filterUnit.value = sourceElement.value;
+    }
+
+    // Sinkronisasi nilai fungsi
+    if (sourceElement.id === 'filter-fungsi') {
+        DOM.filterFungsiModal.value = sourceElement.value;
+    } else if (sourceElement.id === 'filter-fungsi-modal') {
+        DOM.filterFungsi.value = sourceElement.value;
+    }
+
+    applyFiltersAndRender();
+}
+
+
 function applyFiltersAndRender() {
      let filteredData = [...allDatasets];
      
+     // Cukup baca dari salah satu elemen karena sudah sinkron
      const searchTerm = DOM.searchInput.value.toLowerCase();
      const selectedUnit = DOM.filterUnit.value;
      const selectedFungsi = DOM.filterFungsi.value;
@@ -198,7 +242,6 @@ function renderPageContent() {
          const nomorSOP = item['Nomor SOP'] || 'N/A';
          const safeIDSOP = (item.IDSOP || '').trim();
 
-         // [DIUBAH] Membuat elemen span untuk Unit agar bisa diberi style
          const unitLabel = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${unitText}</span>`;
          
          const tableRowHTML = `
@@ -401,8 +444,11 @@ function populateFilterOptions() {
          });
      };
 
+     // Populasi kedua set dropdown
      populateSelect(DOM.filterUnit, units, "Semua Unit");
      populateSelect(DOM.filterFungsi, fungsis, "Semua Fungsi");
+     populateSelect(DOM.filterUnitModal, units, "Semua Unit");
+     populateSelect(DOM.filterFungsiModal, fungsis, "Semua Fungsi");
 }
 
 
@@ -413,8 +459,11 @@ function toggleSideMenu(show) {
 
 function resetFilters() {
      DOM.searchInput.value = '';
+     DOM.searchInputMobile.value = '';
      DOM.filterUnit.value = '';
      DOM.filterFungsi.value = '';
+     DOM.filterUnitModal.value = '';
+     DOM.filterFungsiModal.value = '';
      applyFiltersAndRender();
 }
 
