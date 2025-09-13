@@ -118,9 +118,7 @@
             </div>
             <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
             
-            <!-- [PERUBAHAN] Wrapper untuk tampilan tabel dan kartu -->
             <div class="bg-white rounded-lg shadow">
-                <!-- Tampilan Tabel untuk Desktop (md dan lebih besar) -->
                 <div class="overflow-x-auto hidden md:block">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b">
@@ -132,79 +130,64 @@
                             </tr>
                         </thead>
                         <tbody id="dataset-list" class="divide-y">
-                            <!-- Data baris tabel akan disuntikkan di sini oleh JavaScript -->
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Tampilan Kartu untuk Mobile (di bawah md) -->
                 <div id="dataset-cards-container" class="md:hidden divide-y">
-                    <!-- Kartu data akan disuntikkan di sini oleh JavaScript -->
                 </div>
             </div>
 
-
-            <!-- Pagination Container -->
             <div id="pagination-container" class="flex justify-center items-center mt-8 space-x-2"></div>
             <div id="no-data-message" class="hidden text-center py-10 bg-white rounded-lg shadow-md"><i class="fa-solid fa-database fa-3x text-gray-400"></i><p class="mt-4 text-lg font-semibold text-gray-700">Data Tidak Ditemukan</p><p class="mt-1 text-gray-500">Coba ubah kata kunci pencarian atau filter Anda.</p></div>
         </section>
       </div>
       
       <div id="detail-view-container" class="hidden">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-6">
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
+            <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2 space-y-8">
-                <section>
-                    <div class="bg-white p-6 sm:p-8 rounded-lg shadow-md space-y-6">
-                        <div class="flex justify-between items-start pb-4">
-                            <h2 id="detail-title" class="text-2xl font-bold text-gray-800"></h2>
-                        </div>
-                        <p id="detail-uraian" class="text-gray-700"></p>
-                        <div>
-                            <h3 class="text-xl font-semibold text-gray-800 mb-3">Data dan Sumber Daya</h3>
-                            <div id="resource-container" class="border rounded-lg p-4">
-                                <div class="flex items-center justify-between gap-4">
-                                    <div class="flex-grow">
-                                        <div class="flex items-start">
-                                            <i class="fas fa-file-alt text-gray-500 text-xl mr-3 mt-1"></i>
-                                            <div>
-                                                <p id="detail-file-title" class="font-semibold text-gray-800"></p>
-                                                <div class="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                                                    <span id="detail-filename-display"></span>
-                                                    <span id="detail-file-format" class="font-semibold px-2 py-0.5 rounded-full text-xs"></span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh</a>
+        <!-- [PERUBAHAN] Layout 30/70 untuk detail dan preview -->
+        <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
+            <div class="lg:col-span-3 space-y-6">
+                <section class="bg-white p-6 rounded-lg shadow-md space-y-4">
+                    <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
+                    <p id="detail-uraian" class="text-gray-600 text-sm"></p>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">File SOP</h3>
+                        <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
+                            <div class="flex-grow flex items-center">
+                                <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
+                                <div>
+                                    <p id="detail-file-title" class="font-semibold text-gray-800"></p>
+                                    <span id="detail-file-format" class="font-semibold px-2 py-0.5 rounded-full text-xs"></span>
                                 </div>
                             </div>
-                            <div id="table-preview-container" class="mt-6 hidden">
-                                <h3 class="text-xl font-semibold text-gray-800 mb-3">Preview Data</h3>
-                                <div id="table-preview-content" class="border rounded-lg overflow-x-auto">
-                                    <!-- Konten pratinjau (iframe atau tabel) akan dimasukkan di sini oleh JavaScript -->
-                                </div>
-                            </div>
+                            <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh</a>
                         </div>
                     </div>
+                </section>
+                <section class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Metadata</h3>
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <tbody>
+                            <tr class="border-b"><td class="py-2 font-semibold">Penandatangan</td><td id="meta-penandatangan" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Unit</td><td id="meta-unit" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-2 text-right"></td></tr>
+                            <tr id="meta-revisi-row" class="border-b hidden"><td class="py-2 font-semibold">Tanggal Revisi</td><td id="meta-diperbaharui" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Tanggal Efektif</td><td id="meta-efektif" class="py-2 text-right"></td></tr>
+                        </tbody>
+                    </table>
                 </section>
             </div>
-            <div class="lg:col-span-1 space-y-8">
-                <section>
-                    <div class="bg-white p-6 rounded-lg shadow-md sticky top-20">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-3">Metadata</h3>
-                        <table class="w-full text-sm text-left text-gray-600">
-                            <tbody>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Unit</td><td id="meta-unit" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Revisi</td><td id="meta-diperbaharui" class="py-3 px-2"></td></tr>
-                            </tbody>
-                        </table>
+            <div class="lg:col-span-7">
+                <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
+                    <div id="table-preview-content" class="w-full h-full">
+                        <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
                     </div>
-                </section>
+                </div>
             </div>
         </div>
       </div>
@@ -212,20 +195,15 @@
       <div id="about-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
         <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Satu Data IAIN Bone</h2>
         <p class="text-gray-700 leading-relaxed">
-            Sistem Satu Data IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola, mengintegrasikan, dan menyajikan data dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola data yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
+            Sistem E SOP IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola, mengintegrasikan, dan menyajikan data dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola data yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
         </p>
-        <p class="text-gray-700 mt-4 leading-relaxed">
-            Dengan adanya platform ini, diharapkan pengambilan keputusan di semua tingkatan dapat didasarkan pada data yang valid dan reliabel, sehingga meningkatkan efisiensi, transparansi, dan akuntabilitas institusi.
-        </p>
-        <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-2">Tim Pengembang</h3>
-        <p class="text-gray-700">Dikelola oleh Tim Kerja Satu Data IAIN Bone dan didukung penuh oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
       </div>
       
     </main>
   </div>
 
   <footer class="bg-white text-slate-600 text-sm text-center py-6 border-t">
-    <p>&copy; 2025 - Dikelola oleh Tim Kerja Satu Data IAIN Bone. Didukung oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
+    <p>&copy; 2025 - Dikelola oleh Biro AUAK IAIN Bone</p>
   </footer>
   
   <script src="app.js"></script>
