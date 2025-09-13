@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage'
+    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 'loginModal', 'closeLoginModal'
   ];
    ids.forEach(id => {
        const el = document.getElementById(id);
@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
    DOM.messageForm.addEventListener('submit', handleSendMessage);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
+   DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
  };
 
 //==================================================
@@ -257,8 +258,6 @@ function showDetailView(idsop) {
         return;
     }
     
-    // Fungsionalitas logAction telah dihapus, jadi pemanggilan ini juga dihapus.
-
     DOM.detailTitle.textContent = item.Judul || 'Tanpa Judul';
     DOM.detailUraian.textContent = item.Uraian || 'Tidak ada uraian.';
     DOM.detailFileTitle.textContent = item['Nama File'] || 'File Dataset';
@@ -348,13 +347,11 @@ function handleDatasetListClick(e) {
 }
 
 async function handleSendMessage(e) {
-    // Fungsionalitas ini dihapus karena sheet 'messages' dihapus
     e.preventDefault();
     showCustomAlert('Fungsionalitas pesan saat ini dinonaktifkan.', 'error');
 }
 
-function handleDownload(e) {
-    // Fungsionalitas log download dihapus
+function handleDownload() {
     console.log("Tombol unduh diklik.");
 }
 
