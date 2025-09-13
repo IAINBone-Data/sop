@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
  const DOM = {};
  const cacheDOMElements = () => {
   const ids = [
-    'loginModal', 'loginForm', 'loginButton', 'loginButtonText', 'loginSpinner', 'loginError', 'closeLoginModalButton',
+    'loginModal', 'loginForm', 'loginButton', 'loginButtonText', 'loginSpinner', 'loginError', 'closeLoginModal',
     'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer', 'statsViewContainer',
     'adminListViewContainer', 'datasetList', 'datasetCount', 'searchInput', 'filterCategory', 'filterSifatContainer',
     'filterProducer', 'filterTag', 'loadingIndicator', 'noDataMessage', 'resetFilterButton',
@@ -29,32 +29,33 @@ document.addEventListener('DOMContentLoaded', function () {
     'requestViewContainer', 'requestListTableBody', 'requestListCards', 'requestDataModal', 'requestDataForm',
     'cancelRequestForm', 'requestModalDatasetTitle', 'requestFormError', 'requestButtonContainer', 'messageMenuItem',
     'messageLink', 'messageViewContainer', 'messageListContainer', 'customAlertModal', 'customAlertMessage',
-    'closeCustomAlertButton', 'customAlertIconContainer', 'statTotalDataset', 'statTotalProducer', 'statTotalCategory', 'popularDatasetsList',
-    'noPopularDatasets', 'resetPasswordModal', 'resetPasswordForm', 'closeResetPasswordModalButton', 'resetPasswordError',
+    'closeCustomAlert', 'customAlertIconContainer', 'statTotalDataset', 'statTotalProducer', 'statTotalCategory', 'popularDatasetsList',
+    'noPopularDatasets', 'resetPasswordModal', 'resetPasswordForm', 'closeResetPasswordModal', 'resetPasswordError',
     'resetPasswordSuccess', 'resetSubmitButton', 'resetButtonText', 'resetSpinner', 'addDatasetModal',
-    'addDatasetForm', 'closeAddDatasetModalButton', 'cancelAddDatasetButton', 'addDatasetError', 'addDatasetSuccess',
+    'addDatasetForm', 'closeAddDatasetModal', 'cancelAddDatasetButton', 'addDatasetError', 'addDatasetSuccess',
     'submitAddDatasetButton', 'addDatasetButtonText', 'addDatasetSpinner', 'addKategori', 'addKategoriNew',
-    'editDatasetModal', 'editDatasetForm', 'closeEditDatasetModalButton', 'cancelEditDatasetButton',
+    'editDatasetModal', 'editDatasetForm', 'closeEditDatasetModal', 'cancelEditDatasetButton',
     'submitEditDatasetButton', 'editDatasetError', 'editDatasetSuccess', 'editDatasetButtonText', 'editDatasetSpinner',
     'userModal', 'userForm', 'userModalTitle', 'addUserButton', 'cancelUserForm', 'adminListTableBody', 'userFormError',
     'adminListCards', 'profileModal', 'profileForm', 'cancelProfileForm', 'saveProfileButton',
     'profileOpenResetPassword', 'profileFormError', 'profileFormSuccess', 'addDatasetButtonContainer',
-    'addDatasetTriggerButton', 'reloadDatasetButton', 'chatButton', 'messageModal', 'messageForm', 'closeMessageModalButton',
+    'addDatasetTriggerButton', 'reloadDatasetButton', 'chatButton', 'messageModal', 'messageForm', 'closeMessageModal',
     'cancelMessageForm', 'submitMessageButton', 'sendMessageButtonText', 'sendMessageSpinner', 'messageFormError',
     'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian', 'detailSifat',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
     'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 'addProdusenData', 'editProdusenData',
     'editKategori', 'currentFileInfo', 'statsTotalVisitors', 'statsTotalDownloads', 'monthlyVisitsChart', 'yearlyVisitsChart',
-    'adminLoginsTableBody'
+    'adminLoginsTableBody', 'editTahunDataStart', 'editTahunDataEnd'
   ];
-  ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) {
-          const key = id.replace(/-./g, m => m[1].toUpperCase());
-          DOM[key] = el;
-      }
-  });
+   ids.forEach(id => {
+       // Mengubah camelCase ke kebab-case untuk mencocokkan ID di HTML
+       const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
+       const el = document.getElementById(kebabCaseId);
+       if (el) {
+           DOM[id] = el;
+       }
+   });
  };
 
  // === STATE MANAGEMENT ===
@@ -156,20 +157,20 @@ document.addEventListener('DOMContentLoaded', function () {
  // === EVENT LISTENERS SETUP ===
 
  const setupEventListeners = () => {
-   DOM.closeLoginModalButton.addEventListener('click', () => toggleModal('loginModal', false));
+   DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
    DOM.loginForm.addEventListener('submit', handleLogin);
    DOM.userInfoContainer.addEventListener('click', handleUserMenuClick);
    window.addEventListener('click', closeAdminPopupOnClickOutside);
-   DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer'); });
+   DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
    DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
    DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
-   DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer', true); });
-   DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('aboutViewContainer', true); });
-   DOM.statsLink.addEventListener('click', (e) => { e.preventDefault(); showView('statsViewContainer', true); loadAndRenderStats(); });
-   DOM.adminListLink.addEventListener('click', (e) => { e.preventDefault(); showView('adminListViewContainer', true); loadAndRenderAdminList(); });
-   DOM.requestLink.addEventListener('click', (e) => { e.preventDefault(); showView('requestViewContainer', true); loadAndRenderRequests(); });
-   DOM.messageLink.addEventListener('click', (e) => { e.preventDefault(); showView('messageViewContainer', true); loadAndRenderMessages(); });
-   DOM.backToListButton.addEventListener('click', () => showView('listViewContainer'));
+   DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container', true); });
+   DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
+   DOM.statsLink.addEventListener('click', (e) => { e.preventDefault(); showView('stats-view-container', true); loadAndRenderStats(); });
+   DOM.adminListLink.addEventListener('click', (e) => { e.preventDefault(); showView('admin-list-view-container', true); loadAndRenderAdminList(); });
+   DOM.requestLink.addEventListener('click', (e) => { e.preventDefault(); showView('request-view-container', true); loadAndRenderRequests(); });
+   DOM.messageLink.addEventListener('click', (e) => { e.preventDefault(); showView('message-view-container', true); loadAndRenderMessages(); });
+   DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    const filterInputs = [DOM.searchInput, DOM.filterCategory, DOM.filterProducer, DOM.filterTag, DOM.filterYear, DOM.filterDataStartYear, DOM.filterDataEndYear];
    filterInputs.forEach(input => input.addEventListener('input', applyFiltersAndRender));
    DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
@@ -185,17 +186,17 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.popularDatasetsList.addEventListener('click', handlePopularDatasetClick);
    DOM.addDatasetTriggerButton.addEventListener('click', () => toggleAddDatasetModal(true));
-   DOM.closeAddDatasetModalButton.addEventListener('click', () => toggleAddDatasetModal(false));
+   DOM.closeAddDatasetModal.addEventListener('click', () => toggleAddDatasetModal(false));
    DOM.cancelAddDatasetButton.addEventListener('click', () => toggleAddDatasetModal(false));
    DOM.addDatasetForm.addEventListener('submit', handleAddOrEditDataset);
    DOM.addKategori.addEventListener('change', () => DOM.addKategoriNew.classList.toggle('hidden', DOM.addKategori.value !== '--tambah-baru--'));
-   DOM.closeEditDatasetModalButton.addEventListener('click', () => toggleEditDatasetModal(false));
+   DOM.closeEditDatasetModal.addEventListener('click', () => toggleEditDatasetModal(false));
    DOM.cancelEditDatasetButton.addEventListener('click', () => toggleEditDatasetModal(false));
    DOM.editDatasetForm.addEventListener('submit', handleAddOrEditDataset);
    DOM.cancelProfileForm.addEventListener('click', () => toggleProfileModal(false));
    DOM.profileForm.addEventListener('submit', handleSaveProfile);
    DOM.profileOpenResetPassword.addEventListener('click', (e) => { e.preventDefault(); toggleProfileModal(false); toggleResetPasswordModal(true); });
-   DOM.closeResetPasswordModalButton.addEventListener('click', () => toggleResetPasswordModal(false));
+   DOM.closeResetPasswordModal.addEventListener('click', () => toggleResetPasswordModal(false));
    DOM.resetPasswordForm.addEventListener('submit', handleResetPassword);
    DOM.addUserButton.addEventListener('click', () => toggleUserModal(true));
    DOM.cancelUserForm.addEventListener('click', () => toggleUserModal(false));
@@ -211,10 +212,10 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.requestViewContainer.addEventListener('click', (e) => { if (e.target.closest('.status-update-button')) handleStatusUpdateClick(e); });
    DOM.messageListContainer.addEventListener('click', handleMessageClick);
    DOM.chatButton.addEventListener('click', () => toggleMessageModal(true));
-   DOM.closeMessageModalButton.addEventListener('click', () => toggleMessageModal(false));
+   DOM.closeMessageModal.addEventListener('click', () => toggleMessageModal(false));
    DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
    DOM.messageForm.addEventListener('submit', handleSendMessage);
-   DOM.closeCustomAlertButton.addEventListener('click', () => toggleModal('customAlertModal', false));
+   DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
  };
 
 //==================================================
@@ -233,7 +234,7 @@ async function handleLogin(e) {
   if (response.status === 'success') {
     sessionStorage.setItem('currentUser', JSON.stringify(response.user));
     updateUIForLoginStatus();
-    toggleModal('loginModal', false);
+    toggleModal('login-modal', false);
     DOM.loginForm.reset();
     await loadInitialData(); 
   } else {
@@ -246,7 +247,7 @@ async function handleLogin(e) {
 function handleLogout() {
   sessionStorage.removeItem('currentUser');
   updateUIForLoginStatus();
-  showView('listViewContainer');
+  showView('list-view-container');
   applyFiltersAndRender();
 }
 
@@ -265,7 +266,7 @@ function updateUIForLoginStatus() {
           <span class="font-semibold text-sm text-gray-800 hidden md:block">${user.Nama || user.Username}</span>
           <i class="fas fa-chevron-down text-xs text-gray-500"></i>
         </button>
-        <div id="admin-popup-menu" class="admin-popup hidden w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1">
+        <div id="admin-popup-menu" class="admin-popup hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
           <div class="px-4 py-3 border-b"><p class="text-sm font-semibold truncate">${user.Nama}</p><p class="text-xs text-gray-500 truncate">${user.Unit}</p></div>
           <div class="py-1">
             <a href="#" id="popup-menu-profile" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fas fa-user-circle w-5 mr-3 text-gray-400"></i>Profil</a>
@@ -423,7 +424,7 @@ function renderPaginationControls() {
 function showDetailView(datasetIndex) {
     if (datasetIndex < 0 || !allDatasets[datasetIndex]) {
         showCustomAlert('Data tidak ditemukan atau tidak valid.', 'error');
-        showView('listViewContainer');
+        showView('list-view-container');
         return;
     }
     currentDetailItemIndex = datasetIndex;
@@ -449,8 +450,8 @@ function showDetailView(datasetIndex) {
     else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
     DOM.metaProdusen.textContent = item['Produsen Data'] || 'N/A';
     DOM.metaPenanggungJawab.textContent = item['Penanggung Jawab'] || 'N/A';
-    DOM.metaTanggal.textContent = item.Tanggal || 'N/A';
-    DOM.metaDiperbaharui.textContent = new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID');
+    DOM.metaTanggal.textContent = item.Tanggal ? new Date(item.Tanggal).toLocaleDateString('id-ID') : 'N/A';
+    DOM.metaDiperbaharui.textContent = item['Tanggal Diperbaharui'] ? new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID') : 'N/A';
     DOM.metaFrekuensi.textContent = item.Frekuensi || 'N/A';
     DOM.metaTahunData.textContent = item['Tahun Data'] || 'N/A';
     
@@ -493,13 +494,13 @@ function showDetailView(datasetIndex) {
     }
 
     displayChangeHistory(item);
-    showView('detailViewContainer');
+    showView('detail-view-container');
 }
 
 async function handleAddOrEditDataset(e) {
     e.preventDefault();
     const form = e.target;
-    const isEdit = form.id === 'editDatasetForm';
+    const isEdit = form.id === 'edit-dataset-form';
     const modalError = isEdit ? DOM.editDatasetError : DOM.addDatasetError;
     const modalSuccess = isEdit ? DOM.editDatasetSuccess : DOM.addDatasetSuccess;
     const submitButton = isEdit ? DOM.submitEditDatasetButton : DOM.submitAddDatasetButton;
@@ -541,6 +542,15 @@ async function handleAddOrEditDataset(e) {
     }
     delete dataObject['Kategori-select'];
 
+    // Combine Tahun Data
+    const startYear = dataObject['Tahun Data Start'];
+    const endYear = dataObject['Tahun Data End'];
+    if (startYear && endYear) {
+        dataObject['Tahun Data'] = `${startYear} - ${endYear}`;
+    }
+    delete dataObject['Tahun Data Start'];
+    delete dataObject['Tahun Data End'];
+
     const user = JSON.parse(sessionStorage.getItem('currentUser'));
 
     const payload = {
@@ -555,7 +565,6 @@ async function handleAddOrEditDataset(e) {
     
     if (isEdit) {
         payload.rowIndex = dataObject.rowIndex;
-        // Keep existing file info if no new file is uploaded
         if (!file) {
            const currentItem = allDatasets.find(d => d.rowIndex == dataObject.rowIndex);
            if (currentItem) {
@@ -572,7 +581,7 @@ async function handleAddOrEditDataset(e) {
         modalSuccess.textContent = response.message || 'Operasi berhasil!';
         modalSuccess.classList.remove('hidden');
         setTimeout(async () => {
-            toggleModal(isEdit ? 'editDatasetModal' : 'addDatasetModal', false);
+            toggleModal(isEdit ? 'edit-dataset-modal' : 'add-dataset-modal', false);
             await loadInitialData(isEdit);
         }, 2000);
     } else {
@@ -616,7 +625,7 @@ function displayChangeHistory(currentItem) {
 
 function handleUserMenuClick(e) {
     const target = e.target;
-    if (target.closest('#admin-login-button')) toggleModal('loginModal', true);
+    if (target.closest('#admin-login-button')) toggleModal('login-modal', true);
     if (target.closest('#admin-menu-trigger')) {
         document.getElementById('admin-popup-menu').classList.toggle('hidden');
     }
@@ -646,7 +655,7 @@ async function handleDetailViewActions(e) {
             const response = await callAppsScript('deleteDataset', { rowIndex: item.rowIndex, user: user.Username });
             if (response.status === 'success') {
                 showCustomAlert('Dataset berhasil dihapus.', 'success');
-                showView('listViewContainer');
+                showView('list-view-container');
                 loadInitialData();
             } else {
                 showCustomAlert(`Gagal menghapus: ${response.message}`, 'error');
@@ -753,8 +762,7 @@ function handleDownload(e) {
 //==================================================
 
 function toggleModal(modalId, show) {
-  const modalKey = modalId.replace(/-./g, m => m[1].toUpperCase());
-  const modal = DOM[modalKey];
+  const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.toggle('hidden', !show);
     if(show) {
@@ -804,7 +812,7 @@ function showCustomAlert(message, type = 'success') {
         iconContainer.innerHTML = `<i class="fas fa-times text-red-600 text-xl"></i>`;
         iconContainer.className = 'mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100';
     }
-    toggleModal('customAlertModal', true);
+    toggleModal('custom-alert-modal', true);
 }
 
 function showErrorState(title, message) {
@@ -839,7 +847,7 @@ function populateSelect(selectElement, optionsArray, withPlaceholder = false, al
     if (!selectElement) return;
     const currentValue = selectElement.value;
     selectElement.innerHTML = '';
-    let firstOptionText = "Semua " + (selectElement.id.replace('filter', '').replace('add', '').replace('edit', '') || "Opsi");
+    let firstOptionText = "Semua " + (selectElement.id.replace('filter-', '').replace('add-', '').replace('edit-', '') || "Opsi");
     if (withPlaceholder) firstOptionText = "Pilih salah satu...";
     selectElement.innerHTML = `<option value="">${firstOptionText}</option>`;
     optionsArray.forEach(option => selectElement.innerHTML += `<option value="${option}">${option}</option>`);
@@ -941,30 +949,41 @@ function toggleAddDatasetModal(show, itemToUpdate = null) {
         DOM.addDatasetForm.reset();
         DOM.addKategoriNew.classList.add('hidden');
         if (itemToUpdate) {
-            // Pre-fill for 'Perbaharui'
-            DOM.addDatasetForm.querySelector('h2').textContent = 'Perbaharui SOP';
+            DOM.addDatasetForm.querySelector('h1').textContent = 'Perbaharui SOP';
             DOM.addDatasetForm.Judul.value = itemToUpdate.Judul;
-            // Fields to pre-fill can be added here
         } else {
-            DOM.addDatasetForm.querySelector('h2').textContent = 'Tambah SOP Baru';
+            DOM.addDatasetForm.querySelector('h1').textContent = 'Tambah SOP Baru';
         }
     }
-    toggleModal('addDatasetModal', show);
+    toggleModal('add-dataset-modal', show);
 }
 
 function toggleEditDatasetModal(show, itemToEdit = null) {
     if (show && itemToEdit) {
         DOM.editDatasetForm.reset();
         for (const key in itemToEdit) {
-            if (DOM.editDatasetForm[key]) {
-                DOM.editDatasetForm[key].value = itemToEdit[key];
+            const input = DOM.editDatasetForm.elements[key];
+            if (input) {
+                if(input.type === 'radio') {
+                    const radioToSelect = document.querySelector(`#edit-dataset-form input[name="${key}"][value="${itemToEdit[key]}"]`);
+                    if(radioToSelect) radioToSelect.checked = true;
+                } else {
+                    input.value = itemToEdit[key];
+                }
             }
         }
+        
+        if (itemToEdit['Tahun Data']) {
+            const [start, end] = itemToEdit['Tahun Data'].split(' - ');
+            DOM.editTahunDataStart.value = start || '';
+            DOM.editTahunDataEnd.value = end || '';
+        }
+
         DOM.editDatasetForm.rowIndex.value = itemToEdit.rowIndex;
         const fileInfo = itemToEdit['Nama File'] ? `${itemToEdit['Nama File']} (${itemToEdit.Format})` : 'Tidak ada file saat ini.';
         DOM.currentFileInfo.textContent = fileInfo;
     }
-    toggleModal('editDatasetModal', show);
+    toggleModal('edit-dataset-modal', show);
 }
 
 function toggleProfileModal(show) {
@@ -978,11 +997,11 @@ function toggleProfileModal(show) {
             }
         }
     }
-    toggleModal('profileModal', show);
+    toggleModal('profile-modal', show);
 }
 
 function toggleResetPasswordModal(show) {
-    toggleModal('resetPasswordModal', show);
+    toggleModal('reset-password-modal', show);
 }
 
 function toggleUserModal(show, userData = null) {
@@ -1000,19 +1019,19 @@ function toggleUserModal(show, userData = null) {
             DOM.userModalTitle.textContent = 'Tambah Admin Baru';
         }
     }
-    toggleModal('userModal', show);
+    toggleModal('user-modal', show);
 }
 
 function toggleRequestDataModal(show, item = null) {
     if(show && item) {
         DOM.requestModalDatasetTitle.textContent = item.Judul;
-        DOM.requestDataForm.datasetTitle.value = item.Judul;
+        DOM.requestDataForm.querySelector('input[name="datasetTitle"]').value = item.Judul;
     }
-    toggleModal('requestDataModal', show);
+    toggleModal('request-data-modal', show);
 }
 
 function toggleMessageModal(show) {
-    toggleModal('messageModal', show);
+    toggleModal('message-modal', show);
 }
 
 // --- STATS PAGE ---
@@ -1026,7 +1045,6 @@ async function loadAndRenderStats() {
         DOM.statsTotalVisitors.textContent = '0';
         DOM.statsTotalDownloads.textContent = '0';
     }
-    // Logic to render charts would go here if Chart.js is implemented
 }
 
 // --- ADMIN LIST PAGE ---
@@ -1079,6 +1097,11 @@ async function handleSaveUser(e) {
     const action = isEdit ? 'editUser' : 'addUser';
     const payload = { data: userData, rowIndex: userData.rowIndex };
 
+    if (isEdit && !userData.Password) {
+        const oldUser = allUsers.find(u => u.rowIndex == userData.rowIndex);
+        payload.data.Password = oldUser.Password;
+    }
+
     const response = await callAppsScript(action, payload);
 
     if (response.status === 'success') {
@@ -1117,15 +1140,16 @@ async function loadAndRenderRequests() {
             const statusColor = req.Status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : req.Status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
             const rowHtml = `
                 <tr class="border-b">
-                    <td class="p-3">${new Date(req.Tanggal).toLocaleDateString('id-ID')}</td>
-                    <td class="p-3">${req['Judul SOP'] || ''}</td>
-                    <td class="p-3 hidden md:table-cell">${req.Pemohon || ''} (${req.Email || ''})</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor}">${req.Status}</span></td>
-                    <td class="p-3 text-right">
+                    <td class="py-2 px-4">${new Date(req.Tanggal).toLocaleDateString('id-ID')}</td>
+                    <td class="py-2 px-4">${req['Judul SOP'] || ''}</td>
+                    <td class="py-2 px-4 hidden md:table-cell">${req.Pemohon || ''} (${req.Email || ''})</td>
+                    <td class="py-2 px-4 hidden lg:table-cell">${req.Keperluan || ''}</td>
+                    <td class="py-2 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor}">${req.Status}</span></td>
+                    <td class="py-2 px-4 text-right">
                         ${req.Status === 'Pending' ? `
                         <button class="status-update-button bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600" data-row="${req.rowIndex}" data-status="Approved">Setujui</button>
                         <button class="status-update-button bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600" data-row="${req.rowIndex}" data-status="Rejected">Tolak</button>
-                        ` : `Direspon oleh ${req['Direspon Oleh'] || 'N/A'}`}
+                        ` : `Direspon oleh: ${req['Direspon Oleh'] || 'N/A'}`}
                     </td>
                 </tr>`;
             DOM.requestListTableBody.innerHTML += rowHtml;
@@ -1174,7 +1198,7 @@ async function loadAndRenderMessages() {
         allMessages.sort((a,b) => new Date(b.Tanggal) - new Date(a.Tanggal));
         allMessages.forEach(msg => {
             DOM.messageListContainer.innerHTML += `
-                <div class="message-item bg-white p-4 rounded-lg shadow border cursor-pointer hover:bg-gray-50">
+                <div class="message-item p-4 hover:bg-gray-50 cursor-pointer">
                     <div class="flex justify-between items-center">
                         <p class="font-bold">${msg.Nama} <span class="text-sm font-normal text-gray-500">- ${msg.Kontak}</span></p>
                         <span class="text-xs text-gray-500">${new Date(msg.Tanggal).toLocaleString('id-ID')}</span>
@@ -1187,10 +1211,8 @@ async function loadAndRenderMessages() {
 }
 
 function handleMessageClick(e) {
-    // Bisa ditambahkan fungsi untuk menampilkan detail pesan
     const item = e.target.closest('.message-item');
     if(item) {
-        // Logika untuk menampilkan detail pesan bisa ditambahkan di sini
         console.log("Pesan diklik:", item);
     }
 }
