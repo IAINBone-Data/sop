@@ -20,12 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
     'headerTitleLink', 'hamburgerMenuButton', 'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink',
     'customAlertModal', 'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
     'statTotalDataset', 'statTotalProducer', 'statTotalCategory',
-    'reloadDatasetButton', 'chatButton', 'messageModal', 'messageForm', 'closeMessageModal',
-    'cancelMessageForm', 'submitMessageButton', 'sendMessageButtonText', 'sendMessageSpinner', 'messageFormError',
+    'reloadDatasetButton',
     'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 'loginModal', 'closeLoginModal'
+    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 
+    'loginModal', 'closeLoginModal' // Menambahkan kembali referensi untuk modal login
   ];
    ids.forEach(id => {
        const el = document.getElementById(id);
@@ -132,11 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
    });
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
-   DOM.detailDownloadLink.addEventListener('click', handleDownload);
-   DOM.chatButton.addEventListener('click', () => toggleMessageModal(true));
-   DOM.closeMessageModal.addEventListener('click', () => toggleMessageModal(false));
-   DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
-   DOM.messageForm.addEventListener('submit', handleSendMessage);
+   if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
  };
@@ -346,11 +342,6 @@ function handleDatasetListClick(e) {
     }
 }
 
-async function handleSendMessage(e) {
-    e.preventDefault();
-    showCustomAlert('Fungsionalitas pesan saat ini dinonaktifkan.', 'error');
-}
-
 function handleDownload() {
     console.log("Tombol unduh diklik.");
 }
@@ -363,14 +354,6 @@ function toggleModal(modalId, show) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.toggle('hidden', !show);
-  }
-}
-
-function setButtonLoading(button, spinner, text, isLoading) {
-  if (button && spinner && text) {
-      button.disabled = isLoading;
-      spinner.classList.toggle('hidden', !isLoading);
-      text.classList.toggle('hidden', isLoading);
   }
 }
 
@@ -487,10 +470,6 @@ function animateCountUp(el, endValue) {
       requestAnimationFrame(counter);
     }
     requestAnimationFrame(counter);
-}
-
-function toggleMessageModal(show) {
-    toggleModal('message-modal', show);
 }
 
 // RUN APP
