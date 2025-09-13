@@ -78,7 +78,7 @@
     </div>
   </div>
 
-  <!-- [BARU] Modal Konfirmasi Reload -->
+  <!-- Modal Konfirmasi Reload -->
   <div id="confirm-reload-modal" class="modal-overlay fixed inset-0 z-[100] flex items-center justify-center bg-black bg-opacity-50 hidden">
     <div class="w-full max-w-sm p-6 space-y-4 bg-white rounded-xl shadow-lg text-center transform transition-all">
         <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100">
@@ -182,8 +182,11 @@
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
             <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
         </div>
+        <!-- [DIUBAH] Tata letak grid baru untuk detail view -->
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
-            <div class="lg:col-span-3 space-y-6">
+            
+            <!-- Bagian Detail: Muncul ke-1 di mobile, Kiri-atas di desktop -->
+            <div class="lg:col-span-3 order-1">
                 <section class="bg-white p-6 rounded-lg shadow-md space-y-4">
                     <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
                     <p id="detail-uraian" class="text-gray-600 text-sm"></p>
@@ -192,6 +195,19 @@
                         <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh Dokumen</a>
                     </div>
                 </section>
+            </div>
+
+            <!-- Bagian Pratinjau: Muncul ke-2 di mobile, Kanan di desktop (merentang 2 baris) -->
+            <div class="lg:col-span-7 lg:row-span-2 order-2 lg:order-3">
+                <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
+                    <div id="table-preview-content" class="w-full h-full">
+                        <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bagian Metadata: Muncul ke-3 di mobile, Kiri-bawah di desktop -->
+            <div class="lg:col-span-3 order-3 lg:order-2">
                 <section class="bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Metadata</h3>
                     <table class="w-full text-sm text-left text-gray-600">
@@ -206,13 +222,7 @@
                     </table>
                 </section>
             </div>
-            <div class="lg:col-span-7">
-                <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
-                    <div id="table-preview-content" class="w-full h-full">
-                        <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
-                    </div>
-                </div>
-            </div>
+
         </div>
       </div>
 
