@@ -20,9 +20,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
     'reloadDatasetButton', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 
-    'metaUnit', 'metaFungsi', // [PERUBAHAN] ID Metadata disesuaikan
-    'metaTanggal', 'metaDiperbaharui', 'tablePreviewContainer',
-    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi'
+    'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'tablePreviewContainer',
+    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
+    'resetFilterButton' // Menambahkan ID tombol reset
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
    DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
+   DOM.resetFilterButton.addEventListener('click', resetFilters); // Menambahkan event listener untuk reset
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
@@ -221,7 +222,6 @@ function showDetailView(idsop) {
     else if (['XLS', 'XLSX'].includes(formatText)) DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800';
     else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
     
-    // [PERUBAHAN] Logika untuk mengisi metadata disesuaikan
     DOM.metaUnit.textContent = item.Unit || 'N/A';
     DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
     DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] ? new Date(item['Tanggal Pembuatan']).toLocaleDateString('id-ID') : 'N/A';
@@ -355,6 +355,15 @@ function toggleSideMenu(show) {
 function handleReload() {
     loadInitialData();
 }
+
+// Fungsi baru untuk mereset filter
+function resetFilters() {
+    DOM.searchInput.value = '';
+    DOM.filterUnit.value = '';
+    DOM.filterFungsi.value = '';
+    applyFiltersAndRender();
+}
+
 
 function updateDatasetCount() {
     if(!DOM.datasetCount) return;
