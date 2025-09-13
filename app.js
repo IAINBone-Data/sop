@@ -4,6 +4,7 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - [BARU] Menambahkan fungsionalitas accordion (buka/tutup) untuk bagian metadata.
  * - [PERBAIKAN] Memberikan warna latar pada tombol login admin.
  * - Sinkronisasi input filter antara tampilan mobile dan desktop.
  * - Memberikan warna latar pada label Unit di tampilan desktop dan mobile.
@@ -36,10 +37,10 @@ document.addEventListener('DOMContentLoaded', function () {
     'resetFilterButton',
     'filterModal', 'openFilterButton', 'closeFilterModal',
     'confirmReloadModal', 'confirmReloadButton', 'cancelReloadButton',
-    // Elemen duplikat untuk filter desktop dan mobile
     'searchInputMobile', 'resetFilterButtonMobile',
     'filterUnit', 'filterFungsi',
-    'filterUnitModal', 'filterFungsiModal'
+    'filterUnitModal', 'filterFungsiModal',
+    'toggleMetadataButton', 'metadataContent', 'metadataChevron' // ID Baru
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -125,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    
-   // [DIUBAH] Event listener untuk filter
    DOM.searchInput.addEventListener('input', syncAndFilter);
    DOM.searchInputMobile.addEventListener('input', syncAndFilter);
    DOM.filterUnit.addEventListener('change', syncAndFilter);
@@ -151,6 +151,12 @@ document.addEventListener('DOMContentLoaded', function () {
        toggleModal('confirm-reload-modal', false);
        loadInitialData();
    });
+
+   // Event listener baru untuk metadata accordion
+   DOM.toggleMetadataButton.addEventListener('click', () => {
+        DOM.metadataContent.classList.toggle('hidden');
+        DOM.metadataChevron.classList.toggle('rotate-180');
+   });
  };
 
 //==================================================
@@ -165,25 +171,21 @@ function updateUIForLoginStatus() {
 // DATA RENDERING & FILTERING
 //==================================================
 
-// [BARU] Fungsi untuk sinkronisasi nilai filter sebelum filtering
 function syncAndFilter(event) {
     const sourceElement = event.target;
 
-    // Sinkronisasi nilai search
     if (sourceElement.id === 'search-input') {
         DOM.searchInputMobile.value = sourceElement.value;
     } else if (sourceElement.id === 'search-input-mobile') {
         DOM.searchInput.value = sourceElement.value;
     }
 
-    // Sinkronisasi nilai unit
     if (sourceElement.id === 'filter-unit') {
         DOM.filterUnitModal.value = sourceElement.value;
     } else if (sourceElement.id === 'filter-unit-modal') {
         DOM.filterUnit.value = sourceElement.value;
     }
 
-    // Sinkronisasi nilai fungsi
     if (sourceElement.id === 'filter-fungsi') {
         DOM.filterFungsiModal.value = sourceElement.value;
     } else if (sourceElement.id === 'filter-fungsi-modal') {
@@ -197,7 +199,6 @@ function syncAndFilter(event) {
 function applyFiltersAndRender() {
      let filteredData = [...allDatasets];
      
-     // Cukup baca dari salah satu elemen karena sudah sinkron
      const searchTerm = DOM.searchInput.value.toLowerCase();
      const selectedUnit = DOM.filterUnit.value;
      const selectedFungsi = DOM.filterFungsi.value;
@@ -302,6 +303,10 @@ function showDetailView(idsop) {
          return;
      }
      
+     // Reset metadata accordion ke keadaan default (terciut)
+     DOM.metadataContent.classList.add('hidden');
+     DOM.metadataChevron.classList.remove('rotate-180');
+
      DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
      DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
      
@@ -444,7 +449,6 @@ function populateFilterOptions() {
          });
      };
 
-     // Populasi kedua set dropdown
      populateSelect(DOM.filterUnit, units, "Semua Unit");
      populateSelect(DOM.filterFungsi, fungsis, "Semua Fungsi");
      populateSelect(DOM.filterUnitModal, units, "Semua Unit");
