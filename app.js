@@ -240,8 +240,9 @@ function showDetailView(idsop) {
     
     DOM.metaUnit.textContent = item.Unit || 'N/A';
     DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
+    // [PERUBAHAN] Menggunakan toLocaleDateString untuk format DD/MM/YYYY
     DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] ? new Date(item['Tanggal Pembuatan']).toLocaleDateString('id-ID') : 'N/A';
-    DOM.metaDiperbaharui.textContent = item['Tanggal Revisi'] ? new Date(item['Tanggal Revisi']).toLocaleString('id-ID') : 'N/A';
+    DOM.metaDiperbaharui.textContent = item['Tanggal Revisi'] ? new Date(item['Tanggal Revisi']).toLocaleDateString('id-ID') : 'N/A';
     
     DOM.detailDownloadLink.style.display = 'inline-block';
 
