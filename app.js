@@ -28,7 +28,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'loginModal', 'closeLoginModal' // Menambahkan kembali referensi untuk modal login
   ];
    ids.forEach(id => {
-       const el = document.getElementById(id);
+       // [PERBAIKAN] Mengubah camelCase (js) menjadi kebab-case (html) untuk menemukan ID dengan benar
+       const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
+       const el = document.getElementById(kebabCaseId);
        if (el) {
            DOM[id] = el;
        }
