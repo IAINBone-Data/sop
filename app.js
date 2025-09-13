@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 
+    'tablePreviewContent', 
     'loginModal', 'closeLoginModal' // Menambahkan kembali referensi untuk modal login
   ];
    ids.forEach(id => {
@@ -155,16 +155,9 @@ function updateUIForLoginStatus() {
 function applyFiltersAndRender() {
     let baseData = allDatasets;
 
-    const uniqueTitles = new Map();
-    baseData.sort((a,b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui']));
-
-    baseData.forEach(item => {
-        if (!uniqueTitles.has(item.Judul)) {
-            uniqueTitles.set(item.Judul, item);
-        }
-    });
-
-    let filteredData = Array.from(uniqueTitles.values());
+    // [PERUBAHAN] Menghapus filter judul unik untuk menampilkan semua entri SOP
+    let filteredData = [...baseData];
+    
     const searchTerm = DOM.searchInput.value.toLowerCase();
     const category = DOM.filterCategory.value;
     const producer = DOM.filterProducer.value;
@@ -295,36 +288,8 @@ function showDetailView(idsop) {
         DOM.detailDownloadLink.href = '#';
     }
 
-    displayChangeHistory(item);
+    // [PERUBAHAN] Menghapus pemanggilan fungsi riwayat perubahan
     showView('detail-view-container');
-}
-
-function displayChangeHistory(currentItem) {
-    const historyItems = allDatasets
-        .filter(item => item.Judul === currentItem.Judul && item.IDSOP !== currentItem.IDSOP)
-        .sort((a, b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui']));
-    
-    DOM.historyList.innerHTML = '';
-    if (historyItems.length > 0) {
-        DOM.historySection.classList.remove('hidden');
-        DOM.noHistoryMessage.classList.add('hidden');
-        historyItems.forEach(item => {
-            const fileId = item['File ID'];
-            const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : '#';
-
-            DOM.historyList.innerHTML += `
-                <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
-                    <div>
-                        <p class="font-semibold text-gray-800">${item['Nama File'] || 'N/A'}</p>
-                        <div class="text-sm text-gray-600">Diperbaharui: ${new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID')}</div>
-                    </div>
-                    <a href="${downloadUrl}" target="_blank" class="bg-blue-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-blue-700"><i class="fas fa-download"></i></a>
-                </div>`;
-        });
-    } else {
-        DOM.historySection.classList.add('hidden');
-        DOM.noHistoryMessage.classList.remove('hidden');
-    }
 }
 
 //==================================================
@@ -405,8 +370,8 @@ function setLoadingState(isLoading) {
 
 function updateSummaryStats() {
     if (!filterOptionsCache || !allDatasets) return;
-    const uniqueTitles = new Set(allDatasets.map(d => d.Judul));
-    animateCountUp(DOM.statTotalDataset, uniqueTitles.size);
+    // [PERUBAHAN] Menghitung total SOP berdasarkan semua entri, bukan judul unik
+    animateCountUp(DOM.statTotalDataset, allDatasets.length);
     animateCountUp(DOM.statTotalProducer, filterOptionsCache.producers.length);
     animateCountUp(DOM.statTotalCategory, filterOptionsCache.categories.length);
 }
