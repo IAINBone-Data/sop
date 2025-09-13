@@ -62,14 +62,14 @@
         <h2 class="text-xl font-bold text-gray-800">Filter SOP</h2>
         <div class="space-y-4">
             <div>
-                <label for="filter-unit" class="text-sm font-medium text-gray-700">Unit</label>
-                <select id="filter-unit" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <label for="filter-unit-modal" class="text-sm font-medium text-gray-700">Unit</label>
+                <select id="filter-unit-modal" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Semua Unit</option>
                 </select>
             </div>
             <div>
-                <label for="filter-fungsi" class="text-sm font-medium text-gray-700">Fungsi</label>
-                <select id="filter-fungsi" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                <label for="filter-fungsi-modal" class="text-sm font-medium text-gray-700">Fungsi</label>
+                <select id="filter-fungsi-modal" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Semua Fungsi</option>
                 </select>
             </div>
@@ -137,17 +137,37 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-2 mb-4">
-              <div class="relative flex-grow">
-                  <input type="text" id="search-input" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+            <!-- [DIUBAH] Filter untuk Mobile (Tampil di layar kecil) -->
+            <div class="lg:hidden">
+              <div class="flex items-center gap-2 mb-4">
+                <div class="relative flex-grow">
+                    <input type="search" id="search-input-mobile" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                </div>
+                <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center">
+                    <i class="fas fa-filter"></i>
+                </button>
+                <button id="reset-filter-button-mobile" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center">
+                    <i class="fas fa-undo"></i>
+                </button>
               </div>
-              <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center">
-                  <i class="fas fa-filter"></i>
-              </button>
-              <button id="reset-filter-button" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center">
-                  <i class="fas fa-undo"></i>
-              </button>
+            </div>
+            
+            <!-- [DIUBAH] Filter untuk Desktop (Tampil di layar besar) -->
+            <div class="hidden lg:flex flex-wrap items-center justify-between mb-4 gap-4">
+                <div class="relative flex-grow" style="min-width: 250px;">
+                    <input type="search" id="search-input" placeholder="Cari Nama atau Nomor SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                </div>
+                <div class="flex items-center gap-4 flex-wrap justify-end">
+                    <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="">Semua Unit</option>
+                    </select>
+                    <select id="filter-fungsi" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="">Semua Fungsi</option>
+                    </select>
+                    <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Reset</button>
+                </div>
             </div>
 
             <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
@@ -182,12 +202,13 @@
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
             <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
         </div>
-        <!-- [DIUBAH] Tata letak grid baru untuk detail view -->
+        <!-- [PERBAIKAN] Tata letak grid baru yang responsif untuk halaman detail -->
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
             
-            <!-- Bagian Detail: Muncul ke-1 di mobile, Kiri-atas di desktop -->
-            <div class="lg:col-span-3 order-1">
-                <section class="bg-white p-6 rounded-lg shadow-md space-y-4">
+            <!-- Kolom kiri di desktop, berisi Detail dan Metadata -->
+            <div class="lg:col-span-3 flex flex-col gap-8">
+                <!-- Bagian Detail: Selalu urutan ke-1 di mobile -->
+                <section class="order-1 bg-white p-6 rounded-lg shadow-md space-y-4">
                     <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
                     <p id="detail-uraian" class="text-gray-600 text-sm"></p>
                     <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
@@ -195,20 +216,9 @@
                         <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh Dokumen</a>
                     </div>
                 </section>
-            </div>
 
-            <!-- Bagian Pratinjau: Muncul ke-2 di mobile, Kanan di desktop (merentang 2 baris) -->
-            <div class="lg:col-span-7 lg:row-span-2 order-2 lg:order-3">
-                <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
-                    <div id="table-preview-content" class="w-full h-full">
-                        <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bagian Metadata: Muncul ke-3 di mobile, Kiri-bawah di desktop -->
-            <div class="lg:col-span-3 order-3 lg:order-2">
-                <section class="bg-white p-6 rounded-lg shadow-md">
+                <!-- Bagian Metadata: Urutan ke-3 di mobile -->
+                <section class="order-3 bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Metadata</h3>
                     <table class="w-full text-sm text-left text-gray-600">
                         <tbody>
@@ -223,6 +233,14 @@
                 </section>
             </div>
 
+            <!-- Kolom kanan di desktop, berisi Pratinjau PDF. Urutan ke-2 di mobile -->
+            <div class="lg:col-span-7 order-2">
+                <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
+                    <div id="table-preview-content" class="w-full h-full">
+                        <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
+                    </div>
+                </div>
+            </div>
         </div>
       </div>
 
