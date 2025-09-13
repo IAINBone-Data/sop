@@ -6,7 +6,7 @@
  */
 
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3PDSqG35NMjCoo2eT2eVt7uLfNmfx1FxfkTPfgp3_UGmSPoplvT_kyWVE65Iqo8ry/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUGtvg6395FkwLtTZozVxXLExnOxXImGKcBC5mFSTR0UsO_31kadjGkaGu5EGANqmD/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
@@ -101,7 +101,8 @@ document.addEventListener('DOMContentLoaded', function () {
               filterOptionsCache = { categories: [], producers: [], tags: [], years: [] };
           }
       
-          allDatasets.sort((a, b) => (new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui'])));
+          // [PERUBAHAN] Mengurutkan berdasarkan IDSOP dari yang terbaru (asumsi format timestamp)
+          allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
 
           applyFiltersAndRender();
           updateSummaryStats();
@@ -153,10 +154,7 @@ function updateUIForLoginStatus() {
 //==================================================
 
 function applyFiltersAndRender() {
-    let baseData = allDatasets;
-
-    // [PERUBAHAN] Menghapus filter judul unik untuk menampilkan semua entri SOP
-    let filteredData = [...baseData];
+    let filteredData = [...allDatasets];
     
     const searchTerm = DOM.searchInput.value.toLowerCase();
     const category = DOM.filterCategory.value;
@@ -166,7 +164,7 @@ function applyFiltersAndRender() {
     const startYear = DOM.filterDataStartYear.value;
     const endYear = DOM.filterDataEndYear.value;
 
-    if (searchTerm) filteredData = filteredData.filter(item => (item.Judul || '').toLowerCase().includes(searchTerm) || (item.Uraian || '').toLowerCase().includes(searchTerm) || (item.Tag || '').toLowerCase().includes(searchTerm));
+    if (searchTerm) filteredData = filteredData.filter(item => (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm) || (item.Tag || '').toLowerCase().includes(searchTerm));
     if (category) filteredData = filteredData.filter(item => item.Kategori === category);
     if (producer) filteredData = filteredData.filter(item => item['Produsen Data'] === producer);
     if (tag) filteredData = filteredData.filter(item => (item.Tag || '').split(',').map(t => t.trim()).includes(tag));
@@ -202,19 +200,19 @@ function renderPageContent() {
     const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
 
     paginatedItems.forEach(item => {
+        const producerText = (item.Unit && item.Fungsi) ? `${item.Unit} - ${item.Fungsi}` : (item.Unit || item.Fungsi || 'N/A');
         DOM.datasetList.innerHTML += `
             <div class="dataset-card bg-white p-5 rounded-lg shadow-md border hover:shadow-lg hover:border-blue-500 transition-all">
                 <div class="flex justify-between items-start">
-                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex-grow cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item.Judul || 'Tanpa Judul'}</h3>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex-grow cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item['Nama SOP'] || 'Tanpa Judul'}</h3>
                 </div>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item.Uraian || 'Tidak ada uraian.'}</p>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item['Nomor SOP'] || 'Tidak ada nomor SOP.'}</p>
                 <div class="flex flex-wrap items-center justify-between gap-y-2">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">${item.Format || 'N/A'}</span>
                         ${item.Kategori ? `<span class="inline-block bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-1 rounded-full"><i class="fas fa-folder-open mr-1"></i> ${item.Kategori}</span>` : ''}
-                        ${item['Tahun Data'] ? `<span class="inline-block bg-gray-200 text-gray-800 text-xs font-semibold px-2.5 py-1 rounded-full"><i class="fas fa-calendar-alt mr-1"></i> ${item['Tahun Data']}</span>` : ''}
                     </div>
-                    <div class="text-right flex-shrink-0"><span class="text-sm font-semibold text-blue-600">${item['Produsen Data'] || 'N/A'}</span></div>
+                    <div class="text-right flex-shrink-0"><span class="text-sm font-semibold text-blue-600">${producerText}</span></div>
                 </div>
             </div>`;
     });
@@ -249,16 +247,16 @@ function showDetailView(idsop) {
         return;
     }
     
-    DOM.detailTitle.textContent = item.Judul || 'Tanpa Judul';
-    DOM.detailUraian.textContent = item.Uraian || 'Tidak ada uraian.';
-    DOM.detailFileTitle.textContent = item['Nama File'] || 'File Dataset';
-    DOM.detailFilenameDisplay.textContent = item.Judul || 'Tanpa Judul';
+    DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
+    DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
+    DOM.detailFileTitle.textContent = item['Nama File'] || 'File SOP';
+    DOM.detailFilenameDisplay.textContent = item['Nama SOP'] || 'Tanpa Judul';
     const formatText = (item.Format || 'N/A').toUpperCase();
     DOM.detailFileFormat.textContent = formatText;
     if (formatText === 'CSV') DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800';
     else if (['XLS', 'XLSX'].includes(formatText)) DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800';
     else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
-    DOM.metaProdusen.textContent = item['Produsen Data'] || 'N/A';
+    DOM.metaProdusen.textContent = (item.Unit && item.Fungsi) ? `${item.Unit} - ${item.Fungsi}` : (item.Unit || item.Fungsi || 'N/A');
     DOM.metaPenanggungJawab.textContent = item['Penanggung Jawab'] || 'N/A';
     DOM.metaTanggal.textContent = item['Tanggal Dibuat'] ? new Date(item['Tanggal Dibuat']).toLocaleDateString('id-ID') : 'N/A';
     DOM.metaDiperbaharui.textContent = item['Tanggal Diperbaharui'] ? new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID') : 'N/A';
@@ -288,9 +286,9 @@ function showDetailView(idsop) {
         DOM.detailDownloadLink.href = '#';
     }
 
-    // [PERUBAHAN] Menghapus pemanggilan fungsi riwayat perubahan
     showView('detail-view-container');
 }
+
 
 //==================================================
 // EVENT HANDLERS
@@ -370,7 +368,6 @@ function setLoadingState(isLoading) {
 
 function updateSummaryStats() {
     if (!filterOptionsCache || !allDatasets) return;
-    // [PERUBAHAN] Menghitung total SOP berdasarkan semua entri, bukan judul unik
     animateCountUp(DOM.statTotalDataset, allDatasets.length);
     animateCountUp(DOM.statTotalProducer, filterOptionsCache.producers.length);
     animateCountUp(DOM.statTotalCategory, filterOptionsCache.categories.length);
