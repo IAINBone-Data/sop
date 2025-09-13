@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'paginationContainer', 'backToListButton', 'headerTitleLink', 'hamburgerMenuButton', 
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
-    'reloadDatasetButton', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
+    'reloadDatasetButton', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal'
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
  // === STATE MANAGEMENT ===
  let allDatasets = [];
  let currentPage = 1;
- const rowsPerPage = 10;
+ const rowsPerPage = 100; // [PERUBAHAN] Menaikkan paginasi menjadi 100
  let currentFilteredData = [];
  
   // === API HELPER ===
@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    DOM.searchInput.addEventListener('input', applyFiltersAndRender);
-   DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
@@ -135,17 +134,9 @@ function applyFiltersAndRender() {
             (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
         );
     }
-
-    const sortValue = DOM.sortDatasetSelect.value;
-    const parseDate = (dateStr) => new Date(dateStr);
     
-    filteredData.sort((a, b) => {
-        if (sortValue === 'tanggal-asc') {
-            return (parseDate(a['Tanggal Diperbaharui']) || 0) - (parseDate(b['Tanggal Diperbaharui']) || 0);
-        }
-        // Default sort is by newest date
-        return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
-    });
+    // Default sort is by newest (based on IDSOP in loadInitialData)
+    // No more date sorting needed here
 
     currentFilteredData = filteredData;
     currentPage = 1;
@@ -164,16 +155,15 @@ function renderPageContent() {
     const startIndex = (currentPage - 1) * rowsPerPage;
     const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
 
-    // [PERUBAHAN] Mengubah dari card menjadi baris tabel (<tr>)
     paginatedItems.forEach(item => {
         const unitText = item.Unit || 'N/A';
         const fungsiText = item.Fungsi || 'N/A';
         DOM.datasetList.innerHTML += `
             <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${item.IDSOP}">
-                <td class="p-4 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${item['Nomor SOP'] || ''}</td>
                 <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                <td class="p-4 text-sm text-gray-700">${unitText}</td>
-                <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${fungsiText}</td>
             </tr>`;
     });
 
