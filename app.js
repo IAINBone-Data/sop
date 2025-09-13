@@ -2,47 +2,33 @@
  * =================================================================================
  * SCRIPT APLIKASI UTAMA - SATU DATA IAIN BONE
  * =================================================================================
- * Versi ini telah dimodifikasi untuk menghapus fungsionalitas login.
+ * Versi ini telah disederhanakan tanpa fungsionalitas login, permohonan, dan kolom Sifat.
  */
 
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwaZGTS7zK-kou_CV4Mw6VBgxM3mR0-75Wur0th9g-8Dw_uPDeVLh6Sea8TBjyg2U6M/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3PDSqG35NMjCoo2eT2eVt7uLfNmfx1FxfkTPfgp3_UGmSPoplvT_kyWVE65Iqo8ry/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
  const DOM = {};
  const cacheDOMElements = () => {
   const ids = [
-    // Elemen terkait login, profil, dan reset password telah dihapus
-    'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer', 'statsViewContainer',
-    'adminListViewContainer', 'datasetList', 'datasetCount', 'searchInput', 'filterCategory', 'filterSifatContainer',
+    'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer',
+    'datasetList', 'datasetCount', 'searchInput', 'filterCategory',
     'filterProducer', 'filterTag', 'loadingIndicator', 'noDataMessage', 'resetFilterButton',
-    'paginationContainer', 'filterYear', 'filterDataStartYear', 'filterDataEndYear', 'backToListButton', 'detailActionButtons',
-    'headerTitleLink', 'hamburgerMenuButton', 'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'statsLink',
-    'adminListLink', 'statsMenuItem', 'adminListMenuItem', 'panduanMenuItem', 'requestMenuItem', 'requestLink',
-    'requestViewContainer', 'requestListTableBody', 'requestListCards', 'requestDataModal', 'requestDataForm',
-    'cancelRequestForm', 'requestModalDatasetTitle', 'requestFormError', 'requestButtonContainer', 'messageMenuItem',
-    'messageLink', 'messageViewContainer', 'messageListContainer', 'customAlertModal', 'customAlertMessage',
-    'closeCustomAlert', 'customAlertIconContainer', 'statTotalDataset', 'statTotalProducer', 'statTotalCategory', 'popularDatasetsList',
-    'noPopularDatasets', 'addDatasetModal',
-    'addDatasetForm', 'closeAddDatasetModal', 'cancelAddDatasetButton', 'addDatasetError', 'addDatasetSuccess',
-    'submitAddDatasetButton', 'addDatasetButtonText', 'addDatasetSpinner', 'addKategori', 'addKategoriNew',
-    'editDatasetModal', 'editDatasetForm', 'closeEditDatasetModal', 'cancelEditDatasetButton',
-    'submitEditDatasetButton', 'editDatasetError', 'editDatasetSuccess', 'editDatasetButtonText', 'editDatasetSpinner',
-    'userModal', 'userForm', 'userModalTitle', 'addUserButton', 'cancelUserForm', 'adminListTableBody', 'userFormError',
-    'adminListCards', 'addDatasetButtonContainer',
-    'addDatasetTriggerButton', 'reloadDatasetButton', 'chatButton', 'messageModal', 'messageForm', 'closeMessageModal',
+    'paginationContainer', 'filterYear', 'filterDataStartYear', 'filterDataEndYear', 'backToListButton',
+    'headerTitleLink', 'hamburgerMenuButton', 'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink',
+    'customAlertModal', 'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
+    'statTotalDataset', 'statTotalProducer', 'statTotalCategory',
+    'reloadDatasetButton', 'chatButton', 'messageModal', 'messageForm', 'closeMessageModal',
     'cancelMessageForm', 'submitMessageButton', 'sendMessageButtonText', 'sendMessageSpinner', 'messageFormError',
-    'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian', 'detailSifat',
+    'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage', 'addProdusenData', 'editProdusenData',
-    'editKategori', 'currentFileInfo', 'statsTotalVisitors', 'statsTotalDownloads', 'monthlyVisitsChart', 'yearlyVisitsChart',
-    'adminLoginsTableBody', 'editTahunDataStart', 'editTahunDataEnd'
+    'tablePreviewContent', 'historySection', 'historyList', 'noHistoryMessage'
   ];
    ids.forEach(id => {
-       const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
-       const el = document.getElementById(kebabCaseId);
+       const el = document.getElementById(id);
        if (el) {
            DOM[id] = el;
        }
@@ -51,11 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
  // === STATE MANAGEMENT ===
  let allDatasets = [];
- let allUsers = [];
- let allRequests = [];
- let allMessages = [];
  let filterOptionsCache = null;
- let currentDetailItemIndex = -1;
  let currentPage = 1;
  const rowsPerPage = 10;
  let currentFilteredData = [];
@@ -98,11 +80,9 @@ document.addEventListener('DOMContentLoaded', function () {
   loadInitialData();
  };
 
-  const loadInitialData = async (keepDetailView = false, callback) => {
+  const loadInitialData = async () => {
       setLoadingState(true);
-      if (!keepDetailView) {
-          DOM.datasetList.innerHTML = '';
-      }
+      DOM.datasetList.innerHTML = '';
       
       const response = await callAppsScript('getData', { sheetName: 'SOP' });
 
@@ -124,12 +104,10 @@ document.addEventListener('DOMContentLoaded', function () {
           applyFiltersAndRender();
           updateSummaryStats();
           populateFilterOptions();
-          loadTopVisited();
       } else {
           showErrorState('Gagal Memuat Data', response.message);
       }
       setLoadingState(false);
-      if(callback) callback();
   };
  
  // === EVENT LISTENERS SETUP ===
@@ -148,16 +126,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
    DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
    DOM.resetFilterButton.addEventListener('click', resetFilters);
-   DOM.filterSifatContainer.addEventListener('change', applyFiltersAndRender);
    DOM.toggleFilterBtn.addEventListener('click', () => {
      DOM.filterContent.classList.toggle('hidden');
      DOM.toggleFilterBtn.querySelector('i').classList.toggle('rotate-180');
    });
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
-   DOM.detailViewContainer.addEventListener('click', handleDetailViewActions);
    DOM.detailDownloadLink.addEventListener('click', handleDownload);
-   DOM.popularDatasetsList.addEventListener('click', handlePopularDatasetClick);
    DOM.chatButton.addEventListener('click', () => toggleMessageModal(true));
    DOM.closeMessageModal.addEventListener('click', () => toggleMessageModal(false));
    DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
@@ -166,17 +141,11 @@ document.addEventListener('DOMContentLoaded', function () {
  };
 
 //==================================================
-// AUTHENTICATION & UI UPDATE FUNCTIONS
+// UI UPDATE FUNCTIONS
 //==================================================
 
 function updateUIForLoginStatus() {
-  // Semua menu admin disembunyikan secara default
-  [DOM.statsMenuItem, DOM.adminListMenuItem, DOM.panduanMenuItem, DOM.requestMenuItem, DOM.messageMenuItem].forEach(item => {
-      if(item) item.classList.add('hidden')
-    });
-  if(DOM.addDatasetButtonContainer) DOM.addDatasetButtonContainer.classList.add('hidden');
-
-  // Selalu tampilkan tombol login
+  // Selalu tampilkan tombol login, tapi fungsionalitasnya dinonaktifkan
   DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>`;
 }
 
@@ -185,17 +154,12 @@ function updateUIForLoginStatus() {
 //==================================================
 
 function applyFiltersAndRender() {
-    // Hanya tampilkan data dengan Sifat 'Terbuka' karena tidak ada user yang login
-    let baseData = allDatasets.filter(item => item.Sifat === 'Terbuka');
+    let baseData = allDatasets;
 
     const uniqueTitles = new Map();
-    const sortedBaseData = [...baseData].sort((a,b) => {
-        const dateA = new Date(a['Tanggal Diperbaharui']);
-        const dateB = new Date(b['Tanggal Diperbaharui']);
-        return dateB - dateA;
-    });
+    baseData.sort((a,b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui']));
 
-    sortedBaseData.forEach(item => {
+    baseData.forEach(item => {
         if (!uniqueTitles.has(item.Judul)) {
             uniqueTitles.set(item.Judul, item);
         }
@@ -205,7 +169,6 @@ function applyFiltersAndRender() {
     const searchTerm = DOM.searchInput.value.toLowerCase();
     const category = DOM.filterCategory.value;
     const producer = DOM.filterProducer.value;
-    const sifat = document.querySelector('input[name="filter-sifat"]:checked').value;
     const tag = DOM.filterTag.value;
     const year = DOM.filterYear.value;
     const startYear = DOM.filterDataStartYear.value;
@@ -214,7 +177,6 @@ function applyFiltersAndRender() {
     if (searchTerm) filteredData = filteredData.filter(item => (item.Judul || '').toLowerCase().includes(searchTerm) || (item.Uraian || '').toLowerCase().includes(searchTerm) || (item.Tag || '').toLowerCase().includes(searchTerm));
     if (category) filteredData = filteredData.filter(item => item.Kategori === category);
     if (producer) filteredData = filteredData.filter(item => item['Produsen Data'] === producer);
-    if (sifat) filteredData = filteredData.filter(item => item.Sifat === sifat);
     if (tag) filteredData = filteredData.filter(item => (item.Tag || '').split(',').map(t => t.trim()).includes(tag));
     if (year) filteredData = filteredData.filter(item => (item.Tanggal || '').endsWith(`/${year}`));
     if (startYear) filteredData = filteredData.filter(item => (item['Tahun Data'] || '').split('-')[1]?.trim() >= startYear);
@@ -224,11 +186,10 @@ function applyFiltersAndRender() {
     const parseDate = (dateStr) => new Date(dateStr);
     
     filteredData.sort((a, b) => {
-        switch (sortValue) {
-            case 'tanggal-desc': return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
-            case 'tanggal-asc': return (parseDate(a['Tanggal Diperbaharui']) || 0) - (parseDate(b['Tanggal Diperbaharui']) || 0);
-            default: return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
+        if (sortValue === 'tanggal-asc') {
+            return (parseDate(a['Tanggal Diperbaharui']) || 0) - (parseDate(b['Tanggal Diperbaharui']) || 0);
         }
+        return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
     });
 
     currentFilteredData = filteredData;
@@ -249,22 +210,12 @@ function renderPageContent() {
     const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
 
     paginatedItems.forEach(item => {
-        const originalIndex = allDatasets.findIndex(d => d.rowIndex === item.rowIndex);
-        const sifatColor = getSifatColor(item.Sifat);
-        
-        // Tombol aksi (edit/hapus) tidak ditampilkan karena tidak ada login
-        const actionButtonHtml = '';
-
         DOM.datasetList.innerHTML += `
             <div class="dataset-card bg-white p-5 rounded-lg shadow-md border hover:shadow-lg hover:border-blue-500 transition-all">
                 <div class="flex justify-between items-start">
-                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex-grow cursor-pointer view-detail-trigger" data-id="${originalIndex}">${item.Judul || 'Tanpa Judul'}</h3>
-                    <div class="flex items-center flex-shrink-0 ml-2">
-                        <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full ${sifatColor}">${item.Sifat || 'N/A'}</span>
-                        ${actionButtonHtml}
-                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 mb-2 flex-grow cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item.Judul || 'Tanpa Judul'}</h3>
                 </div>
-                <p class="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer view-detail-trigger" data-id="${originalIndex}">${item.Uraian || 'Tidak ada uraian.'}</p>
+                <p class="text-gray-600 text-sm mb-4 line-clamp-2 cursor-pointer view-detail-trigger" data-id="${item.IDSOP}">${item.Uraian || 'Tidak ada uraian.'}</p>
                 <div class="flex flex-wrap items-center justify-between gap-y-2">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full">${item.Format || 'N/A'}</span>
@@ -298,25 +249,18 @@ function renderPaginationControls() {
     }));
 }
 
-function showDetailView(datasetIndex) {
-    if (datasetIndex < 0 || !allDatasets[datasetIndex]) {
-        showCustomAlert('Data tidak ditemukan atau tidak valid.', 'error');
+function showDetailView(idsop) {
+    const item = allDatasets.find(d => d.IDSOP === idsop);
+    if (!item) {
+        showCustomAlert('Data tidak ditemukan.', 'error');
         showView('list-view-container');
         return;
     }
-    currentDetailItemIndex = datasetIndex;
-    const item = allDatasets[datasetIndex];
-
-    callAppsScript('logAction', { 
-        type: 'visit', 
-        details: { title: item.Judul }, 
-        user: 'Guest' 
-    });
+    
+    // Fungsionalitas logAction telah dihapus, jadi pemanggilan ini juga dihapus.
 
     DOM.detailTitle.textContent = item.Judul || 'Tanpa Judul';
     DOM.detailUraian.textContent = item.Uraian || 'Tidak ada uraian.';
-    DOM.detailSifat.textContent = item.Sifat || 'N/A';
-    DOM.detailSifat.className = `text-sm font-bold px-3 py-1 rounded-full flex-shrink-0 ml-4 ${getSifatColor(item.Sifat)}`;
     DOM.detailFileTitle.textContent = item['Nama File'] || 'File Dataset';
     DOM.detailFilenameDisplay.textContent = item.Judul || 'Tanpa Judul';
     const formatText = (item.Format || 'N/A').toUpperCase();
@@ -326,21 +270,12 @@ function showDetailView(datasetIndex) {
     else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
     DOM.metaProdusen.textContent = item['Produsen Data'] || 'N/A';
     DOM.metaPenanggungJawab.textContent = item['Penanggung Jawab'] || 'N/A';
-    DOM.metaTanggal.textContent = item.Tanggal ? new Date(item.Tanggal).toLocaleDateString('id-ID') : 'N/A';
+    DOM.metaTanggal.textContent = item['Tanggal Dibuat'] ? new Date(item['Tanggal Dibuat']).toLocaleDateString('id-ID') : 'N/A';
     DOM.metaDiperbaharui.textContent = item['Tanggal Diperbaharui'] ? new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID') : 'N/A';
     DOM.metaFrekuensi.textContent = item.Frekuensi || 'N/A';
     DOM.metaTahunData.textContent = item['Tahun Data'] || 'N/A';
     
-    // Logika download disederhanakan, hanya untuk data terbuka
-    const canDownload = item.Sifat === 'Terbuka';
-    
-    DOM.detailDownloadLink.style.display = canDownload ? 'inline-block' : 'none';
-    DOM.requestButtonContainer.innerHTML = '';
-    if (!canDownload) {
-        DOM.requestButtonContainer.innerHTML = `<button id="detail-request-button" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 text-sm flex items-center w-full justify-center"><i class="fas fa-inbox mr-2"></i> Minta Data</button>`;
-    }
-    
-    DOM.detailActionButtons.innerHTML = ''; // Tombol edit/hapus dihapus
+    DOM.detailDownloadLink.style.display = 'inline-block';
 
     const fileId = item['File ID'] || '';
 
@@ -369,7 +304,7 @@ function showDetailView(datasetIndex) {
 
 function displayChangeHistory(currentItem) {
     const historyItems = allDatasets
-        .filter(item => item.Judul === currentItem.Judul && item.rowIndex !== currentItem.rowIndex)
+        .filter(item => item.Judul === currentItem.Judul && item.IDSOP !== currentItem.IDSOP)
         .sort((a, b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui']));
     
     DOM.historyList.innerHTML = '';
@@ -400,11 +335,8 @@ function displayChangeHistory(currentItem) {
 //==================================================
 
 function handleUserMenuClick(e) {
-    const target = e.target;
-    // Fungsionalitas login dinonaktifkan, tombol tidak melakukan apa-apa
-    if (target.closest('#admin-login-button')) {
-      console.log("Tombol login diklik, fungsionalitas dinonaktifkan.");
-      showCustomAlert('Fungsionalitas login saat ini dinonaktifkan.', 'error');
+    if (e.target.closest('#admin-login-button')) {
+      toggleModal('login-modal', true);
     }
 }
 
@@ -415,46 +347,15 @@ function handleDatasetListClick(e) {
     }
 }
 
-async function handleDetailViewActions(e) {
-    // Tombol edit/hapus sudah tidak ada, namun request button mungkin masih ada
-    if (e.target.closest('#detail-request-button')) {
-        toggleRequestDataModal(true, allDatasets[currentDetailItemIndex]);
-    }
-}
-
 async function handleSendMessage(e) {
+    // Fungsionalitas ini dihapus karena sheet 'messages' dihapus
     e.preventDefault();
-    if (!DOM.messageForm.checkValidity()) {
-        DOM.messageForm.reportValidity();
-        return;
-    }
-    setButtonLoading(DOM.submitMessageButton, DOM.sendMessageSpinner, DOM.sendMessageButtonText, true);
-    DOM.messageFormError.classList.add('hidden');
-    const formData = new FormData(DOM.messageForm);
-    const messageData = Object.fromEntries(formData.entries());
-
-    const response = await callAppsScript('sendMessage', messageData);
-
-    if (response.status === 'success') {
-        toggleMessageModal(false);
-        showCustomAlert('Pesan Anda telah berhasil dikirim.', 'success');
-        DOM.messageForm.reset();
-    } else {
-        DOM.messageFormError.textContent = response.message;
-        DOM.messageFormError.classList.remove('hidden');
-    }
-    setButtonLoading(DOM.submitMessageButton, DOM.sendMessageSpinner, DOM.sendMessageButtonText, false);
+    showCustomAlert('Fungsionalitas pesan saat ini dinonaktifkan.', 'error');
 }
 
 function handleDownload(e) {
-    const item = allDatasets[currentDetailItemIndex];
-    if (item) {
-        callAppsScript('logAction', {
-            type: 'download',
-            details: { title: item.Judul },
-            user: 'Guest'
-        });
-    }
+    // Fungsionalitas log download dihapus
+    console.log("Tombol unduh diklik.");
 }
 
 //==================================================
@@ -465,11 +366,6 @@ function toggleModal(modalId, show) {
   const modal = document.getElementById(modalId);
   if (modal) {
     modal.classList.toggle('hidden', !show);
-    if(show) {
-        const form = modal.querySelector('form');
-        if(form) form.reset();
-        modal.querySelectorAll('.form-error, .form-success').forEach(el => el.classList.add('hidden'));
-    }
   }
 }
 
@@ -487,20 +383,6 @@ function showView(viewId, closeMenu = false) {
     if(view) view.classList.remove('hidden');
     if (closeMenu) toggleSideMenu(false);
     window.scrollTo(0, 0);
-}
-
-function getSifatColor(sifat) {
-    const colors = {'Terbuka': 'bg-green-100 text-green-800','Terbatas': 'bg-yellow-100 text-yellow-800','Tertutup': 'bg-red-100 text-red-800'};
-    return colors[sifat] || 'bg-gray-100 text-gray-800';
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve({ base64: reader.result.split(',')[1], name: file.name, type: file.type });
-        reader.onerror = error => reject(error);
-    });
 }
 
 function showCustomAlert(message, type = 'success') {
@@ -528,31 +410,30 @@ function showErrorState(title, message) {
 }
 
 function setLoadingState(isLoading) {
-    DOM.loadingIndicator.style.display = isLoading ? 'flex' : 'none';
+    if(DOM.loadingIndicator) DOM.loadingIndicator.style.display = isLoading ? 'flex' : 'none';
     if(DOM.reloadDatasetButton) {
         DOM.reloadDatasetButton.disabled = isLoading;
-        if (isLoading) DOM.reloadDatasetButton.querySelector('i').classList.add('fa-spin');
-        else DOM.reloadDatasetButton.querySelector('i').classList.remove('fa-spin');
+        const icon = DOM.reloadDatasetButton.querySelector('i');
+        if (icon) {
+           if (isLoading) icon.classList.add('fa-spin');
+           else icon.classList.remove('fa-spin');
+        }
     }
 }
 
 function updateSummaryStats() {
-    if (!filterOptionsCache) return;
+    if (!filterOptionsCache || !allDatasets) return;
     const uniqueTitles = new Set(allDatasets.map(d => d.Judul));
     animateCountUp(DOM.statTotalDataset, uniqueTitles.size);
     animateCountUp(DOM.statTotalProducer, filterOptionsCache.producers.length);
     animateCountUp(DOM.statTotalCategory, filterOptionsCache.categories.length);
 }
 
-function populateSelect(selectElement, optionsArray, withPlaceholder = false, allowAdd = false) {
+function populateSelect(selectElement, optionsArray) {
     if (!selectElement) return;
     const currentValue = selectElement.value;
-    selectElement.innerHTML = '';
-    let firstOptionText = "Semua " + (selectElement.id.replace('filter-', '').replace('add-', '').replace('edit-', '') || "Opsi");
-    if (withPlaceholder) firstOptionText = "Pilih salah satu...";
-    selectElement.innerHTML = `<option value="">${firstOptionText}</option>`;
+    selectElement.innerHTML = `<option value="">Semua ${selectElement.id.replace('filter-','')}</option>`;
     optionsArray.forEach(option => selectElement.innerHTML += `<option value="${option}">${option}</option>`);
-    if(allowAdd) selectElement.innerHTML += `<option value="--tambah-baru--">Tambah Kategori Baru...</option>`;
     selectElement.value = currentValue;
 }
 
@@ -564,26 +445,20 @@ function populateFilterOptions() {
     populateSelect(DOM.filterYear, filterOptionsCache.years);
 }
 
-async function loadTopVisited() {
-    DOM.noPopularDatasets.classList.remove('hidden');
-    DOM.popularDatasetsList.innerHTML = '';
-}
-
 function toggleSideMenu(show) {
-    DOM.popupMenu.classList.toggle('-translate-x-full', !show);
-    DOM.menuOverlay.classList.toggle('hidden', !show);
+    if(DOM.popupMenu) DOM.popupMenu.classList.toggle('-translate-x-full', !show);
+    if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
 }
 
 function resetFilters(){
-    DOM.searchInput.value = '';
-    DOM.filterCategory.value = '';
-    document.getElementById('sifat-semua').checked = true;
-    DOM.filterProducer.value = '';
-    DOM.filterTag.value = '';
-    DOM.filterYear.value = '';
-    DOM.filterDataStartYear.value = '';
-    DOM.filterDataEndYear.value = '';
-    DOM.sortDatasetSelect.value = 'tanggal-desc';
+    if(document.getElementById('search-input')) document.getElementById('search-input').value = '';
+    if(DOM.filterCategory) DOM.filterCategory.value = '';
+    if(DOM.filterProducer) DOM.filterProducer.value = '';
+    if(DOM.filterTag) DOM.filterTag.value = '';
+    if(DOM.filterYear) DOM.filterYear.value = '';
+    if(DOM.filterDataStartYear) DOM.filterDataStartYear.value = '';
+    if(DOM.filterDataEndYear) DOM.filterDataEndYear.value = '';
+    if(DOM.sortDatasetSelect) DOM.sortDatasetSelect.value = 'tanggal-desc';
     applyFiltersAndRender();
 }
 
@@ -591,18 +466,8 @@ function handleReload() {
     loadInitialData();
 }
 
-function handlePopularDatasetClick(e) {
-    const target = e.target.closest('.popular-dataset-item');
-    if(target) {
-        const title = target.dataset.title;
-        const datasetIndex = allDatasets.findIndex(d => d.Judul === title);
-        if (datasetIndex > -1) {
-            showDetailView(datasetIndex);
-        }
-    }
-}
-
 function updateDatasetCount() {
+    if(!DOM.datasetCount) return;
     DOM.datasetCount.innerHTML = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
 }
 
@@ -627,8 +492,9 @@ function animateCountUp(el, endValue) {
     requestAnimationFrame(counter);
 }
 
-// Sisa fungsi untuk halaman admin, dll. tidak diperlukan lagi
-// karena fungsionalitasnya bergantung pada login
+function toggleMessageModal(show) {
+    toggleModal('message-modal', show);
+}
 
 // RUN APP
 initializeApp();
