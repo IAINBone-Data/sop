@@ -2,7 +2,7 @@
  * =================================================================================
  * SCRIPT APLIKASI UTAMA - SATU DATA IAIN BONE
  * =================================================================================
- * Versi ini telah disederhanakan dan menggunakan tampilan tabel.
+ * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  */
 
 // --- KONFIGURASI APLIKASI ---
@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', function () {
  const cacheDOMElements = () => {
   const ids = [
     'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer',
-    'datasetList', 'datasetCount', 'searchInput', 'loadingIndicator', 'noDataMessage',
+    'datasetList', 'datasetCardsContainer', // [PERUBAHAN] Menambahkan kontainer kartu
+    'datasetCount', 'searchInput', 'loadingIndicator', 'noDataMessage',
     'paginationContainer', 'backToListButton', 'headerTitleLink', 'hamburgerMenuButton', 
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
@@ -22,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 
     'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
-    'resetFilterButton' // Menambahkan ID tombol reset
+    'resetFilterButton'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -111,8 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
    DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
-   DOM.resetFilterButton.addEventListener('click', resetFilters); // Menambahkan event listener untuk reset
+   DOM.resetFilterButton.addEventListener('click', resetFilters);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
+   DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick); // [PERUBAHAN] Menambahkan event listener untuk kartu
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
@@ -158,8 +160,10 @@ function applyFiltersAndRender() {
 }
 
 function renderPageContent() {
-    DOM.datasetList.innerHTML = ''; // Ini menargetkan <tbody>
+    DOM.datasetList.innerHTML = ''; 
+    DOM.datasetCardsContainer.innerHTML = ''; // [PERUBAHAN] Membersihkan kontainer kartu
     DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
+
     if (currentFilteredData.length === 0) {
         if(DOM.paginationContainer) DOM.paginationContainer.innerHTML = '';
         updateDatasetCount();
@@ -172,13 +176,25 @@ function renderPageContent() {
     paginatedItems.forEach(item => {
         const unitText = item.Unit || 'N/A';
         const fungsiText = item.Fungsi || 'N/A';
-        DOM.datasetList.innerHTML += `
+        
+        // HTML untuk baris tabel (desktop)
+        const tableRowHTML = `
             <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${item.IDSOP}">
-                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${item['Nomor SOP'] || ''}</td>
+                <td class="p-4 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
                 <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
-                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${fungsiText}</td>
+                <td class="p-4 text-sm text-gray-700">${unitText}</td>
+                <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
             </tr>`;
+        
+        // HTML untuk kartu (mobile)
+        const cardHTML = `
+            <div class="view-detail-trigger cursor-pointer p-4" data-id="${item.IDSOP}">
+                <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
+            </div>
+        `;
+
+        DOM.datasetList.innerHTML += tableRowHTML;
+        DOM.datasetCardsContainer.innerHTML += cardHTML;
     });
 
     renderPaginationControls();
@@ -356,7 +372,6 @@ function handleReload() {
     loadInitialData();
 }
 
-// Fungsi baru untuk mereset filter
 function resetFilters() {
     DOM.searchInput.value = '';
     DOM.filterUnit.value = '';
