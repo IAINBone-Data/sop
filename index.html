@@ -13,37 +13,6 @@
     #main-app { flex-grow: 1; }
     .dataset-card { cursor: pointer; }
     .modal-overlay { transition: opacity 0.3s ease; }
-    .admin-popup {
-        position: absolute;
-        right: 0;
-        top: 100%;
-        margin-top: 0.5rem;
-        z-index: 50;
-        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-        transform-origin: top right;
-    }
-    .admin-popup.hidden {
-        opacity: 0;
-        transform: scale(0.95);
-        pointer-events: none;
-    }
-    .modal-scrollable .modal-content {
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-    /* Gaya untuk filter Sifat Data */
-    input[type="radio"][name="filter-sifat"]:checked + .sifat-filter-label {
-        background-color: #3b82f6; /* bg-blue-600 */
-        color: white;
-        border-color: #3b82f6; /* border-blue-600 */
-    }
-    .sifat-filter-label {
-        transition: background-color 0.2s, color 0.2s;
-    }
-    .sifat-filter-label:hover {
-        background-color: #eff6ff; /* bg-blue-100 */
-    }
-
     html, body {
         scroll-behavior: smooth;
     }
@@ -67,7 +36,7 @@
     <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
       <form id="message-form">
         <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Kirim Pesan ke Admin</h2>
+            <h2 class="text-2xl font-bold text-gray-800">Kirim Pesan</h2>
             <button type="button" id="close-message-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
         </div>
         <div class="space-y-4">
@@ -96,7 +65,20 @@
     </div>
   </div>
 
-  <!-- Modal yang berhubungan dengan login telah dihapus -->
+  <!-- Modal Login (Hanya Tampilan, Fungsionalitas Dihapus) -->
+  <div id="login-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-800">Login Administrator</h1>
+        <p class="text-gray-500">Fungsionalitas login saat ini dinonaktifkan.</p>
+      </div>
+        <div class="flex items-center gap-4">
+          <button type="button" id="close-login-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Tutup</button>
+        </div>
+    </div>
+  </div>
+  
+  <!-- Modal Permintaan Data Telah Dihapus -->
 
   <div id="main-app">
     <header class="bg-white shadow-md sticky top-0 z-40">
@@ -109,7 +91,7 @@
             <a href="#" id="header-title-link" class="text-xl font-bold text-gray-800 ml-4">SOP IAIN Bone</a>
           </div>
           <div id="user-info-container" class="flex items-center gap-4">
-             <!-- Tombol Login akan dirender di sini oleh app.js -->
+             <!-- Tombol Login akan dirender oleh JS -->
           </div>
         </div>
       </div>
@@ -121,11 +103,7 @@
             <ul id="main-menu-list" class="mt-4 space-y-2">
                 <li><a href="#" id="home-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-home w-6 mr-2"></i>Beranda</a></li>
                 <li><a href="#" id="about-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-info-circle w-6 mr-2"></i>Tentang</a></li>
-                <li id="stats-menu-item" class="hidden"><a href="#" id="stats-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-chart-bar w-6 mr-2"></i>Statistik</a></li>
-                <li id="admin-list-menu-item" class="hidden"><a href="#" id="admin-list-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-users-cog w-6 mr-2"></i>Daftar Admin</a></li>
-                <li id="request-menu-item" class="hidden"><a href="#" id="request-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-inbox w-6 mr-2"></i>Permintaan Data</a></li>
-                <li id="message-menu-item" class="hidden"><a href="#" id="message-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-envelope w-6 mr-2"></i>Pesan</a></li>
-                <li id="panduan-menu-item" class="hidden"><a href="https://drive.google.com/drive/folders/1LzHczamY7z75UFF2GlYTNLHxNUHi4SLt?usp=sharing" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-book-open w-6 mr-2"></i>Panduan</a></li>
+                <!-- Menu item admin, statistik, dan permohonan telah dihapus -->
                 <li class="border-t pt-2 mt-2"><a href="https://www.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-globe w-6 mr-2"></i>Web IAIN Bone</a></li>
                 <li><a href="https://s.id/iainbone" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-concierge-bell w-6 mr-2"></i>Informasi Layanan</a></li>
                 <li><a href="https://ppid.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-bullhorn w-6 mr-2"></i>PPID</a></li>
@@ -169,19 +147,7 @@
                         <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
                         <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Kategori</option></select>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Sifat Data</label>
-                        <div id="filter-sifat-container" class="flex flex-wrap gap-2">
-                            <input type="radio" id="sifat-semua" name="filter-sifat" value="" class="sr-only" checked>
-                            <label for="sifat-semua" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">All</label>
-
-                            <input type="radio" id="sifat-terbuka" name="filter-sifat" value="Terbuka" class="sr-only">
-                            <label for="sifat-terbuka" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">Terbuka</label>
-
-                            <input type="radio" id="sifat-terbatas" name="filter-sifat" value="Terbatas" class="sr-only">
-                            <label for="sifat-terbatas" class="sifat-filter-label cursor-pointer px-3 py-1 border rounded-full text-sm font-medium">Terbatas</label>
-                        </div>
-                    </div>
+                    <!-- Filter Sifat Data telah dihapus -->
                     <div>
                         <label for="filter-producer" class="block text-sm font-medium text-gray-700 mb-1">Produsen Data</label>
                         <select id="filter-producer" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Produsen</option></select>
@@ -199,15 +165,6 @@
                         </div>
                     </div>
                     <button id="reset-filter-button" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Reset Filter</button>
-                    
-                    <div class="mt-5 pt-5 border-t">
-                        <h2 class="text-lg font-bold text-gray-800 mb-3">SOP Populer</h2>
-                        <ol id="popular-datasets-list" class="space-y-2 text-sm">
-                            <!-- Popular datasets will be injected here -->
-                        </ol>
-                        <p id="no-popular-datasets" class="text-sm text-gray-500 hidden">Belum ada data kunjungan.</p>
-                    </div>
-
                 </div>
             </div>
           </aside>
@@ -216,20 +173,12 @@
                 <h3 id="dataset-count" class="text-lg font-semibold text-gray-700 w-full sm:w-auto"><i class="fa fa-spinner fa-spin"></i> Memuat data...</h3>
                 <div class="flex items-center gap-4 flex-wrap justify-end flex-grow">
                     <div class="flex items-center gap-2">
-                        <div id="add-dataset-button-container" class="hidden">
-                            <button id="add-dataset-trigger-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm flex items-center whitespace-nowrap">
-                                <i class="fas fa-plus mr-2"></i>Tambah
-                            </button>
-                        </div>
                         <button id="reload-dataset-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm flex items-center whitespace-nowrap" title="Muat Ulang Data">
                             <i id="reload-icon" class="fas fa-sync-alt"></i>
                         </button>
                     </div>
                     <div>
                         <select id="sort-dataset-select" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                            <option value="default">Urut</option>
-                            <option value="no-desc">No Terbaru</option>
-                            <option value="no-asc">No Terlama</option>
                             <option value="tanggal-desc">Tgl Terbaru</option>
                             <option value="tanggal-asc">Tgl Terlama</option>
                         </select>
@@ -240,12 +189,12 @@
                         </select>
                     </div>
                     <div class="relative flex-grow sm:flex-grow-0">
-                        <input type="text" id="search-input" placeholder="Cari dataset..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <input type="text" id="search-input" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
                     </div>
                 </div>
             </div>
-            <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
+            <div id="loading-indicator" class="flex justify-center items-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600 ml-4">Sedang memuat SOP...</p></div>
             <div id="dataset-list" class="space-y-4"></div>
             <!-- Pagination Container -->
             <div id="pagination-container" class="flex justify-center items-center mt-8 space-x-2"></div>
@@ -258,7 +207,6 @@
       <div id="detail-view-container" class="hidden">
         <div class="flex items-center justify-between mb-4">
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Beranda</button>
-            <div id="detail-action-buttons" class="flex items-center gap-2"></div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2 space-y-8">
@@ -266,7 +214,6 @@
                     <div class="bg-white p-6 sm:p-8 rounded-lg shadow-md space-y-6">
                         <div class="flex justify-between items-start pb-4">
                             <h2 id="detail-title" class="text-2xl font-bold text-gray-800"></h2>
-                            <span id="detail-sifat" class="text-sm font-bold px-3 py-1 rounded-full flex-shrink-0 ml-4"></span>
                         </div>
                         <p id="detail-uraian" class="text-gray-700"></p>
                         <div>
@@ -287,7 +234,7 @@
                                     </div>
                                     <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh</a>
                                 </div>
-                                <div id="request-button-container" class="mt-4"></div>
+                                <!-- Container Tombol Permintaan Data Telah Dihapus -->
                             </div>
                             <div id="table-preview-container" class="mt-6 hidden">
                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Preview Data</h3>
@@ -329,38 +276,20 @@
       </div>
 
       <div id="about-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Satu Data IAIN Bone</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang SOP IAIN Bone</h2>
         <p class="text-gray-700 leading-relaxed">
-            Sistem Satu Data IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola, mengintegrasikan, dan menyajikan data dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola data yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
+            Portal SOP IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola dan menyajikan Standar Operasional Prosedur (SOP) dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone.
         </p>
         <p class="text-gray-700 mt-4 leading-relaxed">
-            Dengan adanya platform ini, diharapkan pengambilan keputusan di semua tingkatan dapat didasarkan pada data yang valid dan reliabel, sehingga meningkatkan efisiensi, transparansi, dan akuntabilitas institusi.
+            Dengan adanya platform ini, diharapkan seluruh sivitas akademika dapat mengakses panduan kerja yang valid dan mutakhir dengan mudah, sehingga meningkatkan efisiensi, transparansi, dan standardisasi layanan institusi.
         </p>
-        <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-2">Tim Pengembang</h3>
-        <p class="text-gray-700">Dikelola oleh Tim Kerja Satu Data IAIN Bone dan didukung penuh oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
-      </div>
-      
-      <div id="stats-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
-         <!-- Konten halaman statistik -->
-      </div>
-      
-      <div id="admin-list-view-container" class="hidden p-4 md:p-8 bg-white rounded-lg shadow-md">
-         <!-- Konten halaman daftar admin -->
-      </div>
-
-      <div id="request-view-container" class="hidden p-4 md:p-8 bg-white rounded-lg shadow-md">
-         <!-- Konten halaman permintaan data -->
-      </div>
-      
-      <div id="message-view-container" class="hidden bg-white rounded-lg shadow-md">
-         <!-- Konten halaman pesan -->
       </div>
 
     </main>
   </div>
 
   <footer class="bg-white text-slate-600 text-sm text-center py-6 border-t">
-    <p>&copy; 2025 - Dikelola oleh Tim Kerja Satu Data IAIN Bone. Didukung oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
+    <p>&copy; 2025 - IAIN Bone.</p>
   </footer>
  
   <!-- Tombol Chat Sticky -->
