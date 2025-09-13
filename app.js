@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
     'reloadDatasetButton', 'detailTitle', 'detailUraian',
-    'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 
+    'detailFileTitle', 'detailFileFormat', 'detailDownloadLink', 
     'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
@@ -219,7 +219,6 @@ function renderPaginationControls() {
     }));
 }
 
-// [PERUBAHAN] Fungsi untuk memformat tanggal
 function formatDate(dateString) {
     if (!dateString) return "N/A";
     const date = new Date(dateString);
@@ -242,18 +241,17 @@ function showDetailView(idsop) {
     DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
     DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
     DOM.detailFileTitle.textContent = item['Nama File'] || 'File SOP';
-    DOM.detailFilenameDisplay.textContent = item['Nama SOP'] || 'Tanpa Judul';
+    // [PERBAIKAN] Menghapus referensi ke elemen yang sudah tidak ada
+    // DOM.detailFilenameDisplay.textContent = item['Nama SOP'] || 'Tanpa Judul';
     const formatText = (item.Format || 'N/A').toUpperCase();
     DOM.detailFileFormat.textContent = formatText;
     
-    // [PERUBAHAN] Logika Metadata diperbarui
     DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
     DOM.metaUnit.textContent = item.Unit || 'N/A';
     DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
     DOM.metaTanggal.textContent = formatDate(item['Tanggal Pembuatan']);
     DOM.metaEfektif.textContent = formatDate(item['Tanggal Efektif']);
     
-    // Logika untuk menampilkan/menyembunyikan Tanggal Revisi
     const tanggalRevisi = formatDate(item['Tanggal Revisi']);
     if (tanggalRevisi !== "N/A") {
         DOM.metaDiperbaharui.textContent = tanggalRevisi;
@@ -262,7 +260,6 @@ function showDetailView(idsop) {
         DOM.metaRevisiRow.classList.add('hidden');
     }
     
-    // Logika untuk Status
     if (item.Status) {
         DOM.detailStatus.textContent = item.Status;
         DOM.detailStatus.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
@@ -284,7 +281,6 @@ function showDetailView(idsop) {
     if (fileId) {
         DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
         const format = (item.Format || '').toLowerCase();
-        // Hanya tampilkan preview untuk PDF
         if (format === 'pdf') {
             DOM.tablePreviewContainer.classList.remove('hidden');
             DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
