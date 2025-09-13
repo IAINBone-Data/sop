@@ -11,7 +11,6 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
     body { font-family: 'Inter', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
     #main-app { flex-grow: 1; }
-    .dataset-card { cursor: pointer; }
     .modal-overlay { transition: opacity 0.3s ease; }
     html, body {
         scroll-behavior: smooth;
@@ -113,7 +112,24 @@
                 </div>
             </div>
             <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
-            <div id="dataset-list" class="space-y-4"></div>
+            
+            <!-- [PERUBAHAN] Mengubah dari div menjadi struktur tabel -->
+            <div class="overflow-x-auto bg-white rounded-lg shadow">
+                <table class="w-full">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600">Nomor SOP</th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600">Nama SOP</th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600">Unit</th>
+                            <th class="p-4 text-left text-sm font-semibold text-gray-600">Fungsi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataset-list" class="divide-y">
+                        <!-- Data baris tabel akan disuntikkan di sini oleh JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
             <!-- Pagination Container -->
             <div id="pagination-container" class="flex justify-center items-center mt-8 space-x-2"></div>
             <div id="no-data-message" class="hidden text-center py-10 bg-white rounded-lg shadow-md"><i class="fa-solid fa-database fa-3x text-gray-400"></i><p class="mt-4 text-lg font-semibold text-gray-700">Data Tidak Ditemukan</p><p class="mt-1 text-gray-500">Coba ubah kata kunci pencarian Anda.</p></div>
