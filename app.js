@@ -19,9 +19,10 @@ document.addEventListener('DOMContentLoaded', function () {
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
     'reloadDatasetButton', 'detailTitle', 'detailUraian',
-    'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
-    'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi' // [PERUBAHAN] Menambahkan ID filter baru
+    'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 
+    'metaUnit', 'metaFungsi', // [PERUBAHAN] ID Metadata disesuaikan
+    'metaTanggal', 'metaDiperbaharui', 'tablePreviewContainer',
+    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -88,7 +89,6 @@ document.addEventListener('DOMContentLoaded', function () {
           allDatasets = response.data || [];
           allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
           
-          // [PERUBAHAN] Memanggil fungsi untuk mengisi dropdown filter
           populateFilterOptions();
           applyFiltersAndRender();
       } else {
@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    DOM.searchInput.addEventListener('input', applyFiltersAndRender);
-   // [PERUBAHAN] Menambahkan event listener untuk filter baru
    DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
    DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
@@ -221,12 +220,12 @@ function showDetailView(idsop) {
     if (formatText === 'CSV') DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800';
     else if (['XLS', 'XLSX'].includes(formatText)) DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800';
     else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
-    DOM.metaProdusen.textContent = (item.Unit && item.Fungsi) ? `${item.Unit} - ${item.Fungsi}` : (item.Unit || item.Fungsi || 'N/A');
-    DOM.metaPenanggungJawab.textContent = item['Penanggung Jawab'] || 'N/A';
-    DOM.metaTanggal.textContent = item['Tanggal Dibuat'] ? new Date(item['Tanggal Dibuat']).toLocaleDateString('id-ID') : 'N/A';
-    DOM.metaDiperbaharui.textContent = item['Tanggal Diperbaharui'] ? new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID') : 'N/A';
-    DOM.metaFrekuensi.textContent = item.Frekuensi || 'N/A';
-    DOM.metaTahunData.textContent = item['Tahun Data'] || 'N/A';
+    
+    // [PERUBAHAN] Logika untuk mengisi metadata disesuaikan
+    DOM.metaUnit.textContent = item.Unit || 'N/A';
+    DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
+    DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] ? new Date(item['Tanggal Pembuatan']).toLocaleDateString('id-ID') : 'N/A';
+    DOM.metaDiperbaharui.textContent = item['Tanggal Revisi'] ? new Date(item['Tanggal Revisi']).toLocaleString('id-ID') : 'N/A';
     
     DOM.detailDownloadLink.style.display = 'inline-block';
 
@@ -331,7 +330,6 @@ function setLoadingState(isLoading) {
     }
 }
 
-// [PERUBAHAN] Fungsi baru untuk mengisi dropdown filter
 function populateFilterOptions() {
     const units = [...new Set(allDatasets.map(item => item.Unit).filter(Boolean))].sort();
     const fungsis = [...new Set(allDatasets.map(item => item.Fungsi).filter(Boolean))].sort();
