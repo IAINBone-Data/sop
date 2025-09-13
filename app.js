@@ -4,6 +4,7 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - [PERBAIKAN] Menghapus Nomor SOP dari tampilan kartu mobile.
  * - [BARU] Menambahkan fungsionalitas accordion (buka/tutup) untuk bagian metadata.
  * - [PERBAIKAN] Memberikan warna latar pada tombol login admin.
  * - Sinkronisasi input filter antara tampilan mobile dan desktop.
@@ -257,10 +258,8 @@ function renderPageContent() {
              <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
                  <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
                  <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
-                    <span>${nomorSOP}</span> 
-                    <span>/</span>
                     ${unitLabel}
-                    <span>-</span>
+                    <span class="mx-1">-</span>
                     <span>${fungsiText}</span>
                  </p>
              </div>
