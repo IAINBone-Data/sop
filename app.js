@@ -232,7 +232,6 @@ function formatDate(dateString) {
 
 
 function showDetailView(idsop) {
-    // [PERBAIKAN] Membersihkan spasi dari IDSOP untuk pencocokan yang akurat
     const trimmedIdsop = idsop ? idsop.trim() : '';
     const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
 
@@ -244,7 +243,7 @@ function showDetailView(idsop) {
     
     DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
     DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
-    DOM.detailFileTitle.textContent = item['Nama File'] || 'File SOP';
+    DOM.detailFileTitle.textContent = item['Nama SOP'] || 'File SOP'; // Menggunakan Nama SOP sebagai judul file
     const formatText = (item.Format || 'N/A').toUpperCase();
     DOM.detailFileFormat.textContent = formatText;
     
