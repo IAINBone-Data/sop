@@ -19,8 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'paginationContainer', 'backToListButton', 'headerTitleLink', 'hamburgerMenuButton', 
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
-    'reloadDatasetButton', 'detailTitle', 'detailUraian',
-    'detailFileTitle', 'detailFileFormat', 'detailDownloadLink', 
+    'reloadDatasetButton', 'detailTitle', 'detailUraian', 'detailDownloadLink', 
     'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
@@ -230,6 +229,7 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
+
 function showDetailView(idsop) {
     const trimmedIdsop = idsop ? idsop.trim() : '';
     const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
@@ -272,7 +272,6 @@ function showDetailView(idsop) {
     DOM.detailDownloadLink.style.display = 'inline-block';
 
     const fileUrl = item.File || '';
-    // [PERUBAHAN] Ekstrak File ID dari URL Google Drive
     const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/;
     const match = fileUrl.match(driveRegex);
     const fileId = match ? match[1] : null;
