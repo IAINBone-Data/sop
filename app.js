@@ -5,8 +5,9 @@
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
  * - Memperbaiki SyntaxError pada Regular Expression untuk Google Drive link.
- * - Menghapus fungsi formatDate untuk optimalisasi. Tanggal kini ditampilkan sebagai teks murni dari Google Sheet.
- * - Menghapus pengecekan kolom 'Format'. Aplikasi kini mengasumsikan semua file adalah PDF dan akan langsung menampilkan pratinjau.
+ * - Menghapus fungsi formatDate untuk optimalisasi.
+ * - Menghapus pengecekan kolom 'Format', mengasumsikan semua file adalah PDF.
+ * - Merombak UI Mobile: Tombol login ikon, filter dalam modal, tata letak baru.
  */
 
 // --- KONFIGURASI APLIKASI ---
@@ -27,7 +28,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
-    'resetFilterButton'
+    'resetFilterButton',
+    // [BARU] Elemen untuk UI Mobile baru
+    'filterModal', 'openFilterButton', 'closeFilterModal'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -122,6 +125,10 @@ document.addEventListener('DOMContentLoaded', function () {
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
+
+   // [BARU] Event listener untuk modal filter
+   DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
+   DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
  };
 
 //==================================================
@@ -129,7 +136,8 @@ document.addEventListener('DOMContentLoaded', function () {
 //==================================================
 
 function updateUIForLoginStatus() {
-  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>`;
+  // [DIUBAH] Tombol login menjadi ikon user
+  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full w-10 h-10 flex items-center justify-center" title="Login Administrator"><i class="fas fa-user text-lg"></i></button>`;
 }
 
 //==================================================
@@ -265,7 +273,6 @@ function showDetailView(idsop) {
      DOM.detailDownloadLink.style.display = 'inline-block';
 
      const fileUrl = item.File || '';
-     // [PERBAIKAN] Memperbaiki kesalahan 'invalid range in character class' pada RegEx.
      const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
      const match = fileUrl.match(driveRegex);
      const fileId = match ? match[1] : null;
