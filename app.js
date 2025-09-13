@@ -4,6 +4,7 @@
  * =================================================================================
  * Versi ini telah disederhanakan dan menggunakan tampilan tabel responsif.
  * [LOG PERUBAHAN]
+ * - Memberikan warna latar pada label Unit di tampilan desktop dan mobile.
  * - Menambahkan detail (Nomor, Unit, Fungsi) pada kartu SOP di tampilan mobile.
  * - Menambahkan modal konfirmasi saat tombol reload data ditekan.
  * - Merombak UI Mobile: Tombol login ikon, filter dalam modal, tata letak baru.
@@ -32,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function () {
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
     'resetFilterButton',
     'filterModal', 'openFilterButton', 'closeFilterModal',
-    // [BARU] Elemen untuk modal konfirmasi reload
     'confirmReloadModal', 'confirmReloadButton', 'cancelReloadButton'
   ];
    ids.forEach(id => {
@@ -132,7 +132,6 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
    DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
 
-   // [BARU] Event listener untuk konfirmasi reload
    DOM.cancelReloadButton.addEventListener('click', () => toggleModal('confirm-reload-modal', false));
    DOM.confirmReloadButton.addEventListener('click', () => {
        toggleModal('confirm-reload-modal', false);
@@ -198,20 +197,28 @@ function renderPageContent() {
          const fungsiText = item.Fungsi || 'N/A';
          const nomorSOP = item['Nomor SOP'] || 'N/A';
          const safeIDSOP = (item.IDSOP || '').trim();
+
+         // [DIUBAH] Membuat elemen span untuk Unit agar bisa diberi style
+         const unitLabel = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${unitText}</span>`;
          
          const tableRowHTML = `
              <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
                  <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${nomorSOP}</td>
                  <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
+                 <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitLabel}</td>
                  <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${fungsiText}</td>
              </tr>`;
          
-         // [DIUBAH] Menambahkan detail pada kartu mobile
          const cardHTML = `
              <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
                  <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
-                 <p class="text-xs text-gray-500 mt-1">${nomorSOP} / ${unitText} - ${fungsiText}</p>
+                 <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
+                    <span>${nomorSOP}</span> 
+                    <span>/</span>
+                    ${unitLabel}
+                    <span>-</span>
+                    <span>${fungsiText}</span>
+                 </p>
              </div>
          `;
 
@@ -322,7 +329,6 @@ function handleDownload() {
      console.log("Tombol unduh diklik.");
 }
 
-// [DIUBAH] Logika reload sekarang menampilkan modal konfirmasi
 function handleReload() {
     toggleModal('confirm-reload-modal', true);
 }
