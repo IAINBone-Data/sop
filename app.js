@@ -241,8 +241,6 @@ function showDetailView(idsop) {
     DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
     DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
     DOM.detailFileTitle.textContent = item['Nama File'] || 'File SOP';
-    // [PERBAIKAN] Menghapus referensi ke elemen yang sudah tidak ada
-    // DOM.detailFilenameDisplay.textContent = item['Nama SOP'] || 'Tanpa Judul';
     const formatText = (item.Format || 'N/A').toUpperCase();
     DOM.detailFileFormat.textContent = formatText;
     
