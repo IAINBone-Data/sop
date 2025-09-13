@@ -14,14 +14,15 @@ document.addEventListener('DOMContentLoaded', function () {
  const cacheDOMElements = () => {
   const ids = [
     'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer',
-    'datasetList', 'datasetCardsContainer', // [PERUBAHAN] Menambahkan kontainer kartu
+    'datasetList', 'datasetCardsContainer',
     'datasetCount', 'searchInput', 'loadingIndicator', 'noDataMessage',
     'paginationContainer', 'backToListButton', 'headerTitleLink', 'hamburgerMenuButton', 
     'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
     'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
     'reloadDatasetButton', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 
-    'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'tablePreviewContainer',
+    'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
+    'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
     'resetFilterButton'
   ];
@@ -114,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.resetFilterButton.addEventListener('click', resetFilters);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
-   DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick); // [PERUBAHAN] Menambahkan event listener untuk kartu
+   DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
@@ -161,7 +162,7 @@ function applyFiltersAndRender() {
 
 function renderPageContent() {
     DOM.datasetList.innerHTML = ''; 
-    DOM.datasetCardsContainer.innerHTML = ''; // [PERUBAHAN] Membersihkan kontainer kartu
+    DOM.datasetCardsContainer.innerHTML = ''; 
     DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
 
     if (currentFilteredData.length === 0) {
@@ -177,16 +178,14 @@ function renderPageContent() {
         const unitText = item.Unit || 'N/A';
         const fungsiText = item.Fungsi || 'N/A';
         
-        // HTML untuk baris tabel (desktop)
         const tableRowHTML = `
             <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${item.IDSOP}">
-                <td class="p-4 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${item['Nomor SOP'] || ''}</td>
                 <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                <td class="p-4 text-sm text-gray-700">${unitText}</td>
-                <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${unitText}</td>
+                <td class="p-4 text-sm text-gray-700 hidden md:table-cell">${fungsiText}</td>
             </tr>`;
         
-        // HTML untuk kartu (mobile)
         const cardHTML = `
             <div class="view-detail-trigger cursor-pointer p-4" data-id="${item.IDSOP}">
                 <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
@@ -220,6 +219,18 @@ function renderPaginationControls() {
     }));
 }
 
+// [PERUBAHAN] Fungsi untuk memformat tanggal
+function formatDate(dateString) {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+}
+
+
 function showDetailView(idsop) {
     const item = allDatasets.find(d => d.IDSOP === idsop);
     if (!item) {
@@ -234,15 +245,35 @@ function showDetailView(idsop) {
     DOM.detailFilenameDisplay.textContent = item['Nama SOP'] || 'Tanpa Judul';
     const formatText = (item.Format || 'N/A').toUpperCase();
     DOM.detailFileFormat.textContent = formatText;
-    if (formatText === 'CSV') DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800';
-    else if (['XLS', 'XLSX'].includes(formatText)) DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800';
-    else DOM.detailFileFormat.className = 'font-semibold px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800';
     
+    // [PERUBAHAN] Logika Metadata diperbarui
+    DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
     DOM.metaUnit.textContent = item.Unit || 'N/A';
     DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
-    // [PERUBAHAN] Menggunakan toLocaleDateString untuk format DD/MM/YYYY
-    DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] ? new Date(item['Tanggal Pembuatan']).toLocaleDateString('id-ID') : 'N/A';
-    DOM.metaDiperbaharui.textContent = item['Tanggal Revisi'] ? new Date(item['Tanggal Revisi']).toLocaleDateString('id-ID') : 'N/A';
+    DOM.metaTanggal.textContent = formatDate(item['Tanggal Pembuatan']);
+    DOM.metaEfektif.textContent = formatDate(item['Tanggal Efektif']);
+    
+    // Logika untuk menampilkan/menyembunyikan Tanggal Revisi
+    const tanggalRevisi = formatDate(item['Tanggal Revisi']);
+    if (tanggalRevisi !== "N/A") {
+        DOM.metaDiperbaharui.textContent = tanggalRevisi;
+        DOM.metaRevisiRow.classList.remove('hidden');
+    } else {
+        DOM.metaRevisiRow.classList.add('hidden');
+    }
+    
+    // Logika untuk Status
+    if (item.Status) {
+        DOM.detailStatus.textContent = item.Status;
+        DOM.detailStatus.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+        if (item.Status.toLowerCase() === 'berlaku') {
+            DOM.detailStatus.classList.add('bg-green-100', 'text-green-800');
+        } else {
+            DOM.detailStatus.classList.add('bg-red-100', 'text-red-800');
+        }
+    } else {
+        DOM.detailStatus.classList.add('hidden');
+    }
     
     DOM.detailDownloadLink.style.display = 'inline-block';
 
@@ -253,15 +284,10 @@ function showDetailView(idsop) {
     if (fileId) {
         DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
         const format = (item.Format || '').toLowerCase();
-        let previewHTML = '';
-        if (['pdf', 'docx', 'pptx', 'xls', 'xlsx'].includes(format)) {
-            previewHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-96 border-0" frameborder="0"></iframe>`;
-        } else if (['png', 'jpg', 'jpeg', 'gif'].includes(format)) {
-            previewHTML = `<img src="https://drive.google.com/uc?export=view&id=${fileId}" alt="Pratinjau Gambar" class="w-full h-auto rounded-lg">`;
-        }
-        if (previewHTML) {
-            DOM.tablePreviewContent.innerHTML = previewHTML;
+        // Hanya tampilkan preview untuk PDF
+        if (format === 'pdf') {
             DOM.tablePreviewContainer.classList.remove('hidden');
+            DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
         }
     } else {
         DOM.detailDownloadLink.href = '#';
