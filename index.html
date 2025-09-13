@@ -109,6 +109,8 @@
                             <option value="">Semua Fungsi</option>
                         </select>
                     </div>
+                    <!-- [PERUBAHAN] Menambahkan tombol Reset -->
+                    <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm">Reset</button>
                     <div class="relative flex-grow sm:flex-grow-0">
                         <input type="text" id="search-input" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
@@ -186,7 +188,6 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-3">Metadata</h3>
                         <table class="w-full text-sm text-left text-gray-600">
                             <tbody>
-                                <!-- [PERUBAHAN] Metadata disesuaikan -->
                                 <tr class="border-b"><td class="py-3 px-2 font-semibold">Unit</td><td id="meta-unit" class="py-3 px-2"></td></tr>
                                 <tr class="border-b"><td class="py-3 px-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-3 px-2"></td></tr>
                                 <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-3 px-2"></td></tr>
