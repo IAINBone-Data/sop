@@ -130,45 +130,43 @@
       <div id="list-view-container">
         
         <section class="w-full">
-            <!-- [PERBAIKAN] Kontrol digrupkan untuk mengatasi masalah jarak -->
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <!-- Kiri: Jumlah Data -->
+            <!-- [PERBAIKAN] Tata letak kontrol menjadi 2 baris -->
+            <!-- Baris 1: Judul dan Reload -->
+            <div class="flex items-center justify-between gap-4 mb-4">
                 <h3 id="dataset-count" class="text-lg font-semibold text-gray-700"><i class="fa fa-spinner fa-spin"></i> Memuat data...</h3>
+                <button id="reload-dataset-button" class="bg-white border text-blue-600 hover:bg-gray-100 font-bold p-2 rounded-lg text-lg flex items-center justify-center h-10 w-12 shrink-0" title="Muat Ulang Data">
+                    <i id="reload-icon" class="fas fa-sync-alt"></i>
+                </button>
+            </div>
 
-                <!-- Kanan: Grup Semua Kontrol -->
-                <div class="flex flex-wrap items-center justify-end gap-2 w-full lg:w-auto">
-                    <!-- Kontrol Desktop -->
-                    <div class="hidden lg:flex items-center gap-4">
-                        <div class="relative" style="min-width: 300px;">
-                            <input type="search" id="search-input" placeholder="Cari Nama atau Nomor SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
-                        </div>
-                        <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
-                            <option value="">Semua Unit</option>
-                        </select>
-                        <select id="filter-fungsi" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
-                            <option value="">Semua Fungsi</option>
-                        </select>
-                        <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm shrink-0">Reset</button>
+            <!-- Baris 2: Filter dan Pencarian -->
+            <div class="flex flex-wrap items-center justify-end gap-2 lg:gap-4 mb-4">
+                 <!-- Kontrol Desktop -->
+                 <div class="hidden lg:flex items-center gap-4 flex-grow">
+                    <div class="relative flex-grow" style="max-width: 400px; margin-left: auto;">
+                        <input type="search" id="search-input" placeholder="Cari Nama atau Nomor SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
                     </div>
-                    
-                    <!-- Kontrol Mobile -->
-                    <div class="flex lg:hidden items-center gap-2 flex-grow">
-                        <div class="relative flex-grow">
-                            <input type="search" id="search-input-mobile" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
-                        </div>
-                        <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
-                            <i class="fas fa-filter"></i>
-                        </button>
-                        <button id="reset-filter-button-mobile" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
-                            <i class="fas fa-undo"></i>
-                        </button>
+                    <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="">Semua Unit</option>
+                    </select>
+                    <select id="filter-fungsi" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                        <option value="">Semua Fungsi</option>
+                    </select>
+                    <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm shrink-0">Reset</button>
+                </div>
+                
+                <!-- Kontrol Mobile -->
+                <div class="flex lg:hidden items-center gap-2 flex-grow">
+                    <div class="relative flex-grow">
+                        <input type="search" id="search-input-mobile" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
                     </div>
-
-                    <!-- Tombol Reload -->
-                    <button id="reload-dataset-button" class="bg-white border text-blue-600 hover:bg-gray-100 font-bold p-2 rounded-lg text-lg flex items-center justify-center h-10 w-12 shrink-0" title="Muat Ulang Data">
-                        <i id="reload-icon" class="fas fa-sync-alt"></i>
+                    <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button id="reset-filter-button-mobile" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
+                        <i class="fas fa-undo"></i>
                     </button>
                 </div>
             </div>
@@ -205,12 +203,12 @@
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
             <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
         </div>
-        <!-- [PERBAIKAN] Tata letak grid baru yang responsif untuk halaman detail -->
+        <!-- [PERBAIKAN FINAL] Tata letak grid detail yang benar-benar responsif -->
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
             
-            <!-- [BARU] Wrapper untuk kolom kiri di desktop -->
+            <!-- Kolom Kiri (Detail & Metadata) untuk Desktop -->
             <div class="lg:col-span-3 flex flex-col gap-8">
-                <!-- Bagian Detail: urutan 1 di mobile -->
+                <!-- Bagian Detail -->
                 <section class="order-1 bg-white p-6 rounded-lg shadow-md space-y-4">
                     <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
                     <p id="detail-uraian" class="text-gray-600 text-sm"></p>
@@ -220,7 +218,7 @@
                     </div>
                 </section>
                 
-                <!-- Bagian Metadata: urutan 3 di mobile -->
+                <!-- Bagian Metadata -->
                 <section class="order-3 lg:order-2 bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-lg font-semibold text-gray-800 mb-3 border-b pb-2">Metadata</h3>
                     <table class="w-full text-sm text-left text-gray-600">
@@ -236,7 +234,7 @@
                 </section>
             </div>
 
-            <!-- Bagian Pratinjau: urutan 2 di mobile, kanan di desktop -->
+            <!-- Kolom Kanan (Pratinjau) untuk Desktop -->
             <div class="order-2 lg:order-none lg:col-span-7">
                 <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
                     <div id="table-preview-content" class="w-full h-full">
