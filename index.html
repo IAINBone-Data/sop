@@ -13,6 +13,24 @@
     #main-app { flex-grow: 1; }
     .dataset-card { cursor: pointer; }
     .modal-overlay { transition: opacity 0.3s ease; }
+    .admin-popup {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 0.5rem;
+        z-index: 50;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        transform-origin: top right;
+    }
+    .admin-popup.hidden {
+        opacity: 0;
+        transform: scale(0.95);
+        pointer-events: none;
+    }
+    .modal-scrollable .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
     html, body {
         scroll-behavior: smooth;
     }
@@ -31,58 +49,37 @@
     </div>
 </div>
 
-  <!-- Modal Kirim Pesan -->
-  <div id="message-modal" class="modal-overlay fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
-      <form id="message-form">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">Kirim Pesan</h2>
-            <button type="button" id="close-message-modal" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+  <!-- Modal Login -->
+  <div id="login-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all" id="login-modal-content">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-800">Login Administrator</h1>
+        <p class="text-gray-500">Silakan login untuk melanjutkan</p>
+      </div>
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+          <input type="text" id="username" name="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-        <div class="space-y-4">
-          <div>
-            <label for="message-nama" class="text-sm font-medium text-gray-700">Nama Anda</label>
-            <input type="text" id="message-nama" name="Nama" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label for="message-kontak" class="text-sm font-medium text-gray-700">Email / No. HP</label>
-            <input type="text" id="message-kontak" name="Kontak" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-          </div>
-          <div>
-            <label for="message-pesan" class="text-sm font-medium text-gray-700">Pesan Anda</label>
-            <textarea id="message-pesan" name="Pesan" rows="4" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-          </div>
+        <div>
+          <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="password" name="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
         </div>
-        <div id="message-form-error" class="mt-4 text-sm text-center text-red-500 font-medium hidden"></div>
-        <div class="flex items-center gap-4 pt-6 mt-6 border-t">
-          <button type="button" id="cancel-message-form" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
-          <button type="submit" id="submit-message-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            <span id="send-message-button-text">Kirim Pesan</span>
-            <span id="send-message-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+        <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+        <div class="flex items-center gap-4">
+          <button type="button" id="close-login-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+          <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+            <span id="login-button-text">Login</span>
+            <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
           </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal Login (Hanya Tampilan, Fungsionalitas Dihapus) -->
-  <div id="login-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
-      <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-800">Login Administrator</h1>
-        <p class="text-gray-500">Fungsionalitas login saat ini dinonaktifkan.</p>
-      </div>
-        <div class="flex items-center gap-4">
-          <button type="button" id="close-login-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Tutup</button>
-        </div>
-    </div>
-  </div>
-  
-  <!-- Modal Permintaan Data Telah Dihapus -->
-
   <div id="main-app">
     <header class="bg-white shadow-md sticky top-0 z-40">
-      <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center">
             <button id="hamburger-menu-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100">
@@ -91,7 +88,6 @@
             <a href="#" id="header-title-link" class="text-xl font-bold text-gray-800 ml-4">SOP IAIN Bone</a>
           </div>
           <div id="user-info-container" class="flex items-center gap-4">
-             <!-- Tombol Login akan dirender oleh JS -->
           </div>
         </div>
       </div>
@@ -103,7 +99,6 @@
             <ul id="main-menu-list" class="mt-4 space-y-2">
                 <li><a href="#" id="home-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-home w-6 mr-2"></i>Beranda</a></li>
                 <li><a href="#" id="about-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-info-circle w-6 mr-2"></i>Tentang</a></li>
-                <!-- Menu item admin, statistik, dan permohonan telah dihapus -->
                 <li class="border-t pt-2 mt-2"><a href="https://www.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-globe w-6 mr-2"></i>Web IAIN Bone</a></li>
                 <li><a href="https://s.id/iainbone" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-concierge-bell w-6 mr-2"></i>Informasi Layanan</a></li>
                 <li><a href="https://ppid.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-bullhorn w-6 mr-2"></i>PPID</a></li>
@@ -112,7 +107,7 @@
     </div>
     <div id="menu-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
 
-    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+    <main class="w-full p-4 sm:p-6 lg:p-8">
       
       <div id="list-view-container">
         
@@ -147,7 +142,6 @@
                         <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
                         <select id="filter-category" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Kategori</option></select>
                     </div>
-                    <!-- Filter Sifat Data telah dihapus -->
                     <div>
                         <label for="filter-producer" class="block text-sm font-medium text-gray-700 mb-1">Produsen Data</label>
                         <select id="filter-producer" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"><option value="">Semua Produsen</option></select>
@@ -172,11 +166,9 @@
             <div class="flex flex-wrap items-center justify-between mb-4 gap-4">
                 <h3 id="dataset-count" class="text-lg font-semibold text-gray-700 w-full sm:w-auto"><i class="fa fa-spinner fa-spin"></i> Memuat data...</h3>
                 <div class="flex items-center gap-4 flex-wrap justify-end flex-grow">
-                    <div class="flex items-center gap-2">
-                        <button id="reload-dataset-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm flex items-center whitespace-nowrap" title="Muat Ulang Data">
-                            <i id="reload-icon" class="fas fa-sync-alt"></i>
-                        </button>
-                    </div>
+                    <button id="reload-dataset-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm flex items-center whitespace-nowrap" title="Muat Ulang Data">
+                        <i id="reload-icon" class="fas fa-sync-alt"></i>
+                    </button>
                     <div>
                         <select id="sort-dataset-select" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             <option value="tanggal-desc">Tgl Terbaru</option>
@@ -194,7 +186,7 @@
                     </div>
                 </div>
             </div>
-            <div id="loading-indicator" class="flex justify-center items-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600 ml-4">Sedang memuat SOP...</p></div>
+            <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
             <div id="dataset-list" class="space-y-4"></div>
             <!-- Pagination Container -->
             <div id="pagination-container" class="flex justify-center items-center mt-8 space-x-2"></div>
@@ -234,7 +226,6 @@
                                     </div>
                                     <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh</a>
                                 </div>
-                                <!-- Container Tombol Permintaan Data Telah Dihapus -->
                             </div>
                             <div id="table-preview-container" class="mt-6 hidden">
                                 <h3 class="text-xl font-semibold text-gray-800 mb-3">Preview Data</h3>
@@ -243,15 +234,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </section>
-                <section id="history-section">
-                    <div class="bg-white p-6 rounded-lg shadow-md">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">Riwayat Perubahan :</h3>
-                        <div id="history-list" class="space-y-4">
-                            <!-- History items will be injected here -->
-                        </div>
-                        <p id="no-history-message" class="text-gray-500 hidden">Tidak ada riwayat perubahan untuk dataset ini.</p>
                     </div>
                 </section>
             </div>
@@ -276,28 +258,24 @@
       </div>
 
       <div id="about-view-container" class="hidden p-8 bg-white rounded-lg shadow-md">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang SOP IAIN Bone</h2>
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Tentang Satu Data IAIN Bone</h2>
         <p class="text-gray-700 leading-relaxed">
-            Portal SOP IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola dan menyajikan Standar Operasional Prosedur (SOP) dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone.
+            Sistem Satu Data IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola, mengintegrasikan, dan menyajikan data dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola data yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
         </p>
         <p class="text-gray-700 mt-4 leading-relaxed">
-            Dengan adanya platform ini, diharapkan seluruh sivitas akademika dapat mengakses panduan kerja yang valid dan mutakhir dengan mudah, sehingga meningkatkan efisiensi, transparansi, dan standardisasi layanan institusi.
+            Dengan adanya platform ini, diharapkan pengambilan keputusan di semua tingkatan dapat didasarkan pada data yang valid dan reliabel, sehingga meningkatkan efisiensi, transparansi, dan akuntabilitas institusi.
         </p>
+        <h3 class="text-xl font-semibold text-gray-800 mt-6 mb-2">Tim Pengembang</h3>
+        <p class="text-gray-700">Dikelola oleh Tim Kerja Satu Data IAIN Bone dan didukung penuh oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
       </div>
-
+      
     </main>
   </div>
 
   <footer class="bg-white text-slate-600 text-sm text-center py-6 border-t">
-    <p>&copy; 2025 - IAIN Bone.</p>
+    <p>&copy; 2025 - Dikelola oleh Tim Kerja Satu Data IAIN Bone. Didukung oleh UPT TIPD IAIN Bone dan Tim PPID IAIN Bone.</p>
   </footer>
- 
-  <!-- Tombol Chat Sticky -->
-  <button id="chat-button" class="fixed bottom-6 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 transition-transform transform hover:scale-110 z-50">
-    <i class="fas fa-comments text-2xl"></i>
-  </button>
   
-  <!-- Menghubungkan ke file JavaScript eksternal -->
   <script src="app.js"></script>
 </body>
 </html>
