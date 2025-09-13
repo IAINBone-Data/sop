@@ -2,11 +2,11 @@
  * =================================================================================
  * SCRIPT APLIKASI UTAMA - SATU DATA IAIN BONE
  * =================================================================================
- * Versi ini telah disederhanakan tanpa fungsionalitas login, permohonan, dan kolom Sifat.
+ * Versi ini telah disederhanakan tanpa fungsionalitas filter.
  */
 
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzUGtvg6395FkwLtTZozVxXLExnOxXImGKcBC5mFSTR0UsO_31kadjGkaGu5EGANqmD/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3PDSqG35NMjCoo2eT2eVt7uLfNmfx1FxfkTPfgp3_UGmSPoplvT_kyWVE65Iqo8ry/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
@@ -14,32 +14,28 @@ document.addEventListener('DOMContentLoaded', function () {
  const cacheDOMElements = () => {
   const ids = [
     'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer',
-    'datasetList', 'datasetCount', 'searchInput', 'filterCategory',
-    'filterProducer', 'filterTag', 'loadingIndicator', 'noDataMessage', 'resetFilterButton',
-    'paginationContainer', 'filterYear', 'filterDataStartYear', 'filterDataEndYear', 'backToListButton',
-    'headerTitleLink', 'hamburgerMenuButton', 'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink',
-    'customAlertModal', 'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
-    'statTotalDataset', 'statTotalProducer', 'statTotalCategory',
-    'reloadDatasetButton',
-    'toggleFilterBtn', 'filterContent', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
+    'datasetList', 'datasetCount', 'searchInput', 'loadingIndicator', 'noDataMessage',
+    'paginationContainer', 'backToListButton', 'headerTitleLink', 'hamburgerMenuButton', 
+    'popupMenu', 'menuOverlay', 'homeLink', 'aboutLink', 'customAlertModal', 
+    'customAlertMessage', 'closeCustomAlert', 'customAlertIconContainer', 
+    'reloadDatasetButton', 'sortDatasetSelect', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 
-    'loginModal', 'closeLoginModal' // Menambahkan kembali referensi untuk modal login
+    'tablePreviewContent', 'loginModal', 'closeLoginModal'
   ];
    ids.forEach(id => {
-       // [PERBAIKAN] Mengubah camelCase (js) menjadi kebab-case (html) untuk menemukan ID dengan benar
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
        const el = document.getElementById(kebabCaseId);
        if (el) {
            DOM[id] = el;
+       } else {
+           console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
        }
    });
  };
 
  // === STATE MANAGEMENT ===
  let allDatasets = [];
- let filterOptionsCache = null;
  let currentPage = 1;
  const rowsPerPage = 10;
  let currentFilteredData = [];
@@ -90,23 +86,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (response.status === 'success') {
           allDatasets = response.data || [];
-          
-          if (allDatasets.length > 0) {
-              const categories = [...new Set(allDatasets.map(item => item.Kategori).filter(Boolean))].sort();
-              const producers = [...new Set(allDatasets.map(item => item['Produsen Data']).filter(Boolean))].sort();
-              const tags = [...new Set(allDatasets.flatMap(item => (item.Tag || '').split(',')).map(t => t.trim()).filter(Boolean))].sort();
-              const years = [...new Set(allDatasets.map(item => (item.Tanggal || '').split('/')[2]).filter(Boolean))].sort((a, b) => b - a);
-              filterOptionsCache = { categories, producers, tags, years };
-          } else {
-              filterOptionsCache = { categories: [], producers: [], tags: [], years: [] };
-          }
-      
-          // [PERUBAHAN] Mengurutkan berdasarkan IDSOP dari yang terbaru (asumsi format timestamp)
           allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
-
           applyFiltersAndRender();
-          updateSummaryStats();
-          populateFilterOptions();
       } else {
           showErrorState('Gagal Memuat Data', response.message);
       }
@@ -123,16 +104,8 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container', true); });
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
-   const filterInputs = [DOM.searchInput, DOM.filterCategory, DOM.filterProducer, DOM.filterTag, DOM.filterYear, DOM.filterDataStartYear, DOM.filterDataEndYear];
-   filterInputs.forEach(input => {
-       if(input) input.addEventListener('input', applyFiltersAndRender)
-    });
+   DOM.searchInput.addEventListener('input', applyFiltersAndRender);
    DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
-   DOM.resetFilterButton.addEventListener('click', resetFilters);
-   DOM.toggleFilterBtn.addEventListener('click', () => {
-     DOM.filterContent.classList.toggle('hidden');
-     DOM.toggleFilterBtn.querySelector('i').classList.toggle('rotate-180');
-   });
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
@@ -145,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function () {
 //==================================================
 
 function updateUIForLoginStatus() {
-  // Selalu tampilkan tombol login, tapi fungsionalitasnya dinonaktifkan
   DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>`;
 }
 
@@ -157,20 +129,12 @@ function applyFiltersAndRender() {
     let filteredData = [...allDatasets];
     
     const searchTerm = DOM.searchInput.value.toLowerCase();
-    const category = DOM.filterCategory.value;
-    const producer = DOM.filterProducer.value;
-    const tag = DOM.filterTag.value;
-    const year = DOM.filterYear.value;
-    const startYear = DOM.filterDataStartYear.value;
-    const endYear = DOM.filterDataEndYear.value;
-
-    if (searchTerm) filteredData = filteredData.filter(item => (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm) || (item.Tag || '').toLowerCase().includes(searchTerm));
-    if (category) filteredData = filteredData.filter(item => item.Kategori === category);
-    if (producer) filteredData = filteredData.filter(item => item['Produsen Data'] === producer);
-    if (tag) filteredData = filteredData.filter(item => (item.Tag || '').split(',').map(t => t.trim()).includes(tag));
-    if (year) filteredData = filteredData.filter(item => (item.Tanggal || '').endsWith(`/${year}`));
-    if (startYear) filteredData = filteredData.filter(item => (item['Tahun Data'] || '').split('-')[1]?.trim() >= startYear);
-    if (endYear) filteredData = filteredData.filter(item => (item['Tahun Data'] || '').split('-')[0]?.trim() <= endYear);
+    if (searchTerm) {
+        filteredData = filteredData.filter(item => 
+            (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
+            (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
+        );
+    }
 
     const sortValue = DOM.sortDatasetSelect.value;
     const parseDate = (dateStr) => new Date(dateStr);
@@ -179,6 +143,7 @@ function applyFiltersAndRender() {
         if (sortValue === 'tanggal-asc') {
             return (parseDate(a['Tanggal Diperbaharui']) || 0) - (parseDate(b['Tanggal Diperbaharui']) || 0);
         }
+        // Default sort is by newest date
         return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
     });
 
@@ -191,7 +156,7 @@ function renderPageContent() {
     DOM.datasetList.innerHTML = '';
     DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
     if (currentFilteredData.length === 0) {
-        DOM.paginationContainer.innerHTML = '';
+        if(DOM.paginationContainer) DOM.paginationContainer.innerHTML = '';
         updateDatasetCount();
         return;
     }
@@ -222,6 +187,7 @@ function renderPageContent() {
 }
 
 function renderPaginationControls() {
+    if(!DOM.paginationContainer) return;
     DOM.paginationContainer.innerHTML = '';
     const totalPages = Math.ceil(currentFilteredData.length / rowsPerPage);
     if (totalPages <= 1) return;
@@ -288,7 +254,6 @@ function showDetailView(idsop) {
 
     showView('detail-view-container');
 }
-
 
 //==================================================
 // EVENT HANDLERS
@@ -366,44 +331,9 @@ function setLoadingState(isLoading) {
     }
 }
 
-function updateSummaryStats() {
-    if (!filterOptionsCache || !allDatasets) return;
-    animateCountUp(DOM.statTotalDataset, allDatasets.length);
-    animateCountUp(DOM.statTotalProducer, filterOptionsCache.producers.length);
-    animateCountUp(DOM.statTotalCategory, filterOptionsCache.categories.length);
-}
-
-function populateSelect(selectElement, optionsArray) {
-    if (!selectElement) return;
-    const currentValue = selectElement.value;
-    selectElement.innerHTML = `<option value="">Semua ${selectElement.id.replace('filter-','')}</option>`;
-    optionsArray.forEach(option => selectElement.innerHTML += `<option value="${option}">${option}</option>`);
-    selectElement.value = currentValue;
-}
-
-function populateFilterOptions() {
-    if (!filterOptionsCache) return;
-    populateSelect(DOM.filterCategory, filterOptionsCache.categories);
-    populateSelect(DOM.filterProducer, filterOptionsCache.producers);
-    populateSelect(DOM.filterTag, filterOptionsCache.tags);
-    populateSelect(DOM.filterYear, filterOptionsCache.years);
-}
-
 function toggleSideMenu(show) {
     if(DOM.popupMenu) DOM.popupMenu.classList.toggle('-translate-x-full', !show);
     if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
-}
-
-function resetFilters(){
-    if(document.getElementById('search-input')) document.getElementById('search-input').value = '';
-    if(DOM.filterCategory) DOM.filterCategory.value = '';
-    if(DOM.filterProducer) DOM.filterProducer.value = '';
-    if(DOM.filterTag) DOM.filterTag.value = '';
-    if(DOM.filterYear) DOM.filterYear.value = '';
-    if(DOM.filterDataStartYear) DOM.filterDataStartYear.value = '';
-    if(DOM.filterDataEndYear) DOM.filterDataEndYear.value = '';
-    if(DOM.sortDatasetSelect) DOM.sortDatasetSelect.value = 'tanggal-desc';
-    applyFiltersAndRender();
 }
 
 function handleReload() {
@@ -413,27 +343,6 @@ function handleReload() {
 function updateDatasetCount() {
     if(!DOM.datasetCount) return;
     DOM.datasetCount.innerHTML = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
-}
-
-function animateCountUp(el, endValue) {
-    if (!el) return;
-    let startValue = 0;
-    const duration = 1500;
-    const frameDuration = 1000 / 60;
-    const totalFrames = Math.round(duration / frameDuration);
-    const increment = endValue / totalFrames;
-    let currentFrame = 0;
-    function counter() {
-      currentFrame++;
-      startValue += increment;
-      if (currentFrame >= totalFrames) {
-        el.textContent = endValue;
-        return;
-      }
-      el.textContent = Math.round(startValue);
-      requestAnimationFrame(counter);
-    }
-    requestAnimationFrame(counter);
 }
 
 // RUN APP
