@@ -206,41 +206,38 @@
         <!-- [PERBAIKAN FINAL] Tata letak grid detail yang benar-benar responsif -->
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
             
-            <!-- Kolom Kiri (Detail & Metadata) untuk Desktop -->
-            <div class="lg:col-span-3 flex flex-col gap-8">
-                <!-- Bagian Detail -->
-                <section class="order-1 bg-white p-6 rounded-lg shadow-md space-y-4">
-                    <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
-                    <p id="detail-uraian" class="text-gray-600 text-sm"></p>
-                    <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
-                        <i class="fas fa-file-pdf text-red-500 text-3xl"></i>
-                        <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh Dokumen</a>
-                    </div>
-                </section>
-                
-                <!-- Bagian Metadata (Collapsible) -->
-                <section class="order-3 lg:order-2 bg-white p-6 rounded-lg shadow-md">
-                    <button id="toggle-metadata-button" class="w-full flex items-center justify-between">
-                        <h3 class="text-lg font-semibold text-gray-800">Metadata</h3>
-                        <i id="metadata-chevron" class="fas fa-chevron-down transition-transform duration-300"></i>
-                    </button>
-                    <div id="metadata-content" class="hidden pt-4 mt-4 border-t">
-                        <table class="w-full text-sm text-left text-gray-600">
-                            <tbody>
-                                <tr class="border-b"><td class="py-2 font-semibold">Penandatangan</td><td id="meta-penandatangan" class="py-2 text-right"></td></tr>
-                                <tr class="border-b"><td class="py-2 font-semibold">Unit</td><td id="meta-unit" class="py-2 text-right"></td></tr>
-                                <tr class="border-b"><td class="py-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-2 text-right"></td></tr>
-                                <tr class="border-b"><td class="py-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-2 text-right"></td></tr>
-                                <tr id="meta-revisi-row" class="border-b hidden"><td class="py-2 font-semibold">Tanggal Revisi</td><td id="meta-diperbaharui" class="py-2 text-right"></td></tr>
-                                <tr class="border-b"><td class="py-2 font-semibold">Tanggal Efektif</td><td id="meta-efektif" class="py-2 text-right"></td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-            </div>
+            <!-- Bagian Detail -->
+            <section class="order-1 lg:col-span-3 bg-white p-6 rounded-lg shadow-md space-y-4">
+                <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
+                <p id="detail-uraian" class="text-gray-600 text-sm"></p>
+                <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
+                    <i class="fas fa-file-pdf text-red-500 text-3xl"></i>
+                    <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh Dokumen</a>
+                </div>
+            </section>
+            
+            <!-- Bagian Metadata (Collapsible) -->
+            <section class="order-3 lg:order-none lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
+                <button id="toggle-metadata-button" class="w-full flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-800">Metadata</h3>
+                    <i id="metadata-chevron" class="fas fa-chevron-down transition-transform duration-300"></i>
+                </button>
+                <div id="metadata-content" class="hidden pt-4 mt-4 border-t">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <tbody>
+                            <tr class="border-b"><td class="py-2 font-semibold">Penandatangan</td><td id="meta-penandatangan" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Unit</td><td id="meta-unit" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-2 text-right"></td></tr>
+                            <tr id="meta-revisi-row" class="border-b hidden"><td class="py-2 font-semibold">Tanggal Revisi</td><td id="meta-diperbaharui" class="py-2 text-right"></td></tr>
+                            <tr class="border-b"><td class="py-2 font-semibold">Tanggal Efektif</td><td id="meta-efektif" class="py-2 text-right"></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-            <!-- Kolom Kanan (Pratinjau) untuk Desktop -->
-            <div class="order-2 lg:order-none lg:col-span-7">
+            <!-- Bagian Pratinjau PDF -->
+            <div class="order-2 lg:col-span-7 lg:col-start-4 lg:row-span-2 lg:row-start-1">
                 <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
                     <div id="table-preview-content" class="w-full h-full">
                         <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
