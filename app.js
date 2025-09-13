@@ -60,6 +60,8 @@ document.addEventListener('DOMContentLoaded', function () {
  // === STATE MANAGEMENT ===
  let allDatasets = [];
  let allUsers = [];
+ let allRequests = [];
+ let allMessages = [];
  let filterOptionsCache = null;
  let currentDetailItemIndex = -1;
  let currentPage = 1;
@@ -68,24 +70,30 @@ document.addEventListener('DOMContentLoaded', function () {
  let monthlyChart = null;
  let yearlyChart = null;
  
- // === API HELPER ===
- const callAppsScript = async (action, payload = {}) => {
-  try {
-    const response = await fetch(WEB_APP_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action, payload }),
-      redirect: 'follow'
-    });
-    if (!response.ok) {
-        throw new Error(`Network response error: ${response.statusText}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error(`API Call Error for action "${action}":`, error);
-    return { success: false, message: error.message };
-  }
- };
+  // === API HELPER ===
+  const callAppsScript = async (action, payload = {}) => {
+      try {
+          const response = await fetch(WEB_APP_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action, ...payload }),
+              redirect: 'follow'
+          });
+          if (!response.ok) {
+              throw new Error(`Network response error: ${response.statusText}`);
+          }
+          const text = await response.text();
+          try {
+              return JSON.parse(text);
+          } catch (e) {
+              console.error("Gagal mem-parsing JSON:", text);
+              return { status: 'error', message: 'Gagal memproses respon dari server.' };
+          }
+      } catch (error) {
+          console.error(`API Call Error untuk action "${action}":`, error);
+          return { status: 'error', message: error.message };
+      }
+  };
 
  // === MAIN FUNCTIONS ===
 
@@ -100,102 +108,113 @@ document.addEventListener('DOMContentLoaded', function () {
   loadInitialData();
  };
 
- const loadInitialData = async (keepDetailView = false, callback) => {
-  setLoadingState(true);
-  if (!keepDetailView) {
-    DOM.datasetList.innerHTML = '';
-  }
-  
-  const response = await callAppsScript('getInitialData');
-
-  if (response.success) {
-    allDatasets = response.data.datasets || [];
-    filterOptionsCache = response.data.filterOptions || {};
-    
-    allDatasets.sort((a, b) => (parseInt(b.No, 10) || 0) - (parseInt(a.No, 10) || 0));
-
-    if (keepDetailView && currentDetailItemIndex > -1) {
-      const currentItem = allDatasets[currentDetailItemIndex];
-      if (currentItem) {
-        const updatedItem = allDatasets.find(d => d.rowIndex === currentItem.rowIndex);
-        const newIndex = updatedItem ? allDatasets.indexOf(updatedItem) : -1;
-        showDetailView(newIndex > -1 ? newIndex : 0);
-      } else {
-        showView('listViewContainer');
+  const loadInitialData = async (keepDetailView = false, callback) => {
+      setLoadingState(true);
+      if (!keepDetailView) {
+          DOM.datasetList.innerHTML = '';
       }
-    } else {
-      applyFiltersAndRender();
-    }
-    updateSummaryStats();
-    populateFilterOptions();
-    loadTopVisited();
-  } else {
-    showErrorState('Gagal Memuat Data', response.message);
-  }
-  setLoadingState(false);
-  if(callback) callback();
- };
+      
+      const response = await callAppsScript('getData', { sheetName: 'SOP' });
+
+      if (response.status === 'success') {
+          allDatasets = response.data || [];
+          
+          if (allDatasets.length > 0) {
+              const categories = [...new Set(allDatasets.map(item => item.Kategori).filter(Boolean))].sort();
+              const producers = [...new Set(allDatasets.map(item => item['Produsen Data']).filter(Boolean))].sort();
+              const tags = [...new Set(allDatasets.flatMap(item => (item.Tag || '').split(',')).map(t => t.trim()).filter(Boolean))].sort();
+              const years = [...new Set(allDatasets.map(item => (item.Tanggal || '').split('/')[2]).filter(Boolean))].sort((a, b) => b - a);
+              filterOptionsCache = { categories, producers, tags, years };
+          } else {
+              filterOptionsCache = { categories: [], producers: [], tags: [], years: [] };
+          }
+      
+          allDatasets.sort((a, b) => (new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui'])));
+
+          if (keepDetailView && currentDetailItemIndex > -1) {
+              const currentItem = allDatasets[currentDetailItemIndex];
+              if (currentItem) {
+                  const updatedItem = allDatasets.find(d => d.rowIndex === currentItem.rowIndex);
+                  const newIndex = updatedItem ? allDatasets.indexOf(updatedItem) : -1;
+                  showDetailView(newIndex > -1 ? newIndex : 0);
+              } else {
+                  showView('listViewContainer');
+              }
+          } else {
+              applyFiltersAndRender();
+          }
+          updateSummaryStats();
+          populateFilterOptions();
+          loadTopVisited();
+      } else {
+          showErrorState('Gagal Memuat Data', response.message);
+      }
+      setLoadingState(false);
+      if(callback) callback();
+  };
  
  // === EVENT LISTENERS SETUP ===
 
  const setupEventListeners = () => {
-    DOM.closeLoginModalButton.addEventListener('click', () => toggleModal('loginModal', false));
-    DOM.loginForm.addEventListener('submit', handleLogin);
-    DOM.userInfoContainer.addEventListener('click', handleUserMenuClick);
-    window.addEventListener('click', closeAdminPopupOnClickOutside);
-    DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer'); });
-    DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
-    DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
-    DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer', true); });
-    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('aboutViewContainer', true); });
-    DOM.statsLink.addEventListener('click', (e) => { e.preventDefault(); showView('statsViewContainer', true); loadAndRenderStats(); });
-    DOM.adminListLink.addEventListener('click', (e) => { e.preventDefault(); showView('adminListViewContainer', true); loadAndRenderAdminList(); });
-    DOM.requestLink.addEventListener('click', (e) => { e.preventDefault(); showView('requestViewContainer', true); loadAndRenderRequests(); });
-    DOM.messageLink.addEventListener('click', (e) => { e.preventDefault(); showView('messageViewContainer', true); loadAndRenderMessages(); });
-    DOM.backToListButton.addEventListener('click', () => showView('listViewContainer'));
-    const filterInputs = [DOM.searchInput, DOM.filterCategory, DOM.filterProducer, DOM.filterTag, DOM.filterYear, DOM.filterDataStartYear, DOM.filterDataEndYear];
-    filterInputs.forEach(input => input.addEventListener('input', applyFiltersAndRender));
-    DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
-    DOM.resetFilterButton.addEventListener('click', resetFilters);
-    DOM.filterSifatContainer.addEventListener('change', applyFiltersAndRender);
-    DOM.toggleFilterBtn.addEventListener('click', () => {
-      DOM.filterContent.classList.toggle('hidden');
-      DOM.toggleFilterBtn.querySelector('i').classList.toggle('rotate-180');
-    });
-    DOM.reloadDatasetButton.addEventListener('click', handleReload);
-    DOM.datasetList.addEventListener('click', handleDatasetListClick);
-    DOM.detailViewContainer.addEventListener('click', handleDetailViewActions);
-    DOM.detailDownloadLink.addEventListener('click', handleDownload);
-    DOM.popularDatasetsList.addEventListener('click', handlePopularDatasetClick);
-    DOM.addDatasetTriggerButton.addEventListener('click', () => toggleAddDatasetModal(true));
-    DOM.closeAddDatasetModalButton.addEventListener('click', () => toggleAddDatasetModal(false));
-    DOM.cancelAddDatasetButton.addEventListener('click', () => toggleAddDatasetModal(false));
-    DOM.addDatasetForm.addEventListener('submit', handleAddOrEditDataset);
-    DOM.addKategori.addEventListener('change', () => DOM.addKategoriNew.classList.toggle('hidden', DOM.addKategori.value !== '--tambah-baru--'));
-    DOM.closeEditDatasetModalButton.addEventListener('click', () => toggleEditDatasetModal(false));
-    DOM.cancelEditDatasetButton.addEventListener('click', () => toggleEditDatasetModal(false));
-    DOM.editDatasetForm.addEventListener('submit', handleAddOrEditDataset);
-    DOM.cancelProfileForm.addEventListener('click', () => toggleProfileModal(false));
-    DOM.profileForm.addEventListener('submit', handleSaveProfile);
-    DOM.profileOpenResetPassword.addEventListener('click', (e) => { e.preventDefault(); toggleProfileModal(false); toggleResetPasswordModal(true); });
-    DOM.closeResetPasswordModalButton.addEventListener('click', () => toggleResetPasswordModal(false));
-    DOM.resetPasswordForm.addEventListener('submit', handleResetPassword);
-    DOM.addUserButton.addEventListener('click', () => toggleUserModal(true));
-    DOM.cancelUserForm.addEventListener('click', () => toggleUserModal(false));
-    DOM.userForm.addEventListener('submit', handleSaveUser);
-    DOM.adminListViewContainer.addEventListener('click', (e) => {
-      const editButton = e.target.closest('.edit-user-button');
-      if (editButton) toggleUserModal(true, allUsers[editButton.dataset.index]);
-    });
-    DOM.requestDataForm.addEventListener('submit', handleAddRequest);
-    DOM.cancelRequestForm.addEventListener('click', () => toggleRequestDataModal(false));
-    DOM.requestViewContainer.addEventListener('click', (e) => { if (e.target.closest('.status-update-button')) handleStatusUpdateClick(e); });
-    DOM.messageListContainer.addEventListener('click', handleMessageClick);
-    DOM.chatButton.addEventListener('click', () => toggleMessageModal(true));
-    DOM.closeMessageModalButton.addEventListener('click', () => toggleMessageModal(false));
-    DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
-    DOM.messageForm.addEventListener('submit', handleSendMessage);
-    DOM.closeCustomAlertButton.addEventListener('click', () => toggleModal('customAlertModal', false));
+   DOM.closeLoginModalButton.addEventListener('click', () => toggleModal('loginModal', false));
+   DOM.loginForm.addEventListener('submit', handleLogin);
+   DOM.userInfoContainer.addEventListener('click', handleUserMenuClick);
+   window.addEventListener('click', closeAdminPopupOnClickOutside);
+   DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer'); });
+   DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
+   DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
+   DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('listViewContainer', true); });
+   DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('aboutViewContainer', true); });
+   DOM.statsLink.addEventListener('click', (e) => { e.preventDefault(); showView('statsViewContainer', true); loadAndRenderStats(); });
+   DOM.adminListLink.addEventListener('click', (e) => { e.preventDefault(); showView('adminListViewContainer', true); loadAndRenderAdminList(); });
+   DOM.requestLink.addEventListener('click', (e) => { e.preventDefault(); showView('requestViewContainer', true); loadAndRenderRequests(); });
+   DOM.messageLink.addEventListener('click', (e) => { e.preventDefault(); showView('messageViewContainer', true); loadAndRenderMessages(); });
+   DOM.backToListButton.addEventListener('click', () => showView('listViewContainer'));
+   const filterInputs = [DOM.searchInput, DOM.filterCategory, DOM.filterProducer, DOM.filterTag, DOM.filterYear, DOM.filterDataStartYear, DOM.filterDataEndYear];
+   filterInputs.forEach(input => input.addEventListener('input', applyFiltersAndRender));
+   DOM.sortDatasetSelect.addEventListener('change', applyFiltersAndRender);
+   DOM.resetFilterButton.addEventListener('click', resetFilters);
+   DOM.filterSifatContainer.addEventListener('change', applyFiltersAndRender);
+   DOM.toggleFilterBtn.addEventListener('click', () => {
+     DOM.filterContent.classList.toggle('hidden');
+     DOM.toggleFilterBtn.querySelector('i').classList.toggle('rotate-180');
+   });
+   DOM.reloadDatasetButton.addEventListener('click', handleReload);
+   DOM.datasetList.addEventListener('click', handleDatasetListClick);
+   DOM.detailViewContainer.addEventListener('click', handleDetailViewActions);
+   DOM.detailDownloadLink.addEventListener('click', handleDownload);
+   DOM.popularDatasetsList.addEventListener('click', handlePopularDatasetClick);
+   DOM.addDatasetTriggerButton.addEventListener('click', () => toggleAddDatasetModal(true));
+   DOM.closeAddDatasetModalButton.addEventListener('click', () => toggleAddDatasetModal(false));
+   DOM.cancelAddDatasetButton.addEventListener('click', () => toggleAddDatasetModal(false));
+   DOM.addDatasetForm.addEventListener('submit', handleAddOrEditDataset);
+   DOM.addKategori.addEventListener('change', () => DOM.addKategoriNew.classList.toggle('hidden', DOM.addKategori.value !== '--tambah-baru--'));
+   DOM.closeEditDatasetModalButton.addEventListener('click', () => toggleEditDatasetModal(false));
+   DOM.cancelEditDatasetButton.addEventListener('click', () => toggleEditDatasetModal(false));
+   DOM.editDatasetForm.addEventListener('submit', handleAddOrEditDataset);
+   DOM.cancelProfileForm.addEventListener('click', () => toggleProfileModal(false));
+   DOM.profileForm.addEventListener('submit', handleSaveProfile);
+   DOM.profileOpenResetPassword.addEventListener('click', (e) => { e.preventDefault(); toggleProfileModal(false); toggleResetPasswordModal(true); });
+   DOM.closeResetPasswordModalButton.addEventListener('click', () => toggleResetPasswordModal(false));
+   DOM.resetPasswordForm.addEventListener('submit', handleResetPassword);
+   DOM.addUserButton.addEventListener('click', () => toggleUserModal(true));
+   DOM.cancelUserForm.addEventListener('click', () => toggleUserModal(false));
+   DOM.userForm.addEventListener('submit', handleSaveUser);
+   DOM.adminListViewContainer.addEventListener('click', (e) => {
+     const editButton = e.target.closest('.edit-user-button');
+     if (editButton) toggleUserModal(true, allUsers[editButton.dataset.index]);
+     const deleteButton = e.target.closest('.delete-user-button');
+     if (deleteButton) handleDeleteUser(deleteButton.dataset.index);
+   });
+   DOM.requestDataForm.addEventListener('submit', handleAddRequest);
+   DOM.cancelRequestForm.addEventListener('click', () => toggleRequestDataModal(false));
+   DOM.requestViewContainer.addEventListener('click', (e) => { if (e.target.closest('.status-update-button')) handleStatusUpdateClick(e); });
+   DOM.messageListContainer.addEventListener('click', handleMessageClick);
+   DOM.chatButton.addEventListener('click', () => toggleMessageModal(true));
+   DOM.closeMessageModalButton.addEventListener('click', () => toggleMessageModal(false));
+   DOM.cancelMessageForm.addEventListener('click', () => toggleMessageModal(false));
+   DOM.messageForm.addEventListener('submit', handleSendMessage);
+   DOM.closeCustomAlertButton.addEventListener('click', () => toggleModal('customAlertModal', false));
  };
 
 //==================================================
@@ -211,7 +230,7 @@ async function handleLogin(e) {
 
   const response = await callAppsScript('login', { username, password });
 
-  if (response.success) {
+  if (response.status === 'success') {
     sessionStorage.setItem('currentUser', JSON.stringify(response.user));
     updateUIForLoginStatus();
     toggleModal('loginModal', false);
@@ -234,7 +253,7 @@ function handleLogout() {
 function updateUIForLoginStatus() {
   const userString = sessionStorage.getItem('currentUser');
   const user = userString ? JSON.parse(userString) : null;
-  
+ 
   [DOM.statsMenuItem, DOM.adminListMenuItem, DOM.panduanMenuItem, DOM.requestMenuItem, DOM.messageMenuItem].forEach(item => item.classList.add('hidden'));
   DOM.addDatasetButtonContainer.classList.add('hidden');
 
@@ -290,8 +309,8 @@ function applyFiltersAndRender() {
 
     const uniqueTitles = new Map();
     const sortedBaseData = [...baseData].sort((a,b) => {
-        const dateA = new Date(a.Diperbaharui?.split('/').reverse().join('-'));
-        const dateB = new Date(b.Diperbaharui?.split('/').reverse().join('-'));
+        const dateA = new Date(a['Tanggal Diperbaharui']);
+        const dateB = new Date(b['Tanggal Diperbaharui']);
         return dateB - dateA;
     });
 
@@ -321,18 +340,13 @@ function applyFiltersAndRender() {
     if (endYear) filteredData = filteredData.filter(item => (item['Tahun Data'] || '').split('-')[0]?.trim() <= endYear);
 
     const sortValue = DOM.sortDatasetSelect.value;
-    const parseDate = (dateStr) => {
-        if (!dateStr || !dateStr.includes('/')) return null;
-        const [d, m, y] = dateStr.split('/');
-        return new Date(`${y}-${m}-${d}`);
-    };
+    const parseDate = (dateStr) => new Date(dateStr);
+    
     filteredData.sort((a, b) => {
         switch (sortValue) {
-            case 'no-desc': return (b.No || 0) - (a.No || 0);
-            case 'no-asc': return (a.No || 0) - (b.No || 0);
-            case 'tanggal-desc': return (parseDate(b.Diperbaharui) || 0) - (parseDate(a.Diperbaharui) || 0);
-            case 'tanggal-asc': return (parseDate(a.Diperbaharui) || 0) - (parseDate(b.Diperbaharui) || 0);
-            default: return (b.No || 0) - (a.No || 0);
+            case 'tanggal-desc': return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
+            case 'tanggal-asc': return (parseDate(a['Tanggal Diperbaharui']) || 0) - (parseDate(b['Tanggal Diperbaharui']) || 0);
+            default: return (parseDate(b['Tanggal Diperbaharui']) || 0) - (parseDate(a['Tanggal Diperbaharui']) || 0);
         }
     });
 
@@ -414,8 +428,13 @@ function showDetailView(datasetIndex) {
     }
     currentDetailItemIndex = datasetIndex;
     const item = allDatasets[datasetIndex];
+    const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
 
-    callAppsScript('recordVisit', { title: item.Judul });
+    callAppsScript('logAction', { 
+        type: 'visit', 
+        details: { title: item.Judul }, 
+        user: user ? user.Username : 'Guest' 
+    });
 
     DOM.detailTitle.textContent = item.Judul || 'Tanpa Judul';
     DOM.detailUraian.textContent = item.Uraian || 'Tidak ada uraian.';
@@ -431,30 +450,28 @@ function showDetailView(datasetIndex) {
     DOM.metaProdusen.textContent = item['Produsen Data'] || 'N/A';
     DOM.metaPenanggungJawab.textContent = item['Penanggung Jawab'] || 'N/A';
     DOM.metaTanggal.textContent = item.Tanggal || 'N/A';
-    DOM.metaDiperbaharui.textContent = item.Diperbaharui || 'N/A';
+    DOM.metaDiperbaharui.textContent = new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID');
     DOM.metaFrekuensi.textContent = item.Frekuensi || 'N/A';
     DOM.metaTahunData.textContent = item['Tahun Data'] || 'N/A';
-
-    const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-    const canDownload = item.Sifat === 'Terbuka' || (user && (user.Role === 'Super Admin' || user.Role === 'Tertutup' || user.Role === 'Terbatas' || (user.Role === 'Admin' && user.Username === item.User)));
+    
+    const canDownload = item.Sifat === 'Terbuka' || (user && (user.Role !== 'Terbatas'));
     
     DOM.detailDownloadLink.style.display = canDownload ? 'inline-block' : 'none';
     DOM.requestButtonContainer.innerHTML = '';
     if (!canDownload) {
         DOM.requestButtonContainer.innerHTML = `<button id="detail-request-button" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 text-sm flex items-center w-full justify-center"><i class="fas fa-inbox mr-2"></i> Minta Data</button>`;
     }
-
+    
     DOM.detailActionButtons.innerHTML = '';
     if (user && (user.Role === 'Super Admin' || (user.Role === 'Admin' && user.Username === item.User))) {
         DOM.detailActionButtons.innerHTML = `
-            <button id="detail-update-button" class="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 text-sm flex items-center"><i class="fas fa-copy mr-2"></i>Perbaharui</button>
             <button id="detail-edit-button" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 text-sm flex items-center"><i class="fas fa-edit mr-2"></i>Edit</button>
+            <button id="detail-delete-button" class="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 text-sm flex items-center"><i class="fas fa-trash mr-2"></i>Hapus</button>
         `;
     }
 
-    const fileUrl = item.File || '#';
-    const driveRegex = /https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9-_]+)/;
-    const fileId = (fileUrl.match(driveRegex) || [])[1];
+    const fileUrl = item['File URL'] || '#';
+    const fileId = item['File ID'] || '';
 
     DOM.tablePreviewContainer.classList.add('hidden');
     DOM.tablePreviewContent.innerHTML = '';
@@ -525,17 +542,33 @@ async function handleAddOrEditDataset(e) {
     delete dataObject['Kategori-select'];
 
     const user = JSON.parse(sessionStorage.getItem('currentUser'));
-    dataObject.user = user.Username;
-    dataObject.namaUser = user.Nama;
 
-    if (filePayload) {
-        dataObject = { ...dataObject, ...filePayload };
+    const payload = {
+        data: dataObject,
+        user: user.Username
+    };
+     if (filePayload) {
+        payload.file = filePayload;
+    }
+
+    const action = isEdit ? 'editDataset' : 'addDataset';
+    
+    if (isEdit) {
+        payload.rowIndex = dataObject.rowIndex;
+        // Keep existing file info if no new file is uploaded
+        if (!file) {
+           const currentItem = allDatasets.find(d => d.rowIndex == dataObject.rowIndex);
+           if (currentItem) {
+               payload.data['File URL'] = currentItem['File URL'];
+               payload.data['File ID'] = currentItem['File ID'];
+           }
+        }
+        delete dataObject.rowIndex;
     }
     
-    const action = isEdit ? 'updateDataset' : 'addDataset';
-    const response = await callAppsScript(action, { data: dataObject });
+    const response = await callAppsScript(action, payload);
 
-    if (response.success) {
+    if (response.status === 'success') {
         modalSuccess.textContent = response.message || 'Operasi berhasil!';
         modalSuccess.classList.remove('hidden');
         setTimeout(async () => {
@@ -552,23 +585,21 @@ async function handleAddOrEditDataset(e) {
 function displayChangeHistory(currentItem) {
     const historyItems = allDatasets
         .filter(item => item.Judul === currentItem.Judul && item.rowIndex !== currentItem.rowIndex)
-        .sort((a, b) => new Date(b.Diperbaharui?.split('/').reverse().join('-')) - new Date(a.Diperbaharui?.split('/').reverse().join('-')));
+        .sort((a, b) => new Date(b['Tanggal Diperbaharui']) - new Date(a['Tanggal Diperbaharui']));
     
     DOM.historyList.innerHTML = '';
     if (historyItems.length > 0) {
         DOM.historySection.classList.remove('hidden');
         DOM.noHistoryMessage.classList.add('hidden');
         historyItems.forEach(item => {
-            const fileUrl = item.File || '#';
-            const driveRegex = /https:\/\/drive\.google\.com\/(?:file\/d\/|open\?id=)([a-zA-Z0-9-_]+)/;
-            const fileId = (fileUrl.match(driveRegex) || [])[1];
+            const fileId = item['File ID'];
             const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : '#';
 
             DOM.historyList.innerHTML += `
                 <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
                     <div>
                         <p class="font-semibold text-gray-800">${item['Nama File'] || 'N/A'}</p>
-                        <div class="text-sm text-gray-600">Diperbaharui: ${item.Diperbaharui || 'N/A'}</div>
+                        <div class="text-sm text-gray-600">Diperbaharui: ${new Date(item['Tanggal Diperbaharui']).toLocaleString('id-ID')}</div>
                     </div>
                     <a href="${downloadUrl}" target="_blank" class="bg-blue-600 text-white font-bold py-2 px-2 rounded-lg hover:bg-blue-700"><i class="fas fa-download"></i></a>
                 </div>`;
@@ -578,6 +609,7 @@ function displayChangeHistory(currentItem) {
         DOM.noHistoryMessage.classList.remove('hidden');
     }
 }
+
 //==================================================
 // EVENT HANDLERS
 //==================================================
@@ -603,28 +635,46 @@ function handleDatasetListClick(e) {
     }
 }
 
-function handleDetailViewActions(e) {
+async function handleDetailViewActions(e) {
     if (e.target.closest('#detail-edit-button')) {
         toggleEditDatasetModal(true, allDatasets[currentDetailItemIndex]);
     }
-    if (e.target.closest('#detail-update-button')) {
-        toggleAddDatasetModal(true, allDatasets[currentDetailItemIndex]);
+    if (e.target.closest('#detail-delete-button')) {
+        const item = allDatasets[currentDetailItemIndex];
+        if (confirm(`Apakah Anda yakin ingin menghapus dataset "${item.Judul}"?`)) {
+            const user = JSON.parse(sessionStorage.getItem('currentUser'));
+            const response = await callAppsScript('deleteDataset', { rowIndex: item.rowIndex, user: user.Username });
+            if (response.status === 'success') {
+                showCustomAlert('Dataset berhasil dihapus.', 'success');
+                showView('listViewContainer');
+                loadInitialData();
+            } else {
+                showCustomAlert(`Gagal menghapus: ${response.message}`, 'error');
+            }
+        }
     }
     if (e.target.closest('#detail-request-button')) {
         toggleRequestDataModal(true, allDatasets[currentDetailItemIndex]);
     }
 }
+
 async function handleSaveProfile(e) {
     e.preventDefault();
     const user = JSON.parse(sessionStorage.getItem('currentUser'));
     const formData = new FormData(DOM.profileForm);
     const profileData = Object.fromEntries(formData.entries());
-    const updatedUser = { ...user, ...profileData, rowIndex: user.rowIndex };
     
-    const response = await callAppsScript('updateUser', { data: updatedUser });
-    if (response.success) {
+    const payload = {
+        data: { ...user, ...profileData },
+        rowIndex: user.rowIndex
+    };
+    
+    const response = await callAppsScript('editUser', payload);
+
+    if (response.status === 'success') {
         DOM.profileFormSuccess.textContent = "Profil berhasil diperbarui.";
         DOM.profileFormSuccess.classList.remove('hidden');
+        const updatedUser = { ...user, ...profileData };
         sessionStorage.setItem('currentUser', JSON.stringify(updatedUser));
         updateUIForLoginStatus();
         setTimeout(() => DOM.profileFormSuccess.classList.add('hidden'), 3000);
@@ -636,6 +686,8 @@ async function handleSaveProfile(e) {
 
 async function handleResetPassword(e) {
     e.preventDefault();
+    DOM.resetPasswordError.classList.add('hidden');
+    DOM.resetPasswordSuccess.classList.add('hidden');
     const newPassword = DOM.resetPasswordForm.new_password.value;
     const confirmPassword = DOM.resetPasswordForm.confirm_password.value;
     if (newPassword !== confirmPassword) {
@@ -646,8 +698,8 @@ async function handleResetPassword(e) {
     setButtonLoading(DOM.resetSubmitButton, DOM.resetSpinner, DOM.resetButtonText, true);
     const user = JSON.parse(sessionStorage.getItem('currentUser'));
     const response = await callAppsScript('resetPassword', { username: user.Username, newPassword });
-    if (response.success) {
-        DOM.resetPasswordSuccess.textContent = response.message;
+    if (response.status === 'success') {
+        DOM.resetPasswordSuccess.textContent = response.message + " Anda akan logout.";
         DOM.resetPasswordSuccess.classList.remove('hidden');
         setTimeout(() => {
             toggleResetPasswordModal(false);
@@ -667,17 +719,33 @@ async function handleSendMessage(e) {
         return;
     }
     setButtonLoading(DOM.submitMessageButton, DOM.sendMessageSpinner, DOM.sendMessageButtonText, true);
+    DOM.messageFormError.classList.add('hidden');
     const formData = new FormData(DOM.messageForm);
     const messageData = Object.fromEntries(formData.entries());
-    const response = await callAppsScript('addMessage', { data: messageData });
-    if (response.success) {
+
+    const response = await callAppsScript('sendMessage', messageData);
+
+    if (response.status === 'success') {
         toggleMessageModal(false);
         showCustomAlert('Pesan Anda telah berhasil dikirim.', 'success');
+        DOM.messageForm.reset();
     } else {
         DOM.messageFormError.textContent = response.message;
         DOM.messageFormError.classList.remove('hidden');
     }
     setButtonLoading(DOM.submitMessageButton, DOM.sendMessageSpinner, DOM.sendMessageButtonText, false);
+}
+
+function handleDownload(e) {
+    const item = allDatasets[currentDetailItemIndex];
+    if (item) {
+        const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
+        callAppsScript('logAction', {
+            type: 'download',
+            details: { title: item.Judul },
+            user: user ? user.Username : 'Guest'
+        });
+    }
 }
 
 //==================================================
@@ -687,25 +755,36 @@ async function handleSendMessage(e) {
 function toggleModal(modalId, show) {
   const modalKey = modalId.replace(/-./g, m => m[1].toUpperCase());
   const modal = DOM[modalKey];
-  if (modal) modal.classList.toggle('hidden', !show);
+  if (modal) {
+    modal.classList.toggle('hidden', !show);
+    if(show) {
+        const form = modal.querySelector('form');
+        if(form) form.reset();
+        modal.querySelectorAll('.form-error, .form-success').forEach(el => el.classList.add('hidden'));
+    }
+  }
 }
+
 function setButtonLoading(button, spinner, text, isLoading) {
   if (button && spinner && text) {
       button.disabled = isLoading;
-      spinner.classList.toggle('hidden', isLoading);
-      text.classList.toggle('hidden', !isLoading);
+      spinner.classList.toggle('hidden', !isLoading);
+      text.classList.toggle('hidden', isLoading);
   }
 }
+
 function showView(viewId, closeMenu = false) {
     document.querySelectorAll('#main-app > main > div[id$="-container"]').forEach(div => div.classList.add('hidden'));
     document.getElementById(viewId).classList.remove('hidden');
     if (closeMenu) toggleSideMenu(false);
     window.scrollTo(0, 0);
 }
+
 function getSifatColor(sifat) {
     const colors = {'Terbuka': 'bg-green-100 text-green-800','Terbatas': 'bg-yellow-100 text-yellow-800','Tertutup': 'bg-red-100 text-red-800'};
     return colors[sifat] || 'bg-gray-100 text-gray-800';
 }
+
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -714,6 +793,7 @@ function fileToBase64(file) {
         reader.onerror = error => reject(error);
     });
 }
+
 function showCustomAlert(message, type = 'success') {
     DOM.customAlertMessage.textContent = message;
     const iconContainer = DOM.customAlertIconContainer;
@@ -726,6 +806,7 @@ function showCustomAlert(message, type = 'success') {
     }
     toggleModal('customAlertModal', true);
 }
+
 function showErrorState(title, message) {
     DOM.listViewContainer.innerHTML = `
         <div class="text-center py-10 bg-red-50 rounded-lg">
@@ -736,12 +817,16 @@ function showErrorState(title, message) {
     `;
     setLoadingState(false);
 }
+
 function setLoadingState(isLoading) {
-    DOM.loadingIndicator.style.display = isLoading ? 'block' : 'none';
-    DOM.reloadDatasetButton.disabled = isLoading;
-    if (isLoading) DOM.reloadDatasetButton.querySelector('i').classList.add('fa-spin');
-    else DOM.reloadDatasetButton.querySelector('i').classList.remove('fa-spin');
+    DOM.loadingIndicator.style.display = isLoading ? 'flex' : 'none';
+    if(DOM.reloadDatasetButton) {
+        DOM.reloadDatasetButton.disabled = isLoading;
+        if (isLoading) DOM.reloadDatasetButton.querySelector('i').classList.add('fa-spin');
+        else DOM.reloadDatasetButton.querySelector('i').classList.remove('fa-spin');
+    }
 }
+
 function updateSummaryStats() {
     if (!filterOptionsCache) return;
     const uniqueTitles = new Set(allDatasets.map(d => d.Judul));
@@ -749,55 +834,49 @@ function updateSummaryStats() {
     animateCountUp(DOM.statTotalProducer, filterOptionsCache.producers.length);
     animateCountUp(DOM.statTotalCategory, filterOptionsCache.categories.length);
 }
+
 function populateSelect(selectElement, optionsArray, withPlaceholder = false, allowAdd = false) {
     if (!selectElement) return;
     const currentValue = selectElement.value;
     selectElement.innerHTML = '';
-    let firstOptionText = "Semua " + (selectElement.id.split('-')[1] || "Opsi");
+    let firstOptionText = "Semua " + (selectElement.id.replace('filter', '').replace('add', '').replace('edit', '') || "Opsi");
     if (withPlaceholder) firstOptionText = "Pilih salah satu...";
     selectElement.innerHTML = `<option value="">${firstOptionText}</option>`;
     optionsArray.forEach(option => selectElement.innerHTML += `<option value="${option}">${option}</option>`);
     if(allowAdd) selectElement.innerHTML += `<option value="--tambah-baru--">Tambah Kategori Baru...</option>`;
     selectElement.value = currentValue;
 }
+
 function populateFilterOptions() {
     if (!filterOptionsCache) return;
     populateSelect(DOM.filterCategory, filterOptionsCache.categories);
     populateSelect(DOM.filterProducer, filterOptionsCache.producers);
     populateSelect(DOM.filterTag, filterOptionsCache.tags);
     populateSelect(DOM.filterYear, filterOptionsCache.years);
+    populateSelect(DOM.addKategori, filterOptionsCache.categories, true, true);
     populateSelect(DOM.addProdusenData, filterOptionsCache.producers, true);
+    populateSelect(DOM.editKategori, filterOptionsCache.categories, true, true);
     populateSelect(DOM.editProdusenData, filterOptionsCache.producers, true);
 }
+
 async function loadTopVisited() {
-    const response = await callAppsScript('getTopVisited');
+    DOM.noPopularDatasets.classList.remove('hidden');
     DOM.popularDatasetsList.innerHTML = '';
-    if (response.success && response.data.length > 0) {
-        DOM.noPopularDatasets.classList.add('hidden');
-        response.data.forEach(item => {
-            DOM.popularDatasetsList.innerHTML += `
-                <li class="popular-dataset-item cursor-pointer hover:bg-gray-100 p-1 rounded" data-title="${item.title}">
-                    <div class="flex justify-between items-center">
-                        <span class="truncate pr-2">${item.title}</span>
-                        <span class="font-bold text-gray-800 bg-blue-100 px-2 py-0.5 rounded-full text-xs">${item.visits}</span>
-                    </div>
-                </li>`;
-        });
-    } else {
-        DOM.noPopularDatasets.classList.remove('hidden');
-    }
 }
+
 function toggleSideMenu(show) {
     DOM.popupMenu.classList.toggle('-translate-x-full', !show);
     DOM.menuOverlay.classList.toggle('hidden', !show);
 }
+
 function closeAdminPopupOnClickOutside(e) {
     const adminMenu = document.getElementById('admin-popup-menu');
     const trigger = document.getElementById('admin-menu-trigger');
-    if (adminMenu && !adminMenu.classList.contains('hidden') && !trigger.contains(e.target)) {
+    if (adminMenu && !adminMenu.classList.contains('hidden') && trigger && !trigger.contains(e.target) && !adminMenu.contains(e.target)) {
         adminMenu.classList.add('hidden');
     }
 }
+
 function resetFilters(){
     DOM.searchInput.value = '';
     DOM.filterCategory.value = '';
@@ -807,12 +886,14 @@ function resetFilters(){
     DOM.filterYear.value = '';
     DOM.filterDataStartYear.value = '';
     DOM.filterDataEndYear.value = '';
-    DOM.sortDatasetSelect.value = 'default';
+    DOM.sortDatasetSelect.value = 'tanggal-desc';
     applyFiltersAndRender();
 }
+
 function handleReload() {
     loadInitialData();
 }
+
 function handlePopularDatasetClick(e) {
     const target = e.target.closest('.popular-dataset-item');
     if(target) {
@@ -823,15 +904,9 @@ function handlePopularDatasetClick(e) {
         }
     }
 }
-function handleDownload(e) {
-    const item = allDatasets[currentDetailItemIndex];
-    if (item) {
-        const user = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
-        callAppsScript('recordDownload', { title: item.Judul, username: user?.Username || 'Guest' });
-    }
-}
+
 function updateDatasetCount() {
-    DOM.datasetCount.innerHTML = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> Datasets Ditemukan`;
+    DOM.datasetCount.innerHTML = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
 }
 
 function animateCountUp(el, endValue) {
@@ -853,6 +928,271 @@ function animateCountUp(el, endValue) {
       requestAnimationFrame(counter);
     }
     requestAnimationFrame(counter);
+}
+
+//==================================================
+// ADMIN, REQUEST & MESSAGE PAGE FUNCTIONS
+//==================================================
+
+// --- MODAL TOGGLERS & POPULATORS ---
+
+function toggleAddDatasetModal(show, itemToUpdate = null) {
+    if(show) {
+        DOM.addDatasetForm.reset();
+        DOM.addKategoriNew.classList.add('hidden');
+        if (itemToUpdate) {
+            // Pre-fill for 'Perbaharui'
+            DOM.addDatasetForm.querySelector('h2').textContent = 'Perbaharui SOP';
+            DOM.addDatasetForm.Judul.value = itemToUpdate.Judul;
+            // Fields to pre-fill can be added here
+        } else {
+            DOM.addDatasetForm.querySelector('h2').textContent = 'Tambah SOP Baru';
+        }
+    }
+    toggleModal('addDatasetModal', show);
+}
+
+function toggleEditDatasetModal(show, itemToEdit = null) {
+    if (show && itemToEdit) {
+        DOM.editDatasetForm.reset();
+        for (const key in itemToEdit) {
+            if (DOM.editDatasetForm[key]) {
+                DOM.editDatasetForm[key].value = itemToEdit[key];
+            }
+        }
+        DOM.editDatasetForm.rowIndex.value = itemToEdit.rowIndex;
+        const fileInfo = itemToEdit['Nama File'] ? `${itemToEdit['Nama File']} (${itemToEdit.Format})` : 'Tidak ada file saat ini.';
+        DOM.currentFileInfo.textContent = fileInfo;
+    }
+    toggleModal('editDatasetModal', show);
+}
+
+function toggleProfileModal(show) {
+    if (show) {
+        const user = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (user) {
+            for (const key in user) {
+                if (DOM.profileForm[key]) {
+                    DOM.profileForm[key].value = user[key];
+                }
+            }
+        }
+    }
+    toggleModal('profileModal', show);
+}
+
+function toggleResetPasswordModal(show) {
+    toggleModal('resetPasswordModal', show);
+}
+
+function toggleUserModal(show, userData = null) {
+    if (show) {
+        DOM.userForm.reset();
+        if (userData) {
+            DOM.userModalTitle.textContent = 'Edit Admin';
+            for (const key in userData) {
+                if (DOM.userForm[key]) {
+                    DOM.userForm[key].value = userData[key];
+                }
+            }
+            DOM.userForm.rowIndex.value = userData.rowIndex;
+        } else {
+            DOM.userModalTitle.textContent = 'Tambah Admin Baru';
+        }
+    }
+    toggleModal('userModal', show);
+}
+
+function toggleRequestDataModal(show, item = null) {
+    if(show && item) {
+        DOM.requestModalDatasetTitle.textContent = item.Judul;
+        DOM.requestDataForm.datasetTitle.value = item.Judul;
+    }
+    toggleModal('requestDataModal', show);
+}
+
+function toggleMessageModal(show) {
+    toggleModal('messageModal', show);
+}
+
+// --- STATS PAGE ---
+
+async function loadAndRenderStats() {
+    const response = await callAppsScript('getStats');
+    if (response.status === 'success' && response.data) {
+        animateCountUp(DOM.statsTotalVisitors, response.data.totalVisitors || 0);
+        animateCountUp(DOM.statsTotalDownloads, response.data.totalDownloads || 0);
+    } else {
+        DOM.statsTotalVisitors.textContent = '0';
+        DOM.statsTotalDownloads.textContent = '0';
+    }
+    // Logic to render charts would go here if Chart.js is implemented
+}
+
+// --- ADMIN LIST PAGE ---
+
+async function loadAndRenderAdminList() {
+    const response = await callAppsScript('getData', { sheetName: 'User' });
+    if (response.status === 'success') {
+        allUsers = response.data || [];
+        DOM.adminListTableBody.innerHTML = '';
+        DOM.adminListCards.innerHTML = '';
+        allUsers.forEach((user, index) => {
+            const rowHtml = `
+                <tr class="border-b">
+                    <td class="p-3">${user.Nama || ''}</td>
+                    <td class="p-3 hidden md:table-cell">${user.Username || ''}</td>
+                    <td class="p-3 hidden lg:table-cell">${user.Unit || ''}</td>
+                    <td class="p-3 hidden sm:table-cell">${user.Role || ''}</td>
+                    <td class="p-3 text-right">
+                        <button class="edit-user-button text-blue-500 hover:text-blue-700 p-2" data-index="${index}"><i class="fas fa-edit"></i></button>
+                        <button class="delete-user-button text-red-500 hover:text-red-700 p-2" data-index="${index}"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            const cardHtml = `
+                <div class="bg-white p-4 rounded-lg shadow border">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold">${user.Nama || ''}</p>
+                            <p class="text-sm text-gray-600">${user.Username || ''}</p>
+                        </div>
+                        <div class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">${user.Role || ''}</div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">${user.Unit || ''}</p>
+                    <div class="text-right mt-2 border-t pt-2">
+                        <button class="edit-user-button text-blue-500 hover:text-blue-700 p-2" data-index="${index}"><i class="fas fa-edit"></i> Edit</button>
+                        <button class="delete-user-button text-red-500 hover:text-red-700 p-2" data-index="${index}"><i class="fas fa-trash"></i> Hapus</button>
+                    </div>
+                </div>`;
+            DOM.adminListTableBody.innerHTML += rowHtml;
+            DOM.adminListCards.innerHTML += cardHtml;
+        });
+    }
+}
+
+async function handleSaveUser(e) {
+    e.preventDefault();
+    const formData = new FormData(DOM.userForm);
+    const userData = Object.fromEntries(formData.entries());
+    const isEdit = userData.rowIndex && userData.rowIndex !== '';
+    
+    const action = isEdit ? 'editUser' : 'addUser';
+    const payload = { data: userData, rowIndex: userData.rowIndex };
+
+    const response = await callAppsScript(action, payload);
+
+    if (response.status === 'success') {
+        showCustomAlert(response.message, 'success');
+        toggleUserModal(false);
+        loadAndRenderAdminList();
+    } else {
+        DOM.userFormError.textContent = response.message;
+        DOM.userFormError.classList.remove('hidden');
+    }
+}
+
+async function handleDeleteUser(index) {
+    const user = allUsers[index];
+    if (confirm(`Yakin ingin menghapus admin "${user.Nama}"?`)) {
+        const response = await callAppsScript('deleteUser', { rowIndex: user.rowIndex });
+        if (response.status === 'success') {
+            showCustomAlert('Admin berhasil dihapus.', 'success');
+            loadAndRenderAdminList();
+        } else {
+            showCustomAlert(`Gagal: ${response.message}`, 'error');
+        }
+    }
+}
+
+// --- REQUESTS PAGE ---
+
+async function loadAndRenderRequests() {
+    const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
+    if (response.status === 'success') {
+        allRequests = response.data || [];
+        DOM.requestListTableBody.innerHTML = '';
+        DOM.requestListCards.innerHTML = '';
+        allRequests.sort((a,b) => new Date(b['Tanggal']) - new Date(a['Tanggal']));
+        allRequests.forEach(req => {
+            const statusColor = req.Status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : req.Status === 'Approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+            const rowHtml = `
+                <tr class="border-b">
+                    <td class="p-3">${new Date(req.Tanggal).toLocaleDateString('id-ID')}</td>
+                    <td class="p-3">${req['Judul SOP'] || ''}</td>
+                    <td class="p-3 hidden md:table-cell">${req.Pemohon || ''} (${req.Email || ''})</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor}">${req.Status}</span></td>
+                    <td class="p-3 text-right">
+                        ${req.Status === 'Pending' ? `
+                        <button class="status-update-button bg-green-500 text-white px-2 py-1 text-xs rounded hover:bg-green-600" data-row="${req.rowIndex}" data-status="Approved">Setujui</button>
+                        <button class="status-update-button bg-red-500 text-white px-2 py-1 text-xs rounded hover:bg-red-600" data-row="${req.rowIndex}" data-status="Rejected">Tolak</button>
+                        ` : `Direspon oleh ${req['Direspon Oleh'] || 'N/A'}`}
+                    </td>
+                </tr>`;
+            DOM.requestListTableBody.innerHTML += rowHtml;
+        });
+    }
+}
+
+async function handleAddRequest(e) {
+    e.preventDefault();
+    DOM.requestFormError.classList.add('hidden');
+    const formData = new FormData(DOM.requestDataForm);
+    const requestData = Object.fromEntries(formData.entries());
+
+    const response = await callAppsScript('addRequest', requestData);
+    if(response.status === 'success') {
+        toggleRequestDataModal(false);
+        showCustomAlert('Permohonan Anda berhasil dikirim.', 'success');
+    } else {
+        DOM.requestFormError.textContent = response.message;
+        DOM.requestFormError.classList.remove('hidden');
+    }
+}
+
+async function handleStatusUpdateClick(e) {
+    const button = e.target.closest('.status-update-button');
+    const rowIndex = button.dataset.row;
+    const status = button.dataset.status;
+    const user = JSON.parse(sessionStorage.getItem('currentUser'));
+
+    const response = await callAppsScript('updateRequest', { rowIndex, status, user: user.Username });
+    if(response.status === 'success') {
+        showCustomAlert('Status permohonan diperbarui.', 'success');
+        loadAndRenderRequests();
+    } else {
+        showCustomAlert(`Gagal: ${response.message}`, 'error');
+    }
+}
+
+// --- MESSAGES PAGE ---
+
+async function loadAndRenderMessages() {
+    const response = await callAppsScript('getData', { sheetName: 'messages' });
+    if (response.status === 'success') {
+        allMessages = response.data || [];
+        DOM.messageListContainer.innerHTML = '';
+        allMessages.sort((a,b) => new Date(b.Tanggal) - new Date(a.Tanggal));
+        allMessages.forEach(msg => {
+            DOM.messageListContainer.innerHTML += `
+                <div class="message-item bg-white p-4 rounded-lg shadow border cursor-pointer hover:bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold">${msg.Nama} <span class="text-sm font-normal text-gray-500">- ${msg.Kontak}</span></p>
+                        <span class="text-xs text-gray-500">${new Date(msg.Tanggal).toLocaleString('id-ID')}</span>
+                    </div>
+                    <p class="mt-2 text-gray-700">${msg.Pesan}</p>
+                </div>
+            `;
+        });
+    }
+}
+
+function handleMessageClick(e) {
+    // Bisa ditambahkan fungsi untuk menampilkan detail pesan
+    const item = e.target.closest('.message-item');
+    if(item) {
+        // Logika untuk menampilkan detail pesan bisa ditambahkan di sini
+        console.log("Pesan diklik:", item);
+    }
 }
 
 // RUN APP
