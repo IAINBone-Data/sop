@@ -99,7 +99,6 @@
                     <button id="reload-dataset-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm flex items-center whitespace-nowrap" title="Muat Ulang Data">
                         <i id="reload-icon" class="fas fa-sync-alt"></i>
                     </button>
-                    <!-- [PERUBAHAN] Menambahkan filter Unit dan Fungsi -->
                     <div>
                         <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Semua Unit</option>
@@ -187,12 +186,11 @@
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-3">Metadata</h3>
                         <table class="w-full text-sm text-left text-gray-600">
                             <tbody>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Produsen Data</td><td id="meta-produsen" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Penanggung Jawab</td><td id="meta-penanggung-jawab" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Dibuat</td><td id="meta-tanggal" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Diperbaharui</td><td id="meta-diperbaharui" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Frekuensi</td><td id="meta-frekuensi" class="py-3 px-2"></td></tr>
-                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tahun Data</td><td id="meta-tahun-data" class="py-3 px-2"></td></tr>
+                                <!-- [PERUBAHAN] Metadata disesuaikan -->
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Unit</td><td id="meta-unit" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Fungsi</td><td id="meta-fungsi" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Pembuatan</td><td id="meta-tanggal" class="py-3 px-2"></td></tr>
+                                <tr class="border-b"><td class="py-3 px-2 font-semibold">Tanggal Revisi</td><td id="meta-diperbaharui" class="py-3 px-2"></td></tr>
                             </tbody>
                         </table>
                     </div>
