@@ -230,7 +230,6 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
-
 function showDetailView(idsop) {
     const trimmedIdsop = idsop ? idsop.trim() : '';
     const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
@@ -243,9 +242,6 @@ function showDetailView(idsop) {
     
     DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
     DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
-    DOM.detailFileTitle.textContent = item['Nama SOP'] || 'File SOP'; // Menggunakan Nama SOP sebagai judul file
-    const formatText = (item.Format || 'N/A').toUpperCase();
-    DOM.detailFileFormat.textContent = formatText;
     
     DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
     DOM.metaUnit.textContent = item.Unit || 'N/A';
@@ -264,7 +260,7 @@ function showDetailView(idsop) {
     if (item.Status) {
         DOM.detailStatus.textContent = item.Status;
         DOM.detailStatus.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
-        if (item.Status.toLowerCase() === 'berlaku') {
+        if (item.Status.toLowerCase() === 'berlaku' || item.Status.toLowerCase() === 'aktif') {
             DOM.detailStatus.classList.add('bg-green-100', 'text-green-800');
         } else {
             DOM.detailStatus.classList.add('bg-red-100', 'text-red-800');
@@ -275,7 +271,11 @@ function showDetailView(idsop) {
     
     DOM.detailDownloadLink.style.display = 'inline-block';
 
-    const fileId = item['File ID'] || '';
+    const fileUrl = item.File || '';
+    // [PERUBAHAN] Ekstrak File ID dari URL Google Drive
+    const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/;
+    const match = fileUrl.match(driveRegex);
+    const fileId = match ? match[1] : null;
 
     DOM.tablePreviewContainer.classList.add('hidden');
     DOM.tablePreviewContent.innerHTML = '';
