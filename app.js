@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     'reloadDatasetButton', 'detailTitle', 'detailUraian',
     'detailFileTitle', 'detailFilenameDisplay', 'detailFileFormat', 'detailDownloadLink', 'metaProdusen',
     'metaPenanggungJawab', 'metaTanggal', 'metaDiperbaharui', 'metaFrekuensi', 'metaTahunData', 'tablePreviewContainer',
-    'tablePreviewContent', 'loginModal', 'closeLoginModal'
+    'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi' // [PERUBAHAN] Menambahkan ID filter baru
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
  // === STATE MANAGEMENT ===
  let allDatasets = [];
  let currentPage = 1;
- const rowsPerPage = 100; // [PERUBAHAN] Menaikkan paginasi menjadi 100
+ const rowsPerPage = 100;
  let currentFilteredData = [];
  
   // === API HELPER ===
@@ -87,6 +87,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (response.status === 'success') {
           allDatasets = response.data || [];
           allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
+          
+          // [PERUBAHAN] Memanggil fungsi untuk mengisi dropdown filter
+          populateFilterOptions();
           applyFiltersAndRender();
       } else {
           showErrorState('Gagal Memuat Data', response.message);
@@ -105,6 +108,9 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    DOM.searchInput.addEventListener('input', applyFiltersAndRender);
+   // [PERUBAHAN] Menambahkan event listener untuk filter baru
+   DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
+   DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
@@ -128,16 +134,24 @@ function applyFiltersAndRender() {
     let filteredData = [...allDatasets];
     
     const searchTerm = DOM.searchInput.value.toLowerCase();
+    const selectedUnit = DOM.filterUnit.value;
+    const selectedFungsi = DOM.filterFungsi.value;
+
     if (searchTerm) {
         filteredData = filteredData.filter(item => 
             (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
             (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
         );
     }
-    
-    // Default sort is by newest (based on IDSOP in loadInitialData)
-    // No more date sorting needed here
 
+    if (selectedUnit) {
+        filteredData = filteredData.filter(item => item.Unit === selectedUnit);
+    }
+    
+    if (selectedFungsi) {
+        filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
+    }
+    
     currentFilteredData = filteredData;
     currentPage = 1;
     renderPageContent();
@@ -316,6 +330,24 @@ function setLoadingState(isLoading) {
         }
     }
 }
+
+// [PERUBAHAN] Fungsi baru untuk mengisi dropdown filter
+function populateFilterOptions() {
+    const units = [...new Set(allDatasets.map(item => item.Unit).filter(Boolean))].sort();
+    const fungsis = [...new Set(allDatasets.map(item => item.Fungsi).filter(Boolean))].sort();
+
+    const populateSelect = (selectElement, options, defaultText) => {
+        if (!selectElement) return;
+        selectElement.innerHTML = `<option value="">${defaultText}</option>`;
+        options.forEach(option => {
+            selectElement.innerHTML += `<option value="${option}">${option}</option>`;
+        });
+    };
+
+    populateSelect(DOM.filterUnit, units, "Semua Unit");
+    populateSelect(DOM.filterFungsi, fungsis, "Semua Fungsi");
+}
+
 
 function toggleSideMenu(show) {
     if(DOM.popupMenu) DOM.popupMenu.classList.toggle('-translate-x-full', !show);
