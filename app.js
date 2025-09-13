@@ -23,7 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'metaPenandatangan', 'metaUnit', 'metaFungsi', 'metaTanggal', 'metaDiperbaharui', 'metaRevisiRow',
     'metaEfektif', 'detailStatus', 'tablePreviewContainer',
     'tablePreviewContent', 'loginModal', 'closeLoginModal', 'filterUnit', 'filterFungsi',
-    'resetFilterButton'
+    'resetFilterButton',
+    // [BARU] Elemen untuk modal filter
+    'filterModal', 'openFilterModalButton', 'closeFilterModalButton', 'applyFilterButton'
   ];
    ids.forEach(id => {
        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -109,8 +111,11 @@ document.addEventListener('DOMContentLoaded', function () {
    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
    DOM.searchInput.addEventListener('input', applyFiltersAndRender);
-   DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
-   DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
+   
+    // [DIHAPUS] Event listener 'change' pada select filter dihapus.
+   // DOM.filterUnit.addEventListener('change', applyFiltersAndRender);
+   // DOM.filterFungsi.addEventListener('change', applyFiltersAndRender);
+
    DOM.reloadDatasetButton.addEventListener('click', handleReload);
    DOM.resetFilterButton.addEventListener('click', resetFilters);
    DOM.datasetList.addEventListener('click', handleDatasetListClick);
@@ -118,14 +123,25 @@ document.addEventListener('DOMContentLoaded', function () {
    if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
+
+    // [BARU] Event listener untuk modal filter
+    DOM.openFilterModalButton.addEventListener('click', () => toggleModal('filter-modal', true));
+    DOM.closeFilterModalButton.addEventListener('click', () => toggleModal('filter-modal', false));
+    DOM.applyFilterButton.addEventListener('click', () => {
+        applyFiltersAndRender();
+        toggleModal('filter-modal', false);
+    });
  };
 
 //==================================================
 // UI UPDATE FUNCTIONS
 //==================================================
 
+/**
+ * [DIUBAH] Mengganti tombol login menjadi ikon pengguna.
+ */
 function updateUIForLoginStatus() {
-  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 text-sm"><i class="fas fa-sign-in-alt mr-2"></i>Login</button>`;
+  DOM.userInfoContainer.innerHTML = `<button id="admin-login-button" class="bg-blue-600 text-white font-bold h-10 w-10 rounded-full hover:bg-blue-700 flex items-center justify-center" title="Login Administrator"><i class="fas fa-user"></i></button>`;
 }
 
 //==================================================
@@ -229,14 +245,6 @@ function formatDate(dateString) {
     return `${day}/${month}/${year}`;
 }
 
-/**
- * =========================================================================
- * FUNGSI INI TELAH DIPERBARUI
- * =========================================================================
- * Menampilkan halaman detail untuk item SOP yang dipilih.
- * Termasuk logika yang ditingkatkan untuk menampilkan pratinjau PDF.
- * @param {string} idsop - ID unik dari SOP.
- */
 function showDetailView(idsop) {
     const trimmedIdsop = idsop ? idsop.trim() : '';
     const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
@@ -437,3 +445,4 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
+
