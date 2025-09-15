@@ -109,6 +109,16 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- UI & DATA RENDERING ---
+    const updateCount = (viewName, filteredData) => {
+        const countElement = document.getElementById(`${viewName}-count`);
+        if (countElement) {
+            const total = allData[viewName].length;
+            const showing = filteredData.length;
+            const itemType = viewName === 'sop' ? 'SOP' : 'Permohonan';
+            countElement.innerHTML = `Menampilkan <strong>${showing}</strong> dari <strong>${total}</strong> total ${itemType}.`;
+        }
+    };
+
     const renderView = (viewName, data) => {
         const container = document.getElementById(`${viewName}-view`);
         if (!container) return;
@@ -116,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const addButtonHTML = `<button onclick="window.adminApp.open${isSopView ? 'Sop' : 'Permohonan'}Modal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>`;
         
         const filtersHTML = `
-            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
                 <div class="flex flex-wrap items-center gap-2 flex-grow">
                     <div class="relative flex-grow min-w-[200px]">
                         <input type="search" data-view="${viewName}" class="filter-search w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Cari...">
@@ -131,13 +141,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${addButtonHTML}
                 </div>
             </div>`;
+        
+        const countHTML = `<div class="text-sm text-gray-600 mb-4" id="${viewName}-count"></div>`;
 
         let contentHTML = '';
         if (viewName === 'permohonan') contentHTML = getPermohonanHTML(data);
         if (isSopView) contentHTML = getSopHTML(data);
         
-        container.innerHTML = filtersHTML + `<div class="content-wrapper">${contentHTML}</div>`;
+        container.innerHTML = filtersHTML + countHTML + `<div class="content-wrapper">${contentHTML}</div>`;
         populateFilters(viewName, allData[viewName]);
+        updateCount(viewName, data);
     };
     
     const applyFiltersAndRender = (viewName) => {
@@ -164,6 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (viewName === 'sop') contentHTML = getSopHTML(filteredData);
         const contentContainer = document.querySelector(`#${viewName}-view .content-wrapper`);
         if(contentContainer) contentContainer.innerHTML = contentHTML;
+        updateCount(viewName, filteredData);
     };
     
     const populateFilters = (viewName, data) => {
@@ -282,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             </tr>`;
         }).join('');
-
         const cards = data.map(item => {
             const fileButton = (item.File && item.File.startsWith('http')) 
                 ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
@@ -302,7 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>`;
         }).join('');
-
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
     
