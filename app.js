@@ -91,9 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   const loadInitialData = async (isReload = false) => {
-    // [OPTIMISASI] Durasi cache browser diatur ke 1 jam.
     const CACHE_DURATION_HOURS = 1;
-
 
     if (isReload) {
         showToast('Memuat ulang data SOP...');
@@ -104,36 +102,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 const cache = JSON.parse(cachedItem);
                 const cacheAgeHours = (new Date().getTime() - cache.timestamp) / (1000 * 60 * 60);
 
-
-                // Jika cache valid dan masih baru, gunakan data dari cache dan hentikan eksekusi.
                 if (cache.data && cache.timestamp && cacheAgeHours < CACHE_DURATION_HOURS) {
-                    console.log("Memuat data dari cache browser yang masih baru.");
                     allDatasets = cache.data;
                     populateFilterOptions();
                     applyFiltersAndRender();
                     setLoadingState(false);
-                    
-                    if (!isPermohonanLoaded) {
-                        loadPermohonanDataInBackground();
-                    }
-                    return; // Hentikan fungsi agar tidak mengambil data baru dari server.
+                    if (!isPermohonanLoaded) loadPermohonanDataInBackground();
+                    return;
                 }
             } catch (e) {
-                console.error("Gagal mem-parsing cache, cache akan dihapus:", e);
+                console.error("Gagal mem-parsing cache:", e);
                 localStorage.removeItem('sopDataCache');
             }
         }
-        // Tampilkan loading halaman penuh hanya jika tidak ada cache sama sekali atau cache sudah usang.
         setLoadingState(true);
         if (DOM.datasetList) DOM.datasetList.innerHTML = '';
     }
     
-    // Baris ini hanya akan dieksekusi jika:
-    // 1. Ini adalah reload paksa (isReload = true).
-    // 2. Tidak ada cache di browser.
-    // 3. Cache di browser sudah usang (lebih dari 1 jam).
     const response = await callAppsScript('getData', { sheetName: 'SOP' });
-
 
     if (response.status === 'success') {
         allDatasets = response.data || [];
@@ -142,31 +128,18 @@ document.addEventListener('DOMContentLoaded', function () {
         populateFilterOptions();
         applyFiltersAndRender();
         
-        // Simpan data baru yang segar beserta timestamp ke cache browser.
         try {
-            const cacheData = {
-                data: allDatasets,
-                timestamp: new Date().getTime()
-            };
+            const cacheData = { data: allDatasets, timestamp: new Date().getTime() };
             localStorage.setItem('sopDataCache', JSON.stringify(cacheData));
         } catch (e) {
             console.warn("Gagal menyimpan data ke localStorage:", e);
         }
         
-        if (isReload) {
-            showToast('Data berhasil dimuat ulang!', 'success');
-        }
-
-
-        if (!isPermohonanLoaded) {
-            loadPermohonanDataInBackground();
-        }
+        if (isReload) showToast('Data berhasil dimuat ulang!', 'success');
+        if (!isPermohonanLoaded) loadPermohonanDataInBackground();
     } else {
-        if (isReload) {
-            showToast(`Gagal memuat: ${response.message}`, 'error');
-        } else {
-            showErrorState('Gagal Memuat Data', response.message);
-        }
+        if (isReload) showToast(`Gagal memuat: ${response.message}`, 'error');
+        else showErrorState('Gagal Memuat Data', response.message);
     }
     
     setLoadingState(false);
@@ -174,216 +147,217 @@ document.addEventListener('DOMContentLoaded', function () {
   
   // === EVENT LISTENERS SETUP ===
   const setupEventListeners = () => {
-    DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
-    DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
-    DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
-    DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container', true); });
-    DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
-    DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
-    DOM.permohonanLink.addEventListener('click', (e) => { e.preventDefault(); displayPermohonanView(); });
-    DOM.searchInput.addEventListener('input', syncAndFilter);
-    DOM.searchInputMobile.addEventListener('input', syncAndFilter);
-    DOM.filterUnit.addEventListener('change', syncAndFilter);
-    DOM.filterFungsi.addEventListener('change', syncAndFilter);
-    DOM.filterUnitModal.addEventListener('change', syncAndFilter);
-    DOM.filterFungsiModal.addEventListener('change', syncAndFilter);
-    DOM.reloadDatasetButton.addEventListener('click', handleReload);
-    DOM.resetFilterButton.addEventListener('click', resetFilters);
-    DOM.resetFilterButtonMobile.addEventListener('click', resetFilters);
-    DOM.datasetList.addEventListener('click', handleDatasetListClick);
-    DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick);
+    if (DOM.headerTitleLink) DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
+    if (DOM.hamburgerMenuButton) DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
+    if (DOM.menuOverlay) DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
+    if (DOM.homeLink) DOM.homeLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container', true); });
+    if (DOM.aboutLink) DOM.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showView('about-view-container', true); });
+    if (DOM.backToListButton) DOM.backToListButton.addEventListener('click', () => showView('list-view-container'));
+    if (DOM.permohonanLink) DOM.permohonanLink.addEventListener('click', (e) => { e.preventDefault(); displayPermohonanView(); });
+    if (DOM.searchInput) DOM.searchInput.addEventListener('input', syncAndFilter);
+    if (DOM.searchInputMobile) DOM.searchInputMobile.addEventListener('input', syncAndFilter);
+    if (DOM.filterUnit) DOM.filterUnit.addEventListener('change', syncAndFilter);
+    if (DOM.filterFungsi) DOM.filterFungsi.addEventListener('change', syncAndFilter);
+    if (DOM.filterUnitModal) DOM.filterUnitModal.addEventListener('change', syncAndFilter);
+    if (DOM.filterFungsiModal) DOM.filterFungsiModal.addEventListener('change', syncAndFilter);
+    if (DOM.reloadDatasetButton) DOM.reloadDatasetButton.addEventListener('click', handleReload);
+    if (DOM.resetFilterButton) DOM.resetFilterButton.addEventListener('click', resetFilters);
+    if (DOM.resetFilterButtonMobile) DOM.resetFilterButtonMobile.addEventListener('click', resetFilters);
+    if (DOM.datasetList) DOM.datasetList.addEventListener('click', handleDatasetListClick);
+    if (DOM.datasetCardsContainer) DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick);
     if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
-    DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
-    DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
-    DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
-    DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
-    DOM.toggleMetadataButton.addEventListener('click', () => {
+    if (DOM.closeCustomAlert) DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
+    if (DOM.closeLoginModal) DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
+    if (DOM.openFilterButton) DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
+    if (DOM.closeFilterModal) DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
+    if (DOM.toggleMetadataButton) DOM.toggleMetadataButton.addEventListener('click', () => {
          DOM.metadataContent.classList.toggle('hidden');
          DOM.metadataChevron.classList.toggle('rotate-180');
     });
-
-
-    DOM.ajukanSopButtonPage.addEventListener('click', openPermohonanForm);
-    DOM.closeFormModal.addEventListener('click', () => toggleModal('form-permohonan-modal', false));
-    DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
-    DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
+    if (DOM.ajukanSopButtonPage) DOM.ajukanSopButtonPage.addEventListener('click', openPermohonanForm);
+    if (DOM.closeFormModal) DOM.closeFormModal.addEventListener('click', () => toggleModal('form-permohonan-modal', false));
+    if (DOM.permohonanForm) DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
+    if (DOM.reloadDatasetButtonMobile) DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
   };
 
-
-//==================================================
-// UI UPDATE FUNCTIONS
-//==================================================
-
-
 function updateUIForLoginStatus() {
+  if(!DOM.userInfoContainer) return;
   DOM.userInfoContainer.innerHTML = `
     <button id="ajukan-sop-button-header" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
       <i class="fas fa-plus"></i>
       <span class="hidden sm:inline">Ajukan SOP</span>
     </button>
-    <a href="admin.html" class="bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Login Administrator">
-      <i class="fas fa-user-shield"></i>
-    </a>
+    <button id="admin-login-button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Login Administrator">
+      <i class="fas fa-user"></i>
+    </button>
   `;
   document.getElementById('ajukan-sop-button-header').addEventListener('click', openPermohonanForm);
+  document.getElementById('admin-login-button').addEventListener('click', () => toggleModal('login-modal', true));
 }
 
-
-// ... (Fungsi render dan filter SOP tidak berubah)
 function syncAndFilter(event) {
-      const sourceElement = event.target;
-      if (sourceElement.id === 'search-input') DOM.searchInputMobile.value = sourceElement.value;
-      else if (sourceElement.id === 'search-input-mobile') DOM.searchInput.value = sourceElement.value;
-      if (sourceElement.id === 'filter-unit') DOM.filterUnitModal.value = sourceElement.value;
-      else if (sourceElement.id === 'filter-unit-modal') DOM.filterUnit.value = sourceElement.value;
-      if (sourceElement.id === 'filter-fungsi') DOM.filterFungsiModal.value = sourceElement.value;
-      else if (sourceElement.id === 'filter-fungsi-modal') DOM.filterFungsi.value = sourceElement.value;
-      applyFiltersAndRender();
-}
-function applyFiltersAndRender() {
-       let filteredData = [...allDatasets];
-       const searchTerm = DOM.searchInput.value.toLowerCase();
-       const selectedUnit = DOM.filterUnit.value;
-       const selectedFungsi = DOM.filterFungsi.value;
-       if (searchTerm) {
-           filteredData = filteredData.filter(item => 
-               (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
-               (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
-           );
-       }
-       if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
-       if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
-       currentFilteredData = filteredData;
-       currentPage = 1;
-       renderPageContent();
-}
-function renderPageContent() {
-      DOM.datasetList.innerHTML = ''; 
-      DOM.datasetCardsContainer.innerHTML = ''; 
-      DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
-      if (currentFilteredData.length === 0) {
-          if(DOM.paginationContainer) DOM.paginationContainer.innerHTML = '';
-          updateDatasetCount();
-          return;
-      }
-      const startIndex = (currentPage - 1) * rowsPerPage;
-      const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
-      paginatedItems.forEach(item => {
-          const unitText = item.Unit || 'N/A';
-          const fungsiText = item.Fungsi || 'N/A';
-          const nomorSOP = item['Nomor SOP'] || 'N/A';
-          const safeIDSOP = (item.IDSOP || '').trim();
-          const unitLabel = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${unitText}</span>`;
-          const tableRowHTML = `
-                <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
-                    <td class="p-4 text-sm text-gray-700">${nomorSOP}</td>
-                    <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                    <td class="p-4 text-sm text-gray-700">${unitLabel}</td>
-                    <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
-                </tr>`;
-          const cardHTML = `
-                <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
-                    <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
-                    <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
-                        ${unitLabel} <span class="mx-1">-</span> <span>${fungsiText}</span>
-                    </p>
-                </div>`;
-          DOM.datasetList.innerHTML += tableRowHTML;
-          DOM.datasetCardsContainer.innerHTML += cardHTML;
-      });
-      renderPaginationControls();
-      updateDatasetCount();
-}
-function renderPaginationControls() {
-      if(!DOM.paginationContainer) return;
-      DOM.paginationContainer.innerHTML = '';
-      const totalPages = Math.ceil(currentFilteredData.length / rowsPerPage);
-      if (totalPages <= 1) return;
-      let paginationHTML = '';
-      paginationHTML += `<button class="px-3 py-1 rounded-md ${currentPage === 1 ? 'opacity-50' : 'hover:bg-blue-100'}" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&laquo;</button>`;
-      paginationHTML += `<span class="px-3 py-1 text-sm">Halaman ${currentPage} dari ${totalPages}</span>`;
-      paginationHTML += `<button class="px-3 py-1 rounded-md ${currentPage === totalPages ? 'opacity-50' : 'hover:bg-blue-100'}" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&raquo;</button>`;
-      DOM.paginationContainer.innerHTML = paginationHTML;
-      DOM.paginationContainer.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
-          currentPage = parseInt(e.currentTarget.dataset.page);
-          renderPageContent();
-          window.scrollTo(0, 0);
-      }));
-}
-function showDetailView(idsop) {
-      const trimmedIdsop = idsop ? idsop.trim() : '';
-      const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
-      if (!item) {
-          showCustomAlert('Data tidak ditemukan.', 'error');
-          showView('list-view-container');
-          return;
-      }
-      DOM.metadataContent.classList.add('hidden');
-      DOM.metadataChevron.classList.remove('rotate-180');
-      DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
-      DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
-      DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
-      DOM.metaUnit.textContent = item.Unit || 'N/A';
-      DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
-      DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] || 'N/A';
-      DOM.metaEfektif.textContent = item['Tanggal Efektif'] || 'N/A';
-      const tanggalRevisi = item['Tanggal Revisi'] || 'N/A';
-      if (tanggalRevisi !== "N/A" && tanggalRevisi.trim() !== "") {
-          DOM.metaDiperbaharui.textContent = tanggalRevisi;
-          DOM.metaRevisiRow.classList.remove('hidden');
-      } else {
-          DOM.metaRevisiRow.classList.add('hidden');
-      }
-      if (item.Status) {
-          DOM.detailStatus.textContent = item.Status;
-          DOM.detailStatus.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
-          if (item.Status.toLowerCase() === 'berlaku' || item.Status.toLowerCase() === 'aktif') {
-              DOM.detailStatus.classList.add('bg-green-100', 'text-green-800');
-          } else {
-              DOM.detailStatus.classList.add('bg-red-100', 'text-red-800');
-          }
-      } else {
-          DOM.detailStatus.classList.add('hidden');
-      }
-      DOM.detailDownloadLink.style.display = 'inline-block';
-      const fileUrl = item.File || '';
-      const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
-      const match = fileUrl.match(driveRegex);
-      const fileId = match ? match[1] : null;
-      DOM.tablePreviewContainer.classList.add('hidden');
-      DOM.tablePreviewContent.innerHTML = '';
-      if (fileId) {
-          DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
-          DOM.tablePreviewContainer.classList.remove('hidden');
-          DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
-      } else {
-          DOM.detailDownloadLink.href = '#';
-      }
-      showView('detail-view-container');
+    const sourceElement = event.target;
+    if (sourceElement.id === 'search-input' && DOM.searchInputMobile) DOM.searchInputMobile.value = sourceElement.value;
+    else if (sourceElement.id === 'search-input-mobile' && DOM.searchInput) DOM.searchInput.value = sourceElement.value;
+    
+    if (sourceElement.id === 'filter-unit' && DOM.filterUnitModal) DOM.filterUnitModal.value = sourceElement.value;
+    else if (sourceElement.id === 'filter-unit-modal' && DOM.filterUnit) DOM.filterUnit.value = sourceElement.value;
+
+    if (sourceElement.id === 'filter-fungsi' && DOM.filterFungsiModal) DOM.filterFungsiModal.value = sourceElement.value;
+    else if (sourceElement.id === 'filter-fungsi-modal' && DOM.filterFungsi) DOM.filterFungsi.value = sourceElement.value;
+    
+    applyFiltersAndRender();
 }
 
+function applyFiltersAndRender() {
+    let filteredData = [...allDatasets];
+    const searchTerm = DOM.searchInput ? DOM.searchInput.value.toLowerCase() : '';
+    const selectedUnit = DOM.filterUnit ? DOM.filterUnit.value : '';
+    const selectedFungsi = DOM.filterFungsi ? DOM.filterFungsi.value : '';
+
+    if (searchTerm) {
+        filteredData = filteredData.filter(item => 
+            (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
+            (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
+        );
+    }
+    if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
+    if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
+    
+    currentFilteredData = filteredData;
+    currentPage = 1;
+    renderPageContent();
+}
+
+function renderPageContent() {
+    if (!DOM.datasetList || !DOM.datasetCardsContainer) return;
+    DOM.datasetList.innerHTML = ''; 
+    DOM.datasetCardsContainer.innerHTML = ''; 
+    
+    if(DOM.noDataMessage) DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
+
+    if (currentFilteredData.length === 0) {
+        if (DOM.paginationContainer) DOM.paginationContainer.innerHTML = '';
+        updateDatasetCount();
+        return;
+    }
+
+    const startIndex = (currentPage - 1) * rowsPerPage;
+    const paginatedItems = currentFilteredData.slice(startIndex, startIndex + rowsPerPage);
+
+    paginatedItems.forEach(item => {
+        const unitText = item.Unit || 'N/A';
+        const fungsiText = item.Fungsi || 'N/A';
+        const nomorSOP = item['Nomor SOP'] || 'N/A';
+        const safeIDSOP = (item.IDSOP || '').trim();
+        const unitLabel = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${unitText}</span>`;
+        const tableRowHTML = `
+            <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
+                <td class="p-4 text-sm text-gray-700">${nomorSOP}</td>
+                <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
+                <td class="p-4 text-sm text-gray-700">${unitLabel}</td>
+                <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
+            </tr>`;
+        const cardHTML = `
+            <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
+                <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
+                <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
+                    ${unitLabel} <span class="mx-1">-</span> <span>${fungsiText}</span>
+                </p>
+            </div>`;
+        DOM.datasetList.innerHTML += tableRowHTML;
+        DOM.datasetCardsContainer.innerHTML += cardHTML;
+    });
+
+    renderPaginationControls();
+    updateDatasetCount();
+}
+
+function renderPaginationControls() {
+    if(!DOM.paginationContainer) return;
+    DOM.paginationContainer.innerHTML = '';
+    const totalPages = Math.ceil(currentFilteredData.length / rowsPerPage);
+    if (totalPages <= 1) return;
+
+    let paginationHTML = '';
+    paginationHTML += `<button class="px-3 py-1 rounded-md ${currentPage === 1 ? 'opacity-50' : 'hover:bg-blue-100'}" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">&laquo;</button>`;
+    paginationHTML += `<span class="px-3 py-1 text-sm">Halaman ${currentPage} dari ${totalPages}</span>`;
+    paginationHTML += `<button class="px-3 py-1 rounded-md ${currentPage === totalPages ? 'opacity-50' : 'hover:bg-blue-100'}" ${currentPage === totalPages ? 'disabled' : ''} data-page="${currentPage + 1}">&raquo;</button>`;
+    
+    DOM.paginationContainer.innerHTML = paginationHTML;
+    DOM.paginationContainer.querySelectorAll('button').forEach(btn => btn.addEventListener('click', (e) => {
+        currentPage = parseInt(e.currentTarget.dataset.page);
+        renderPageContent();
+        window.scrollTo(0, 0);
+    }));
+}
+
+function showDetailView(idsop) {
+    const trimmedIdsop = idsop ? idsop.trim() : '';
+    const item = allDatasets.find(d => (d.IDSOP || '').trim() === trimmedIdsop);
+    if (!item) {
+        showCustomAlert('Data tidak ditemukan.', 'error');
+        showView('list-view-container');
+        return;
+    }
+    
+    DOM.metadataContent.classList.add('hidden');
+    DOM.metadataChevron.classList.remove('rotate-180');
+    DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
+    DOM.detailUraian.textContent = item['Nomor SOP'] || 'Tidak ada nomor SOP.';
+    DOM.metaPenandatangan.textContent = item.Penandatangan || 'N/A';
+    DOM.metaUnit.textContent = item.Unit || 'N/A';
+    DOM.metaFungsi.textContent = item.Fungsi || 'N/A';
+    DOM.metaTanggal.textContent = item['Tanggal Pembuatan'] || 'N/A';
+    DOM.metaEfektif.textContent = item['Tanggal Efektif'] || 'N/A';
+    const tanggalRevisi = item['Tanggal Revisi'] || 'N/A';
+    if (tanggalRevisi !== "N/A" && tanggalRevisi.trim() !== "") {
+        DOM.metaDiperbaharui.textContent = tanggalRevisi;
+        DOM.metaRevisiRow.classList.remove('hidden');
+    } else {
+        DOM.metaRevisiRow.classList.add('hidden');
+    }
+    if (item.Status) {
+        DOM.detailStatus.textContent = item.Status;
+        DOM.detailStatus.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'bg-red-100', 'text-red-800');
+        if (item.Status.toLowerCase() === 'berlaku' || item.Status.toLowerCase() === 'aktif') {
+            DOM.detailStatus.classList.add('bg-green-100', 'text-green-800');
+        } else {
+            DOM.detailStatus.classList.add('bg-red-100', 'text-red-800');
+        }
+    } else {
+        DOM.detailStatus.classList.add('hidden');
+    }
+    DOM.detailDownloadLink.style.display = 'inline-block';
+    const fileUrl = item.File || '';
+    const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
+    const match = fileUrl.match(driveRegex);
+    const fileId = match ? match[1] : null;
+    DOM.tablePreviewContainer.classList.add('hidden');
+    DOM.tablePreviewContent.innerHTML = '';
+    if (fileId) {
+        DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
+        DOM.tablePreviewContainer.classList.remove('hidden');
+        DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
+    } else {
+        DOM.detailDownloadLink.href = '#';
+    }
+    showView('detail-view-container');
+}
 
 //==================================================
 // FUNGSI-FUNGSI UNTUK HALAMAN PERMOHONAN
 //==================================================
 
-
 const displayPermohonanView = () => {
     showView('permohonan-view-container', true);
-    if (!isPermohonanLoaded) {
-        loadPermohonanData();
-    } else {
-        renderPermohonanData();
-    }
+    loadPermohonanData();
 };
 
 const loadPermohonanDataInBackground = async () => {
     const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
     if (response.status === 'success') {
         allPermohonan = response.data || [];
-        if (allPermohonan.length > 0 && allPermohonan[0].Timestamp) {
-            allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
-        }
         isPermohonanLoaded = true;
     }
 };
@@ -391,6 +365,7 @@ const loadPermohonanDataInBackground = async () => {
 const loadPermohonanData = async () => {
     DOM.permohonanLoadingIndicator.style.display = 'block';
     DOM.permohonanContent.classList.add('hidden');
+    DOM.permohonanNoDataMessage.classList.add('hidden');
     
     const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
     
@@ -409,12 +384,12 @@ const loadPermohonanData = async () => {
     }
 };
 
-
 const renderPermohonanData = () => {
     DOM.permohonanTableBody.innerHTML = '';
     DOM.permohonanCardsContainer.innerHTML = '';
     DOM.permohonanContent.classList.remove('hidden');
     const contentContainer = DOM.permohonanContent.querySelector('.bg-white');
+    
     if (allPermohonan.length === 0) {
         DOM.permohonanNoDataMessage.classList.remove('hidden');
         if (contentContainer) contentContainer.classList.add('hidden');
@@ -430,48 +405,28 @@ const renderPermohonanData = () => {
                 default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
             }
             const formattedTimestamp = item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
-            const rowHTML = `
-                <tr>
-                    <td class="p-4 text-sm text-gray-700 font-mono">${item.IDPermohonan || 'N/A'}</td>
-                    <td class="p-4 text-sm text-gray-700">${formattedTimestamp}</td>
-                    <td class="p-4 text-sm text-gray-700">${item.Unit || 'N/A'}</td>
-                    <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'N/A'}</td>
-                    <td class="p-4 text-sm text-gray-700">${statusBadge}</td>
-                    <td class="p-4 text-sm text-gray-500">${item.Keterangan || ''}</td>
-                </tr>`;
+            const rowHTML = `<tr><td class="p-4 text-sm text-gray-700 font-mono">${item.IDPermohonan || 'N/A'}</td><td class="p-4 text-sm text-gray-700">${formattedTimestamp}</td><td class="p-4 text-sm text-gray-700">${item.Unit || 'N/A'}</td><td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'N/A'}</td><td class="p-4 text-sm text-gray-700">${statusBadge}</td><td class="p-4 text-sm text-gray-500">${item.Keterangan || ''}</td></tr>`;
             DOM.permohonanTableBody.innerHTML += rowHTML;
 
-
-            const cardHTML = `
-                <div class="p-4 space-y-2">
-                    <div class="flex justify-between items-start">
-                        <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'N/A'}</p>
-                        ${statusBadge}
-                    </div>
-                    <p class="text-xs text-gray-500"><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p>
-                    <p class="text-xs text-gray-500"><span class="font-medium">ID:</span> ${item.IDPermohonan || 'N/A'}</p>
-                    <p class="text-xs text-gray-500"><span class="font-medium">Tanggal:</span> ${formattedTimestamp}</p>
-                    ${item.Keterangan ? `<p class="text-xs text-gray-600 bg-gray-50 p-2 rounded-md mt-1"><span class="font-medium">Ket:</span> ${item.Keterangan}</p>` : ''}
-                </div>`;
+            const cardHTML = `<div class="p-4 space-y-2"><div class="flex justify-between items-start"><p class="font-semibold text-gray-900">${item['Nama SOP'] || 'N/A'}</p>${statusBadge}</div><p class="text-xs text-gray-500"><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p><p class="text-xs text-gray-500"><span class="font-medium">ID:</span> ${item.IDPermohonan || 'N/A'}</p><p class="text-xs text-gray-500"><span class="font-medium">Tanggal:</span> ${formattedTimestamp}</p>${item.Keterangan ? `<p class="text-xs text-gray-600 bg-gray-50 p-2 rounded-md mt-1"><span class="font-medium">Ket:</span> ${item.Keterangan}</p>` : ''}</div>`;
             DOM.permohonanCardsContainer.innerHTML += cardHTML;
         });
     }
 };
 
-
-// ... (Fungsi form permohonan tidak berubah)
 function openPermohonanForm() {
+    if(!DOM.permohonanForm) return;
     DOM.permohonanForm.reset();
-    DOM.formError.classList.add('hidden');
+    if(DOM.formError) DOM.formError.classList.add('hidden');
     toggleModal('form-permohonan-modal', true);
 }
+
 async function handleFormSubmit(e) {
     e.preventDefault();
     DOM.submitSpinner.classList.remove('hidden');
     DOM.submitButtonText.classList.add('hidden');
     DOM.submitPermohonanButton.disabled = true;
     DOM.formError.classList.add('hidden');
-
 
     const unit = DOM.formUnit.value;
     const namaSop = DOM.formNamaSop.value;
@@ -507,6 +462,7 @@ async function handleFormSubmit(e) {
         sendFormData(payload);
     }
 }
+
 async function sendFormData(payload) {
     const response = await callAppsScript('addPermohonan', payload);
     if (response.status === 'success') {
@@ -520,6 +476,7 @@ async function sendFormData(payload) {
         showFormError(response.message || 'Terjadi kesalahan di server.');
     }
 }
+
 function showFormError(message) {
     DOM.formError.textContent = message;
     DOM.formError.classList.remove('hidden');
@@ -528,58 +485,39 @@ function showFormError(message) {
     DOM.submitPermohonanButton.disabled = false;
 }
 
-
-//==================================================
-// EVENT HANDLERS
-//==================================================
-
-
 function handleDatasetListClick(e) {
       const viewTrigger = e.target.closest('.view-detail-trigger');
       if (viewTrigger) showDetailView(viewTrigger.dataset.id);
 }
 
-
 function handleDownload() {
       console.log("Tombol unduh diklik.");
 }
-
 
 function handleReload() {
     loadInitialData(true);
 }
 
-
-//==================================================
-// HELPER & UTILITY FUNCTIONS
-//==================================================
-
-
 function showToast(message, type = 'info') {
+    if(!DOM.toastNotification || !DOM.toastMessage) return;
     clearTimeout(toastTimeout);
     const toast = DOM.toastNotification;
-    if (!toast) {
-        console.error("Toast notification element not found in DOM.");
-        return;
-    }
     const icon = toast.querySelector('i');
-
 
     DOM.toastMessage.textContent = message;
     
     toast.classList.remove('bg-gray-800', 'bg-green-600', 'bg-red-600', 'translate-x-[120%]');
-    icon.className = 'mr-3 fa-lg'; // Reset class icon
-
+    if(icon) icon.className = 'mr-3 fa-lg';
 
     if (type === 'success') {
         toast.classList.add('bg-green-600');
-        icon.classList.add('fas', 'fa-check-circle');
+        if(icon) icon.classList.add('fas', 'fa-check-circle');
     } else if (type === 'error') {
         toast.classList.add('bg-red-600');
-        icon.classList.add('fas', 'fa-exclamation-circle');
+        if(icon) icon.classList.add('fas', 'fa-exclamation-circle');
     } else {
         toast.classList.add('bg-gray-800');
-        icon.classList.add('fas', 'fa-sync-alt', 'fa-spin');
+        if(icon) icon.classList.add('fas', 'fa-sync-alt', 'fa-spin');
     }
     
     toast.classList.remove('translate-x-[120%]');
@@ -589,21 +527,16 @@ function showToast(message, type = 'info') {
     }
 }
 
-
 function hideToast() {
   if (DOM.toastNotification) {
     DOM.toastNotification.classList.add('translate-x-[120%]');
   }
 }
 
-
-
-
 function toggleModal(modalId, show) {
   const modal = document.getElementById(modalId);
   if (modal) modal.classList.toggle('hidden', !show);
 }
-
 
 function showView(viewId, closeMenu = false) {
       document.querySelectorAll('#main-app > main > div[id$="-container"]').forEach(div => div.classList.add('hidden'));
@@ -612,7 +545,6 @@ function showView(viewId, closeMenu = false) {
       if (closeMenu) toggleSideMenu(false);
       window.scrollTo(0, 0);
 }
-
 
 function showCustomAlert(message, type = 'success') {
       DOM.customAlertMessage.textContent = message;
@@ -627,26 +559,21 @@ function showCustomAlert(message, type = 'success') {
       toggleModal('custom-alert-modal', true);
 }
 
-
 function showErrorState(title, message) {
       const container = DOM.listViewContainer || document.body;
       container.innerHTML = `<div class="text-center py-10 bg-red-50 rounded-lg"><i class="fas fa-exclamation-triangle fa-3x text-red-500"></i><h2 class="mt-4 text-xl font-bold text-red-800">${title}</h2><p class="mt-2 text-red-700">${message}</p></div>`;
       setLoadingState(false);
 }
 
-
 function setLoadingState(isLoading) {
     if(DOM.loadingIndicator) DOM.loadingIndicator.classList.toggle('hidden', !isLoading);
 
-
     const buttons = [DOM.reloadDatasetButton, DOM.reloadDatasetButtonMobile];
-    const icons = [DOM.reloadIcon, DOM.reloadIconMobile]; // Assuming DOM.reloadIcon exists
-
+    const icons = [DOM.reloadIcon, DOM.reloadIconMobile];
 
     buttons.forEach(button => {
         if (button) button.disabled = isLoading;
     });
-
 
     icons.forEach(icon => {
         if (icon) {
@@ -655,7 +582,6 @@ function setLoadingState(isLoading) {
         }
     });
 }
-
 
 function populateFilterOptions() {
       const units = [...new Set(allDatasets.map(item => item.Unit).filter(Boolean))].sort();
@@ -673,30 +599,26 @@ function populateFilterOptions() {
       populateSelect(DOM.filterFungsiModal, fungsis, "Semua Fungsi");
 }
 
-
 function toggleSideMenu(show) {
       if(DOM.popupMenu) DOM.popupMenu.classList.toggle('-translate-x-full', !show);
       if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
 }
 
-
 function resetFilters() {
-      DOM.searchInput.value = '';
-      DOM.searchInputMobile.value = '';
-      DOM.filterUnit.value = '';
-      DOM.filterFungsi.value = '';
-      DOM.filterUnitModal.value = '';
-      DOM.filterFungsiModal.value = '';
-      applyFiltersAndRender();
+    if(DOM.searchInput) DOM.searchInput.value = '';
+    if(DOM.searchInputMobile) DOM.searchInputMobile.value = '';
+    if(DOM.filterUnit) DOM.filterUnit.value = '';
+    if(DOM.filterFungsi) DOM.filterFungsi.value = '';
+    if(DOM.filterUnitModal) DOM.filterUnitModal.value = '';
+    if(DOM.filterFungsiModal) DOM.filterFungsiModal.value = '';
+    applyFiltersAndRender();
 }
-
 
 function updateDatasetCount() {
     const text = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
     if(DOM.datasetCount) DOM.datasetCount.innerHTML = text;
     if(DOM.datasetCountMobile) DOM.datasetCountMobile.innerHTML = text;
 }
-
 
 // RUN APP
 initializeApp();
