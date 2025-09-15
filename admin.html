@@ -9,75 +9,82 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .modal-overlay { transition: opacity 0.3s ease-in-out; }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <!-- LOGIN SCREEN -->
-    <div id="login-view" class="flex items-center justify-center min-h-screen">
-        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-            <div class="text-center">
-                <h1 class="text-2xl font-bold text-gray-800">Admin Panel Login</h1>
-                <p class="text-gray-500">SOP IAIN Bone</p>
+    <!-- Container Utama Aplikasi -->
+    <div id="app-container">
+
+        <!-- 1. Halaman Login -->
+        <div id="login-view" class="flex items-center justify-center min-h-screen">
+            <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                <div class="text-center">
+                    <h1 class="text-2xl font-bold text-gray-800">Admin Panel Login</h1>
+                    <p class="text-gray-500">SOP IAIN Bone</p>
+                </div>
+                <form id="admin-login-form" class="space-y-6">
+                    <div>
+                        <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+                        <input type="text" id="username" name="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="password" name="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+                    <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                        <span id="login-button-text">Login</span>
+                        <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+                    </button>
+                    <a href="index.html" class="text-center text-sm text-gray-600 hover:text-blue-600 pt-2 block">&larr; Kembali ke Halaman Utama</a>
+                </form>
             </div>
-            <form id="admin-login-form" class="space-y-6">
-                <div>
-                    <label for="username" class="text-sm font-medium text-gray-700">Username</label>
-                    <input type="text" id="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+
+        <!-- 2. Halaman Dashboard Admin -->
+        <div id="dashboard-view" class="hidden">
+            <!-- Menu Samping (Sidebar) -->
+            <div id="sidebar-menu" class="fixed top-0 left-0 w-64 h-full bg-white shadow-lg z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+                <div class="p-4 border-b">
+                    <h2 class="text-xl font-bold text-gray-800">Admin Dashboard</h2>
                 </div>
-                <div>
-                    <label for="password" class="text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
-                <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
-                    <span id="login-button-text">Login</span>
-                    <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
-                </button>
-            </form>
+                <nav class="p-4">
+                    <ul class="space-y-2">
+                        <li><a href="#" data-view="permohonan" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-file-import w-6 mr-2"></i>Manajemen Permohonan</a></li>
+                        <li><a href="#" data-view="sop" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-book w-6 mr-2"></i>Manajemen SOP</a></li>
+                    </ul>
+                </nav>
+            </div>
+            <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden md:hidden"></div>
+
+            <!-- Konten Utama -->
+            <div class="md:ml-64 transition-all duration-300">
+                <header class="bg-white shadow-md sticky top-0 z-40">
+                    <div class="flex items-center justify-between h-16 px-6">
+                        <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100 md:hidden"><i class="fas fa-bars"></i></button>
+                        <div id="header-title" class="text-lg font-semibold text-gray-800">Manajemen Permohonan</div>
+                        <div class="flex items-center gap-4">
+                            <span id="admin-user-email" class="text-sm text-gray-600 hidden sm:block"></span>
+                            <button id="logout-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm"><i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline">Logout</span></button>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="p-4 sm:p-6 lg:p-8">
+                    <!-- Konten View Permohonan -->
+                    <div id="permohonan-view" class="view-content"></div>
+                    <!-- Konten View SOP -->
+                    <div id="sop-view" class="view-content hidden"></div>
+                </main>
+            </div>
         </div>
     </div>
 
-    <!-- MAIN DASHBOARD (HIDDEN BY DEFAULT) -->
-    <div id="dashboard-view" class="hidden">
-        <header class="bg-white shadow-md sticky top-0 z-40">
-            <div class="w-full px-4 sm:px-6 lg:px-8">
-                <div class="flex items-center justify-between h-16">
-                    <a href="#" class="text-xl font-bold text-gray-800">Admin Dashboard</a>
-                    <div class="flex items-center gap-4">
-                        <span id="admin-user-email" class="text-sm text-gray-600 hidden sm:block"></span>
-                        <button id="logout-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span class="hidden sm:inline">Logout</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <main class="w-full p-4 sm:p-6 lg:p-8">
-            <div class="flex border-b mb-6">
-                <button data-tab="permohonan" class="tab-button py-2 px-4 text-blue-600 border-b-2 border-blue-600 font-semibold">Manajemen Permohonan</button>
-                <button data-tab="sop" class="tab-button py-2 px-4 text-gray-500 hover:text-blue-600">Manajemen SOP</button>
-            </div>
-
-            <!-- PERMOHONAN MANAGEMENT VIEW -->
-            <div id="permohonan-view" class="tab-content">
-                <!-- Content will be injected by JS -->
-            </div>
-
-            <!-- SOP MANAGEMENT VIEW -->
-            <div id="sop-view" class="tab-content hidden">
-                 <!-- Content will be injected by JS -->
-            </div>
-        </main>
-    </div>
-    
-    <!-- MODALS CONTAINER -->
+    <!-- Container untuk Modal -->
     <div id="modals-container"></div>
 
-    <script src="admin.js" defer></script>
+    <script src="admin.js"></script>
 </body>
 </html>
 
