@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function () {
     'formUnit', 'formNamaSop', 'formFile', 'formError', 'submitButtonText', 'submitSpinner',
     'datasetCountMobile', 'reloadDatasetButtonMobile', 'reloadIconMobile',
     'toastNotification', 'toastMessage',
-    // PENAMBAHAN: Cache elemen untuk keterkaitan
-    'detailKeterkaitanContainer', 'detailKeterkaitanContent'
+    // PERUBAHAN: Cache elemen untuk keterkaitan di dalam kartu
+    'detailKeterkaitanCard'
   ];
     ids.forEach(id => {
         const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
   let allPermohonan = [];
   let isPermohonanLoaded = false;
   let toastTimeout = null;
-  // PENAMBAHAN: State untuk melacak status sorting
+  // State untuk melacak status sorting, default berdasarkan IDSOP (terbaru)
   let currentSort = { key: 'IDSOP', order: 'desc' };
   
    // === API HELPER ===
@@ -108,8 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (cache.data && cache.timestamp && cacheAgeHours < CACHE_DURATION_HOURS) {
                     allDatasets = cache.data;
-                    // Pastikan data awal diurutkan sesuai default
-                    allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
                     populateFilterOptions();
                     applyFiltersAndRender();
                     setLoadingState(false);
@@ -129,8 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (response.status === 'success') {
         allDatasets = response.data || [];
-        allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
-        
         populateFilterOptions();
         applyFiltersAndRender();
         
@@ -184,10 +180,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (DOM.permohonanForm) DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
     if (DOM.reloadDatasetButtonMobile) DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
 
-    // PENAMBAHAN: Event listener untuk klik pada header tabel
+    // Event listener untuk klik pada header tabel (sorting)
     const tableHead = document.querySelector('#dataset-list')?.parentElement?.querySelector('thead');
     if (tableHead) {
         tableHead.addEventListener('click', handleSort);
+    }
+
+    // PENAMBAHAN: Event listener untuk klik pada link SOP terkait
+    if (DOM.detailViewContainer) {
+        DOM.detailViewContainer.addEventListener('click', handleDetailViewClick);
     }
   };
 
@@ -234,15 +235,12 @@ function applyFiltersAndRender() {
     if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
     if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
     
-    // PERBAIKAN: Blok logika untuk sorting data
+    // Blok logika untuk sorting data
     if (currentSort.key) {
         filteredData.sort((a, b) => {
             const valA = a[currentSort.key] || '';
             const valB = b[currentSort.key] || '';
-            
-            // Menggunakan localeCompare standar untuk perbandingan string yang benar
             const comparison = valA.localeCompare(valB, 'id-ID');
-            
             return currentSort.order === 'asc' ? comparison : -comparison;
         });
     }
@@ -257,7 +255,6 @@ function renderPageContent() {
     DOM.datasetList.innerHTML = ''; 
     DOM.datasetCardsContainer.innerHTML = ''; 
     
-    // PENAMBAHAN: Memanggil fungsi untuk update ikon sort
     updateSortIcons();
 
     if(DOM.noDataMessage) DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
@@ -327,6 +324,8 @@ function showDetailView(idsop) {
         return;
     }
     
+    // Reset tampilan detail
+    window.scrollTo(0,0);
     DOM.metadataContent.classList.add('hidden');
     DOM.metadataChevron.classList.remove('rotate-180');
     DOM.detailTitle.textContent = item['Nama SOP'] || 'Tanpa Judul';
@@ -360,7 +359,6 @@ function showDetailView(idsop) {
     const match = fileUrl.match(driveRegex);
     const fileId = match ? match[1] : null;
     
-    // PERUBAHAN: Logika untuk menampilkan preview atau pesan "tidak ada data"
     DOM.tablePreviewContainer.classList.remove('hidden');
     if (fileId) {
         DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -370,19 +368,26 @@ function showDetailView(idsop) {
         DOM.tablePreviewContent.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-gray-500 p-8 bg-gray-50 rounded-md" style="min-height: 50vh;"><i class="fas fa-file-excel fa-3x mb-4 text-gray-400"></i><p class="font-semibold">Tidak Ada Pratinjau</p><p class="text-sm mt-1">Dokumen untuk SOP ini tidak tersedia.</p></div>`;
     }
 
-    // PENAMBAHAN: Logika untuk menampilkan bagian Keterkaitan
-    if (item.Hubungan && item.Hubungan.trim() !== '') {
+    // PERUBAHAN: Logika untuk menampilkan bagian Keterkaitan di dalam kartu utama
+    if (DOM.detailKeterkaitanCard && item.Hubungan && item.Hubungan.trim() !== '') {
         const hubunganList = item.Hubungan.split(',').map(sop => sop.trim());
-        let listHTML = '<ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">';
-        hubunganList.forEach(sopName => {
-            listHTML += `<li>${sopName}</li>`;
-        });
-        listHTML += '</ol>';
+        let listHTML = '<div class="pt-4 mt-4 border-t"><h3 class="text-sm font-semibold text-gray-800 mb-2">Keterkaitan:</h3><ol class="list-decimal list-inside space-y-2 text-sm">';
         
-        DOM.detailKeterkaitanContent.innerHTML = listHTML;
-        DOM.detailKeterkaitanContainer.classList.remove('hidden');
-    } else {
-        DOM.detailKeterkaitanContainer.classList.add('hidden');
+        hubunganList.forEach(sopName => {
+            const relatedSop = allDatasets.find(d => d['Nama SOP'] === sopName);
+            if (relatedSop) {
+                listHTML += `<li><a href="#" class="related-sop-link text-blue-600 hover:underline" data-id="${relatedSop.IDSOP}">${sopName}</a></li>`;
+            } else {
+                listHTML += `<li class="text-gray-500">${sopName} (data tidak ditemukan)</li>`;
+            }
+        });
+        listHTML += '</ol></div>';
+        
+        DOM.detailKeterkaitanCard.innerHTML = listHTML;
+        DOM.detailKeterkaitanCard.classList.remove('hidden');
+    } else if (DOM.detailKeterkaitanCard) {
+        DOM.detailKeterkaitanCard.innerHTML = '';
+        DOM.detailKeterkaitanCard.classList.add('hidden');
     }
 
     showView('detail-view-container');
@@ -535,6 +540,18 @@ function handleDatasetListClick(e) {
       if (viewTrigger) showDetailView(viewTrigger.dataset.id);
 }
 
+// PENAMBAHAN: Fungsi baru untuk menangani klik di dalam view detail
+const handleDetailViewClick = (e) => {
+    const relatedLink = e.target.closest('.related-sop-link');
+    if (relatedLink) {
+        e.preventDefault();
+        const sopId = relatedLink.dataset.id;
+        if (sopId) {
+            showDetailView(sopId);
+        }
+    }
+};
+
 function handleDownload() {
       console.log("Tombol unduh diklik.");
 }
@@ -543,7 +560,6 @@ function handleReload() {
     loadInitialData(true);
 }
 
-// PENAMBAHAN: Fungsi untuk menangani klik pada header tabel untuk sorting
 const handleSort = (e) => {
     const header = e.target.closest('[data-sort-key]');
     if (!header) return;
@@ -554,12 +570,11 @@ const handleSort = (e) => {
         currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
     } else {
         currentSort.key = key;
-        currentSort.order = 'asc'; // Default naik saat mengganti kolom
+        currentSort.order = 'asc';
     }
     applyFiltersAndRender();
 };
 
-// PENAMBAHAN: Fungsi untuk memperbarui ikon sort secara visual
 const updateSortIcons = () => {
     const headers = document.querySelectorAll('th[data-sort-key]');
     headers.forEach(header => {
@@ -571,9 +586,9 @@ const updateSortIcons = () => {
 
         if (currentSort.key === key) {
             icon.classList.add(currentSort.order === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
-            icon.classList.add('text-blue-500'); // Warna untuk sort aktif
+            icon.classList.add('text-blue-500');
         } else {
-            icon.classList.add('fa-sort', 'text-gray-400'); // Warna untuk sort non-aktif
+            icon.classList.add('fa-sort', 'text-gray-400');
         }
     });
 };
@@ -624,7 +639,10 @@ function showView(viewId, closeMenu = false) {
       const view = document.getElementById(viewId);
       if(view) view.classList.remove('hidden');
       if (closeMenu) toggleSideMenu(false);
-      window.scrollTo(0, 0);
+      // Jangan scroll ke atas jika view-nya sama
+      if (document.getElementById(viewId)?.classList.contains('hidden')) {
+        window.scrollTo(0, 0);
+      }
 }
 
 function showCustomAlert(message, type = 'success') {
@@ -685,7 +703,6 @@ function toggleSideMenu(show) {
       if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
 }
 
-// PERUBAHAN: Fungsi reset filter diperbarui untuk mereset sort juga
 function resetFilters() {
     if(DOM.searchInput) DOM.searchInput.value = '';
     if(DOM.searchInputMobile) DOM.searchInputMobile.value = '';
@@ -694,7 +711,6 @@ function resetFilters() {
     if(DOM.filterUnitModal) DOM.filterUnitModal.value = '';
     if(DOM.filterFungsiModal) DOM.filterFungsiModal.value = '';
     
-    // Kembalikan ke sort default (terbaru dulu)
     currentSort = { key: 'IDSOP', order: 'desc' };
     
     applyFiltersAndRender();
