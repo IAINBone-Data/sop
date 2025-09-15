@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgRdOnjlNiJa7uDuNVbKAiujis4xRix62BdsMSVm3h1iB1RNGNqBV583zluRTfGwVQ/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3PDSqG35NMjCoo2eT2eVt7uLfNmfx1FxfkTPfgp3_UGmSPoplvT_kyWVE65Iqo8ry/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
@@ -358,7 +358,8 @@ const renderPermohonanData = () => {
                 case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
                 default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
             }
-            const formattedTimestamp = item.Timestamp ? new Date(item.Timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : 'N/A';
+            // [PERBAIKAN] Mengubah format tanggal menjadi DD/MM/YYYY
+            const formattedTimestamp = item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
             const rowHTML = `
                 <tr>
                     <td class="p-4 text-sm text-gray-700 font-mono">${item.IDPermohonan || 'N/A'}</td>
@@ -370,6 +371,7 @@ const renderPermohonanData = () => {
                 </tr>`;
             DOM.permohonanTableBody.innerHTML += rowHTML;
 
+            // [PERBAIKAN] Memastikan 'Keterangan' selalu ada di kartu mobile jika datanya tersedia
             const cardHTML = `
                 <div class="p-4 space-y-2">
                     <div class="flex justify-between items-start">
@@ -579,4 +581,5 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
+
 
