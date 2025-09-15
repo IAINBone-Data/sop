@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbysUO4Tmdt7dSWWbo89bnmiYvIGDwZ17H5PfEh2L4D62I2mgogoZh2JxrvY4cO-egnY/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxwGGSo2OB6p9VTaYit_o__5HwBjpZXYeVkFx5rOeqjpMQ7F8EJmnUB3lRH0XDSz4le/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -113,22 +113,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById(`${viewName}-view`);
         if (!container) return;
         const isSopView = viewName === 'sop';
+        const addButtonHTML = `<button onclick="window.adminApp.open${isSopView ? 'Sop' : 'Permohonan'}Modal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>`;
+        
         const filtersHTML = `
-            <div class="flex flex-col md:flex-row items-center gap-2 mb-4">
-                <div class="relative w-full md:flex-grow">
-                    <input type="search" data-view="${viewName}" class="filter-search w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Cari...">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div class="flex flex-wrap items-center gap-2 flex-grow">
+                    <div class="relative flex-grow min-w-[200px]">
+                        <input type="search" data-view="${viewName}" class="filter-search w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="Cari...">
+                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                    </div>
+                    <select data-view="${viewName}" class="filter-unit w-full sm:w-auto p-2 border rounded-md bg-white"><option value="">Semua Unit</option></select>
+                    <select data-view="${viewName}" class="filter-fungsi w-full sm:w-auto p-2 border rounded-md bg-white ${isSopView ? '' : 'hidden'}"><option value="">Semua Fungsi</option></select>
+                    <button data-view="${viewName}" title="Reset Filter" class="reset-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-undo"></i></button>
+                    <button data-view="${viewName}" title="Muat Ulang" class="reload-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-sync-alt"></i></button>
                 </div>
-                <div class="flex w-full md:w-auto items-center gap-2">
-                    <select data-view="${viewName}" class="filter-unit w-full md:w-auto p-2 border rounded-md bg-white"><option value="">Semua Unit</option></select>
-                    <select data-view="${viewName}" class="filter-fungsi w-full md:w-auto p-2 border rounded-md bg-white ${isSopView ? '' : 'hidden'}"><option value="">Semua Fungsi</option></select>
-                    <button data-view="${viewName}" title="Reset Filter" class="reset-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white"><i class="fas fa-undo"></i></button>
-                    <button data-view="${viewName}" title="Muat Ulang" class="reload-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white"><i class="fas fa-sync-alt"></i></button>
+                <div class="flex-shrink-0">
+                    ${addButtonHTML}
                 </div>
             </div>`;
+
         let contentHTML = '';
         if (viewName === 'permohonan') contentHTML = getPermohonanHTML(data);
         if (isSopView) contentHTML = getSopHTML(data);
+        
         container.innerHTML = filtersHTML + `<div class="content-wrapper">${contentHTML}</div>`;
         populateFilters(viewName, allData[viewName]);
     };
@@ -178,8 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const getPermohonanHTML = (data) => {
-        const addButton = `<div class="flex justify-end mb-4"><button onclick="window.adminApp.openPermohonanModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i> Tambah Permohonan</button></div>`;
-        if (!data || data.length === 0) return addButton + `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data permohonan.</p></div>`;
+        if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data permohonan.</p></div>`;
         const tableHeaders = `
             <tr>
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Timestamp">Tanggal ${getSortIcon('permohonan', 'Timestamp')}</th>
@@ -215,12 +221,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                 </tr>`;
         }).join('');
-        return addButton + `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
+        return `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
     };
 
     const getSopHTML = (data) => {
-        const addButton = `<div class="flex justify-end mb-4"><button onclick="window.adminApp.openSopModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i> Tambah SOP Baru</button></div>`;
-        if (!data || data.length === 0) return addButton + `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data SOP.</p></div>`;
+        if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data SOP.</p></div>`;
         const tableHeaders = `
              <tr>
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Nomor SOP">Nomor SOP ${getSortIcon('sop', 'Nomor SOP')}</th>
@@ -248,9 +253,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             </tr>`;
         }).join('');
-        return addButton + `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
+        return `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
     };
-
+    
     // --- MODALS & FORMS ---
     const openPermohonanModal = (id) => {
         const isEdit = id !== null;
@@ -282,10 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const isEdit = id !== null;
         const form = e.target;
         const data = { 'Unit': form.Unit.value, 'Nama SOP': form.Nama_SOP.value };
-        if (isEdit) { // Only add status and keterangan if editing
-            data.Status = allData.permohonan.find(p => p.IDPermohonan === id).Status; // Keep original status
-            data.Keterangan = allData.permohonan.find(p => p.IDPermohonan === id).Keterangan; // Keep original keterangan
-        }
         let fileInfo = null;
         if (form.file.files[0]) fileInfo = await getFileInfo(form.file.files[0]);
         const action = isEdit ? 'adminUpdatePermohonan' : 'adminCreatePermohonan';
@@ -307,18 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const openDeletePermohonanModal = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) return;
-        const modalHTML = `
-            <div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-xl font-bold">Konfirmasi Hapus</h2>
-                    <p>Anda yakin ingin menghapus permohonan untuk SOP berikut?</p>
-                    <p class="font-semibold text-gray-800 bg-gray-100 p-2 rounded-md">${item['Nama SOP']}</p>
-                    <div class="flex items-center gap-4 pt-4">
-                        <button onclick="window.adminApp.closeModal()" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
-                        <button id="confirm-delete" class="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Ya, Hapus</button>
-                    </div>
-                </div>
-            </div>`;
+        const modalHTML = `<div class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"><div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg"><h2 class="text-xl font-bold">Konfirmasi Hapus</h2><p>Anda yakin ingin menghapus permohonan untuk SOP berikut?</p><p class="font-semibold text-gray-800 bg-gray-100 p-2 rounded-md">${item['Nama SOP']}</p><div class="flex items-center gap-4 pt-4"><button onclick="window.adminApp.closeModal()" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button><button id="confirm-delete" class="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Ya, Hapus</button></div></div></div>`;
         DOM.modalsContainer.innerHTML = modalHTML;
         document.getElementById('confirm-delete').addEventListener('click', () => handleDeletePermohonanConfirm(id));
     };
@@ -353,7 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const fungsiOptions = [...new Set(allData.sop.map(s => s.Fungsi).filter(Boolean))].sort().map(f => `<option value="${f}">${f}</option>`).join('');
         const sopNameOptions = allData.sop.map(s => `<option value="${s['Nama SOP']}">${s['Nama SOP']}</option>`).join('');
 
-        const fields = sopHeaders.map(header => {
+        const visibleHeaders = sopHeaders.filter(header => header !== 'IDSOP');
+
+        const fields = visibleHeaders.map(header => {
             const value = item[header] || '';
             let fieldHtml = `<div><label for="sop-${header}" class="text-sm font-medium text-gray-700">${header}</label><input type="text" id="sop-${header}" name="${header}" value="${value}" class="w-full px-4 py-2 mt-1 bg-gray-50 border rounded-lg"></div>`;
             switch(header) {
@@ -533,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sortHeader = e.target.closest('[data-sort]');
         if (sortHeader) {
             const key = sortHeader.dataset.sort;
-            const view = sortHeader.closest('table').closest('.view-content').id;
+            const view = sortHeader.closest('table').closest('.content-wrapper').parentElement.id;
             if (currentSort.key === key) {
                 currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
             } else {
