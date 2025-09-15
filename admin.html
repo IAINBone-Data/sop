@@ -6,23 +6,22 @@
     <title>Admin Panel - SOP IAIN Bone</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Tom Select Library for multi-select -->
-    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
+        #sidebar-menu.collapsed .menu-text { display: none; }
         #sidebar-menu.collapsed { width: 5rem; }
-        #sidebar-menu.collapsed .menu-text, #sidebar-menu.collapsed .app-title { display: none; }
-        #sidebar-menu.collapsed .menu-item { justify-content: center; }
-        #main-content.collapsed { margin-left: 5rem; }
-        .ts-control { border-radius: 0.5rem !important; border: 1px solid #d1d5db !important; }
+        #sidebar-menu.collapsed .justify-center { justify-content: center; }
+        .main-content.collapsed { margin-left: 5rem; }
+        .ts-control { border-radius: 0.5rem; border-width: 1px; }
     </style>
 </head>
 <body class="bg-gray-100">
 
     <div id="app-container">
-        <!-- Halaman Login -->
+        <!-- 1. Halaman Login -->
         <div id="login-view" class="flex items-center justify-center min-h-screen">
             <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
                 <div class="text-center">
@@ -47,22 +46,22 @@
             </div>
         </div>
 
-        <!-- Dashboard Admin -->
+        <!-- 2. Halaman Dashboard Admin -->
         <div id="dashboard-view" class="hidden">
             <div id="sidebar-menu" class="fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 transition-all duration-300">
-                <div class="flex items-center p-4 border-b h-16">
+                <div class="flex items-center justify-between p-4 border-b h-16">
+                    <h2 class="text-xl font-bold text-gray-800 menu-text">Admin SOP</h2>
                     <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100"><i class="fas fa-bars"></i></button>
-                    <h2 class="app-title text-xl font-bold text-gray-800 ml-4">Admin</h2>
                 </div>
                 <nav class="p-4">
                     <ul class="space-y-2">
-                        <li><a href="#" data-view="permohonan" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-file-signature w-8 mr-2 text-center text-lg"></i><span class="menu-text">Permohonan</span></a></li>
-                        <li><a href="#" data-view="sop" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-book w-8 mr-2 text-center text-lg"></i><span class="menu-text">Daftar SOP</span></a></li>
+                        <li><a href="#" data-view="permohonan" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fa-solid fa-file w-8 mr-2 text-center"></i><span class="menu-text">Permohonan</span></a></li>
+                        <li><a href="#" data-view="sop" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-book w-8 mr-2 text-center"></i><span class="menu-text">Daftar SOP</span></a></li>
                     </ul>
                 </nav>
             </div>
             
-            <div id="main-content" class="md:ml-64 transition-all duration-300">
+            <div id="main-content" class="main-content md:ml-64 transition-all duration-300">
                 <header class="bg-white shadow-md sticky top-0 z-40">
                     <div class="flex items-center justify-between h-16 px-6">
                         <div id="header-title" class="text-lg font-semibold text-gray-800"></div>
@@ -82,6 +81,8 @@
     </div>
 
     <div id="modals-container"></div>
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>
