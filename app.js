@@ -221,12 +221,11 @@ function updateUIForLoginStatus() {
       <i class="fas fa-plus"></i>
       <span class="hidden sm:inline">Ajukan SOP</span>
     </button>
-    <button id="admin-login-button" class="bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Login Administrator">
-      <i class="fas fa-user"></i>
-    </button>
+    <a href="admin.html" class="bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Login Administrator">
+      <i class="fas fa-user-shield"></i>
+    </a>
   `;
   document.getElementById('ajukan-sop-button-header').addEventListener('click', openPermohonanForm);
-  document.getElementById('admin-login-button').addEventListener('click', () => toggleModal('login-modal', true));
 }
 
 
@@ -378,7 +377,6 @@ const displayPermohonanView = () => {
     }
 };
 
-// This function just pre-loads the data when the app starts.
 const loadPermohonanDataInBackground = async () => {
     const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
     if (response.status === 'success') {
@@ -390,7 +388,6 @@ const loadPermohonanDataInBackground = async () => {
     }
 };
 
-// This function handles the UI and data loading when the user navigates to the view.
 const loadPermohonanData = async () => {
     DOM.permohonanLoadingIndicator.style.display = 'block';
     DOM.permohonanContent.classList.add('hidden');
@@ -704,3 +701,4 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
+
