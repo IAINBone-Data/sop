@@ -1,4 +1,3 @@
-
 // --- KONFIGURASI APLIKASI ---
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXvm1PcTj-5edP9V4HD1YFxV-vXhVIDrmRENaIusB5XtOnahpAJo5oZWMkUe8XDL57/exec';
 
@@ -115,7 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (!isPermohonanLoaded) loadPermohonanDataInBackground();
                     return;
                 }
-            } catch (e)
+            } catch (e) {
                 console.error("Gagal mem-parsing cache:", e);
                 localStorage.removeItem('sopDataCache');
             }
@@ -233,14 +232,14 @@ function applyFiltersAndRender() {
     if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
     if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
     
-    // PERUBAHAN: Blok logika untuk sorting data
+    // PERBAIKAN: Blok logika untuk sorting data
     if (currentSort.key) {
         filteredData.sort((a, b) => {
             const valA = a[currentSort.key] || '';
             const valB = b[currentSort.key] || '';
             
-            // Menggunakan localeCompare untuk perbandingan string yang benar
-            const comparison = valA.localeCompare(valB, 'id-ID', { numeric: true });
+            // Menggunakan localeCompare standar untuk perbandingan string yang benar
+            const comparison = valA.localeCompare(valB, 'id-ID');
             
             return currentSort.order === 'asc' ? comparison : -comparison;
         });
@@ -691,3 +690,4 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
+
