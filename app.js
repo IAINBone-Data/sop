@@ -32,11 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
     'toastNotification', 'toastMessage'
   ];
     ids.forEach(id => {
-        const el = document.getElementById(id);
+        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
+        const el = document.getElementById(kebabCaseId);
         if (el) {
             DOM[id] = el;
         } else {
-            console.warn(`Elemen dengan ID '${id}' tidak ditemukan.`);
+            console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
         }
     });
  };
@@ -703,4 +704,3 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
-
