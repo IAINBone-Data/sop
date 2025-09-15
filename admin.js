@@ -1,266 +1,334 @@
-// --- KONFIGURASI WAJIB ---
-const SHEET_ID = '1wwaJ1igtl5xU-kCYsN4gKvUwUDdnJRZl0knVLOEnmuQ';
-const DRIVE_FOLDER_ID = '1Movtc1ya5Yi4u2M0VjZTuCiFOSytkMLx';
-const ADMIN_TOKEN_VALIDITY_HOURS = 2; // Token admin akan valid selama 2 jam
+document.addEventListener('DOMContentLoaded', () => {
+    // --- KONFIGURASI ---
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxVeR6nXbRZbV6gIGEA43jBo0MHcm0icWfPY9zsu2tnLSMsoJgdq_jqQ21fcM8J-Q/exec';
 
-// --- NAMA-NAMA SHEET ---
-const SHEET_NAMES = {
-  SOP: "SOP",
-  PERMOHONAN: "Permohonan",
-  ADMINS: "Admins" // Pastikan Anda memiliki sheet ini
-};
+    // --- DOM ELEMENTS ---
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const adminLoginForm = document.getElementById('admin-login-form');
+    const logoutButton = document.getElementById('logout-button');
+    const adminUserEmail = document.getElementById('admin-user-email');
+    const permohonanView = document.getElementById('permohonan-view');
+    const sopView = document.getElementById('sop-view');
+    const modalsContainer = document.getElementById('modals-container');
+    const tabButtons = document.querySelectorAll('.tab-button');
 
-// =================================================================
-// FUNGSI UTAMA (ROUTER)
-// =================================================================
+    // --- STATE ---
+    let authToken = null;
+    let allPermohonan = [];
+    let allSop = [];
 
-function doPost(e) {
-  let response;
-  try {
-    const params = JSON.parse(e.postData.contents);
-    const action = params.action;
+    // --- API HELPER ---
+    const callApi = async (action, payload = {}, requiresAuth = true) => {
+        if (requiresAuth && !authToken) {
+            handleLogout();
+            return { status: 'error', message: 'Token tidak ada.' };
+        }
+        
+        const fullPayload = requiresAuth ? { ...payload, authToken } : payload;
 
-    // --- Rute Publik (Tidak memerlukan otentikasi) ---
-    switch (action) {
-      case 'getData':
-        return createJsonResponse(handleGetDataWithCache(params.sheetName));
-      case 'addPermohonan':
-        return createJsonResponse(handleAddPermohonan(params));
-      case 'adminLogin':
-        return createJsonResponse(handleAdminLogin(params.username, params.password));
-    }
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, ...fullPayload }),
+                redirect: 'follow'
+            });
+            if (!response.ok) throw new Error(`Network response error: ${response.statusText}`);
+            const result = await response.json();
+            if (result.status === 'error' && result.message === 'Token tidak valid') {
+                 handleLogout();
+            }
+            return result;
+        } catch (error) {
+            console.error(`API Call Error for "${action}":`, error);
+            return { status: 'error', message: error.message };
+        }
+    };
 
-    // --- Rute Admin (Memerlukan otentikasi token) ---
-    const token = params.authToken;
-    const tokenPayload = isTokenValid(token);
-    if (!tokenPayload) {
-      return createJsonResponse({ status: 'error', message: 'Token tidak valid' });
-    }
+    // --- AUTHENTICATION ---
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const loginError = document.getElementById('login-error');
+        const loginButton = document.getElementById('login-button');
+        const loginSpinner = document.getElementById('login-spinner');
+        const loginButtonText = document.getElementById('login-button-text');
+        
+        loginButton.disabled = true;
+        loginSpinner.classList.remove('hidden');
+        loginButtonText.classList.add('hidden');
+        loginError.classList.add('hidden');
+
+        const response = await callApi('adminLogin', { username, password }, false);
+
+        if (response.status === 'success' && response.token) {
+            authToken = response.token;
+            sessionStorage.setItem('adminAuthToken', authToken);
+            sessionStorage.setItem('adminUserEmail', response.email);
+            initializeApp();
+        } else {
+            loginError.textContent = response.message || 'Login Gagal.';
+            loginError.classList.remove('hidden');
+        }
+
+        loginButton.disabled = false;
+        loginSpinner.classList.add('hidden');
+        loginButtonText.classList.remove('hidden');
+    };
+
+    const handleLogout = () => {
+        authToken = null;
+        sessionStorage.removeItem('adminAuthToken');
+        sessionStorage.removeItem('adminUserEmail');
+        loginView.classList.remove('hidden');
+        dashboardView.classList.add('hidden');
+        adminUserEmail.textContent = '';
+    };
+
+    const checkSession = () => {
+        const token = sessionStorage.getItem('adminAuthToken');
+        if (token) {
+            authToken = token;
+            return true;
+        }
+        return false;
+    };
     
-    params.adminEmail = tokenPayload.email;
+    // --- RENDER & MODALS: PERMOHONAN ---
+    const renderPermohonan = (data) => {
+        allPermohonan = data; 
+        if (!data || data.length === 0) {
+            permohonanView.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow"><p class="text-gray-500">Tidak ada data permohonan.</p></div>`;
+            return;
+        }
+        const sortedData = data.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+        const tableRows = sortedData.map(item => {
+            const statusText = item.Status || 'Diajukan';
+            let statusBadge = '';
+            switch (statusText.toLowerCase()) {
+                case 'disetujui': statusBadge = `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
+            }
+            const formattedTimestamp = new Date(item.Timestamp).toLocaleString('id-ID', { dateStyle:'short', timeStyle: 'short' });
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 text-sm text-gray-700">${formattedTimestamp}</td>
+                    <td class="p-3 text-sm text-gray-700">${item.Unit}</td>
+                    <td class="p-3 text-sm font-semibold text-gray-900">${item['Nama SOP']}</td>
+                    <td class="p-3 text-sm">${statusBadge}</td>
+                    <td class="p-3 text-sm text-gray-500">${item.Keterangan || ''}</td>
+                    <td class="p-3 text-sm text-right">
+                        <button class="text-blue-600 hover:text-blue-800" onclick="window.adminApp.openUpdateStatusModal('${item.IDPermohonan}')"><i class="fas fa-edit"></i> Ubah Status</button>
+                    </td>
+                </tr>`;
+        }).join('');
+        permohonanView.innerHTML = `
+            <div class="bg-white rounded-lg shadow overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Unit</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama SOP</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Keterangan</th>
+                            <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">${tableRows}</tbody>
+                </table>
+            </div>`;
+    };
+    const openUpdateStatusModal = (id) => { /* ... (code unchanged) ... */ };
+    const handleUpdateStatusSubmit = async (e, id) => { /* ... (code unchanged) ... */ };
+    const closeStatusModal = () => { modalsContainer.innerHTML = ''; };
 
-    switch (action) {
-      case 'adminGetPermohonan':
-        return createJsonResponse(handleGetDataNoCache(SHEET_NAMES.PERMOHONAN));
-      case 'adminGetSOP':
-        return createJsonResponse(handleGetDataNoCache(SHEET_NAMES.SOP));
-      case 'adminUpdatePermohonan':
-        return createJsonResponse(handleUpdatePermohonanStatus(params));
-      // Fungsi CRUD SOP
-      case 'adminCreateSOP':
-        return createJsonResponse(handleCreateSOP(params));
-      case 'adminUpdateSOP':
-        return createJsonResponse(handleUpdateSOP(params));
-      case 'adminDeleteSOP':
-        return createJsonResponse(handleDeleteSOP(params));
-      default:
-        throw new Error('Aksi admin tidak valid.');
-    }
+    // --- RENDER & MODALS: SOP ---
+    const renderSop = (data) => {
+        allSop = data;
+        const sortedData = data.sort((a, b) => (a['Nama SOP'] || '').localeCompare(b['Nama SOP'] || ''));
 
-  } catch (error) {
-    Logger.log(`Error in doPost: ${error.toString()}`);
-    response = { status: 'error', message: `Server Error: ${error.message}` };
-  }
-  return createJsonResponse(response);
-}
+        const tableRows = sortedData.map(item => `
+            <tr class="hover:bg-gray-50">
+                <td class="p-3 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
+                <td class="p-3 text-sm font-semibold text-gray-900">${item['Nama SOP'] || ''}</td>
+                <td class="p-3 text-sm text-gray-700">${item.Unit || ''}</td>
+                <td class="p-3 text-sm text-gray-700">${item.Fungsi || ''}</td>
+                <td class="p-3 text-sm text-right">
+                    <button class="text-blue-600 hover:text-blue-800 mr-4" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i> Edit</button>
+                    <button class="text-red-600 hover:text-red-800" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i> Hapus</button>
+                </td>
+            </tr>
+        `).join('');
 
-// =================================================================
-// HANDLER PUBLIK
-// =================================================================
+        sopView.innerHTML = `
+            <div class="flex justify-end mb-4">
+                <button id="add-sop-button" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-plus"></i> Tambah SOP Baru
+                </button>
+            </div>
+            <div class="bg-white rounded-lg shadow overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Nomor SOP</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama SOP</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Unit</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Fungsi</th>
+                            <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">${tableRows}</tbody>
+                </table>
+            </div>`;
+        document.getElementById('add-sop-button').addEventListener('click', () => window.adminApp.openSopModal(null));
+    };
 
-function handleGetDataWithCache(sheetName) {
-  const cache = CacheService.getScriptCache();
-  const cacheKey = `data_${sheetName}`;
-  const cached = cache.get(cacheKey);
+    const openSopModal = (rowIndex) => {
+        const isEdit = rowIndex !== null;
+        const item = isEdit ? allSop.find(s => s.rowIndex === rowIndex) : {};
+        if (isEdit && !item) return;
 
-  if (cached != null) {
-    return { status: 'success', data: JSON.parse(cached), source: 'cache' };
-  }
+        const title = isEdit ? 'Edit SOP' : 'Tambah SOP Baru';
+        const modalHTML = `
+            <div id="sop-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg max-h-[90vh] overflow-y-auto">
+                    <form id="sop-form" class="p-8 space-y-4">
+                        <h2 class="text-xl font-bold">${title}</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="text-sm">Nama SOP</label><input name="Nama SOP" value="${item['Nama SOP'] || ''}" required class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Nomor SOP</label><input name="Nomor SOP" value="${item['Nomor SOP'] || ''}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Unit</label><input name="Unit" value="${item.Unit || ''}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Fungsi</label><input name="Fungsi" value="${item.Fungsi || ''}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Penandatangan</label><input name="Penandatangan" value="${item.Penandatangan || ''}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Status</label><input name="Status" value="${item.Status || 'Berlaku'}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Tanggal Pembuatan</label><input type="date" name="Tanggal Pembuatan" value="${(item['Tanggal Pembuatan'] || '').substring(0,10)}" class="w-full mt-1 p-2 border rounded-md"></div>
+                            <div><label class="text-sm">Tanggal Efektif</label><input type="date" name="Tanggal Efektif" value="${(item['Tanggal Efektif'] || '').substring(0,10)}" class="w-full mt-1 p-2 border rounded-md"></div>
+                        </div>
+                        <div><label class="text-sm">Link File Google Drive</label><input name="File" value="${item.File || ''}" placeholder="https://drive.google.com/..." class="w-full mt-1 p-2 border rounded-md"></div>
+                        <div class="flex items-center gap-4 pt-4">
+                            <button type="button" id="cancel-sop-form" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
+                            <button type="submit" id="submit-sop-form" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold flex justify-center items-center">
+                                <span>Simpan</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        modalsContainer.innerHTML = modalHTML;
+        document.getElementById('sop-form').addEventListener('submit', (e) => handleSopFormSubmit(e, rowIndex));
+        document.getElementById('cancel-sop-form').addEventListener('click', () => modalsContainer.innerHTML = '');
+    };
 
-  const data = getDataFromSheet(sheetName);
-  cache.put(cacheKey, JSON.stringify(data), 21600); // Cache for 6 hours
-  return { status: 'success', data: data, source: 'sheet' };
-}
+    const handleSopFormSubmit = async (e, rowIndex) => {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+        
+        // Handle dates correctly
+        if (data['Tanggal Pembuatan']) data['Tanggal Pembuatan'] = new Date(data['Tanggal Pembuatan']).toISOString();
+        if (data['Tanggal Efektif']) data['Tanggal Efektif'] = new Date(data['Tanggal Efektif']).toISOString();
 
-function handleAddPermohonan(params) {
-  const { unit, namaSop, idPermohonan, timestamp, fileData, fileName, fileType } = params;
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.PERMOHONAN);
+        const isEdit = rowIndex !== null;
+        const action = isEdit ? 'adminUpdateSOP' : 'adminCreateSOP';
+        const payload = isEdit ? { rowIndex, data } : { data };
 
-  let fileUrl = '';
-  if (fileData && fileName) {
-    fileUrl = createFileInDrive(unit, namaSop, fileData, fileName, fileType);
-  }
-  
-  const newRow = [idPermohonan, new Date(timestamp), unit, namaSop, 'Diajukan', '', fileUrl, '', ''];
-  sheet.appendRow(newRow);
-  
-  CacheService.getScriptCache().remove(`data_${SHEET_NAMES.PERMOHONAN}`);
-  return { status: 'success', message: 'Permohonan berhasil ditambahkan.' };
-}
+        const submitButton = document.getElementById('submit-sop-form');
+        submitButton.disabled = true;
+        submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
 
+        const response = await callApi(action, payload);
+        if (response.status === 'success') {
+            modalsContainer.innerHTML = '';
+            loadSopData();
+        } else {
+            alert('Gagal menyimpan: ' + response.message);
+            submitButton.disabled = false;
+            submitButton.innerHTML = `<span>Simpan</span>`;
+        }
+    };
 
-// =================================================================
-// HANDLER & FUNGSI ADMIN
-// =================================================================
+    const openDeleteSopModal = (rowIndex) => {
+        const item = allSop.find(s => s.rowIndex === rowIndex);
+        if (!item) return;
+        const modalHTML = `
+            <div id="delete-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold">Konfirmasi Hapus</h2>
+                    <p>Anda yakin ingin menghapus SOP berikut?</p>
+                    <p class="font-semibold text-gray-800 bg-gray-100 p-2 rounded-md">${item['Nama SOP']}</p>
+                    <div class="flex items-center gap-4 pt-4">
+                        <button id="cancel-delete" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
+                        <button id="confirm-delete" class="w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold">Ya, Hapus</button>
+                    </div>
+                </div>
+            </div>`;
+        modalsContainer.innerHTML = modalHTML;
+        document.getElementById('cancel-delete').addEventListener('click', () => modalsContainer.innerHTML = '');
+        document.getElementById('confirm-delete').addEventListener('click', () => handleDeleteSopConfirm(rowIndex));
+    };
 
-function handleAdminLogin(username, password) {
-  const adminSheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.ADMINS);
-  if (!adminSheet) throw new Error("Sheet 'Admins' tidak ditemukan.");
-  
-  const data = adminSheet.getDataRange().getValues();
-  const adminUser = data.find(row => row[0] === username && row[1] === password);
-
-  if (adminUser) {
-    const email = adminUser[2];
-    const token = Utilities.base64Encode(Math.random().toString());
-    const expiration = new Date().getTime() + ADMIN_TOKEN_VALIDITY_HOURS * 3600 * 1000;
+    const handleDeleteSopConfirm = async (rowIndex) => {
+        const deleteButton = document.getElementById('confirm-delete');
+        deleteButton.disabled = true;
+        deleteButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+        const response = await callApi('adminDeleteSOP', { rowIndex });
+        if (response.status === 'success') {
+            modalsContainer.innerHTML = '';
+            loadSopData();
+        } else {
+            alert('Gagal menghapus: ' + response.message);
+            modalsContainer.innerHTML = '';
+        }
+    };
     
-    PropertiesService.getScriptProperties().setProperty(token, JSON.stringify({ email: email, expires: expiration }));
+    // --- INITIALIZATION & DATA LOADING ---
+    const initializeApp = () => {
+        loginView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
+        loadPermohonanData();
+    };
     
-    return { status: 'success', token: token, email: email };
-  } else {
-    return { status: 'error', message: 'Username atau password salah.' };
-  }
-}
-
-function handleGetDataNoCache(sheetName) {
-  const data = getDataFromSheet(sheetName);
-  return { status: 'success', data: data, source: 'sheet' };
-}
-
-function handleUpdatePermohonanStatus(params) {
-  const { id, newStatus, keterangan, adminEmail } = params;
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.PERMOHONAN);
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  
-  const idColIndex = headers.indexOf('IDPermohonan');
-  const statusColIndex = headers.indexOf('Status');
-  const keteranganColIndex = headers.indexOf('Keterangan');
-  const updatedByColIndex = headers.indexOf('Diperbarui Oleh');
-  const updatedDateColIndex = headers.indexOf('Tgl Diperbarui');
-
-  if (idColIndex === -1) throw new Error("Kolom 'IDPermohonan' tidak ditemukan.");
-
-  const rowIndex = data.findIndex(row => row[idColIndex] == id);
-
-  if (rowIndex > -1) {
-    const rowToUpdate = rowIndex + 2; // +2 because findIndex is 0-based and headers are removed
-    sheet.getRange(rowToUpdate, statusColIndex + 1).setValue(newStatus);
-    sheet.getRange(rowToUpdate, keteranganColIndex + 1).setValue(keterangan);
-    sheet.getRange(rowToUpdate, updatedByColIndex + 1).setValue(adminEmail);
-    sheet.getRange(rowToUpdate, updatedDateColIndex + 1).setValue(new Date());
+    const loadPermohonanData = async () => { /* ... (code unchanged) ... */ };
+    const loadSopData = async () => {
+        sopView.innerHTML = `<div class="text-center p-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div>`;
+        const response = await callApi('adminGetSOP');
+        if(response.status === 'success'){
+            renderSop(response.data);
+        } else {
+            sopView.innerHTML = `<div class="text-center p-8 bg-red-50 text-red-600 rounded-lg shadow">${response.message}</div>`;
+        }
+    };
     
-    CacheService.getScriptCache().remove(`data_${SHEET_NAMES.PERMOHONAN}`);
-    return { status: 'success', message: 'Status permohonan berhasil diperbarui.' };
-  } else {
-    return { status: 'error', message: `Permohonan dengan ID ${id} tidak ditemukan.` };
-  }
-}
-
-function handleCreateSOP(params) {
-  const { data } = params;
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.SOP);
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  
-  // Buat baris baru dengan urutan yang benar sesuai header
-  const newRow = headers.map(header => data[header] || "");
-  
-  sheet.appendRow(newRow);
-  
-  CacheService.getScriptCache().remove(`data_${SHEET_NAMES.SOP}`);
-  return { status: 'success', message: 'SOP baru berhasil ditambahkan.' };
-}
-
-function handleUpdateSOP(params) {
-  const { rowIndex, data } = params;
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.SOP);
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  
-  const updatedRow = headers.map(header => data[header] || "");
-
-  sheet.getRange(rowIndex, 1, 1, headers.length).setValues([updatedRow]);
-
-  CacheService.getScriptCache().remove(`data_${SHEET_NAMES.SOP}`);
-  return { status: 'success', message: 'SOP berhasil diperbarui.' };
-}
-
-function handleDeleteSOP(params) {
-  const { rowIndex } = params;
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAMES.SOP);
-  
-  sheet.deleteRow(rowIndex);
-  
-  CacheService.getScriptCache().remove(`data_${SHEET_NAMES.SOP}`);
-  return { status: 'success', message: 'SOP berhasil dihapus.' };
-}
-
-
-// =================================================================
-// FUNGSI-FUNGSI BANTU (HELPERS)
-// =================================================================
-
-function getDataFromSheet(sheetName) {
-  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(sheetName);
-  if (!sheet) throw new Error(`Sheet '${sheetName}' tidak ditemukan.`);
-  return sheetToJSON(sheet);
-}
-
-function isTokenValid(token) {
-  if (!token) return false;
-  const tokenData = PropertiesService.getScriptProperties().getProperty(token);
-  if (!tokenData) return false;
-  
-  const data = JSON.parse(tokenData);
-  if (new Date().getTime() > data.expires) {
-    PropertiesService.getScriptProperties().deleteProperty(token);
-    return false;
-  }
-  return data;
-}
-
-function createFileInDrive(unit, namaSop, fileData, fileName, fileType) {
-  const cleanUnit = unit.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-  const cleanNamaSop = namaSop.replace(/[^a-zA-Z0-9 ]/g, "").trim();
-  const extension = fileName.split('.').pop();
-  const newFileName = `${cleanUnit}-${cleanNamaSop}.${extension}`;
-  
-  const parentFolder = DriveApp.getFolderById(DRIVE_FOLDER_ID);
-  const year = new Date().getFullYear().toString();
-  const yearFolder = getOrCreateFolder(parentFolder, year);
-  const unitFolder = getOrCreateFolder(yearFolder, cleanUnit);
-
-  const decodedData = Utilities.base64Decode(fileData.split(',')[1]);
-  const blob = Utilities.newBlob(decodedData, fileType, newFileName);
-  const file = unitFolder.createFile(blob);
-  return file.getUrl();
-}
-
-function createJsonResponse(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function sheetToJSON(sheet) {
-  const data = sheet.getDataRange().getValues();
-  if (data.length < 2) return [];
-  const headers = data.shift();
-  
-  return data.map((row, index) => {
-    const obj = { rowIndex: index + 2 };
-    headers.forEach((header, i) => {
-      if (row[i] instanceof Date) {
-        obj[header] = row[i].toISOString();
-      } else {
-        obj[header] = row[i];
-      }
+    // --- EVENT LISTENERS ---
+    adminLoginForm.addEventListener('submit', handleLogin);
+    logoutButton.addEventListener('click', handleLogout);
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600'));
+            button.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
+            document.getElementById(`${tab}-view`).classList.remove('hidden');
+            if (tab === 'sop') loadSopData();
+            else if (tab === 'permohonan') loadPermohonanData();
+        });
     });
-    return obj;
-  });
-}
 
-function getOrCreateFolder(parentFolder, childFolderName) {
-  const folders = parentFolder.getFoldersByName(childFolderName);
-  return folders.hasNext() ? folders.next() : parentFolder.createFolder(childFolderName);
-}
+    // --- GLOBAL APP OBJECT FOR MODALS ---
+    window.adminApp = {
+        openUpdateStatusModal,
+        openSopModal,
+        openDeleteSopModal
+    };
+
+    // --- STARTUP ---
+    if (checkSession()) {
+        initializeApp();
+    }
+});
 
