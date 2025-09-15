@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         // Tampilkan loading halaman penuh hanya jika tidak ada cache sama sekali atau cache sudah usang.
         setLoadingState(true);
-        DOM.datasetList.innerHTML = '';
+        if (DOM.datasetList) DOM.datasetList.innerHTML = '';
     }
     
     // Baris ini hanya akan dieksekusi jika:
@@ -377,7 +377,7 @@ const displayPermohonanView = () => {
     }
 };
 
-
+// This function just pre-loads the data when the app starts.
 const loadPermohonanDataInBackground = async () => {
     const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
     if (response.status === 'success') {
@@ -386,33 +386,30 @@ const loadPermohonanDataInBackground = async () => {
             allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         }
         isPermohonanLoaded = true;
-        
-        if (!DOM.permohonanViewContainer.classList.contains('hidden')) {
-          DOM.permohonanLoadingIndicator.style.display = 'none';
-          renderPermohonanData();
-        }
     }
 };
 
-
+// This function handles the UI and data loading when the user navigates to the view.
 const loadPermohonanData = async () => {
     DOM.permohonanLoadingIndicator.style.display = 'block';
     DOM.permohonanContent.classList.add('hidden');
     
-    await loadPermohonanDataInBackground();
+    const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
     
     DOM.permohonanLoadingIndicator.style.display = 'none';
 
-
-    if (!isPermohonanLoaded) {
-        const permohonanSection = DOM.permohonanViewContainer.querySelector('section');
-        if (permohonanSection) {
-            permohonanSection.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat data permohonan. Silakan coba lagi nanti.</p>`;
+    if (response.status === 'success') {
+        allPermohonan = response.data || [];
+        if (allPermohonan.length > 0 && allPermohonan[0].Timestamp) {
+            allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         }
+        isPermohonanLoaded = true;
+        renderPermohonanData();
+    } else {
+        DOM.permohonanContent.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat data permohonan. Silakan coba lagi nanti.</p>`;
+        DOM.permohonanContent.classList.remove('hidden');
     }
 };
-
-
 
 
 const renderPermohonanData = () => {
@@ -706,3 +703,4 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
+
