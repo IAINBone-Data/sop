@@ -116,6 +116,8 @@
             <h2 class="text-xl font-bold border-b pb-2">Menu</h2>
             <ul id="main-menu-list" class="mt-4 space-y-2">
                 <li><a href="#" id="home-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-home w-6 mr-2"></i>Beranda</a></li>
+                <!-- [BARU] Menu Permohonan SOP -->
+                <li><a href="#" id="permohonan-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-file-signature w-6 mr-2"></i>Permohonan SOP</a></li>
                 <li><a href="#" id="about-link" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-info-circle w-6 mr-2"></i>Tentang</a></li>
                 <li class="border-t pt-2 mt-2"><a href="https://www.iain-bone.ac.id" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-globe w-6 mr-2"></i>Web IAIN Bone</a></li>
                 <li><a href="https://s.id/iainbone" target="_blank" class="flex items-center py-2 px-4 hover:bg-gray-100 rounded"><i class="fas fa-concierge-bell w-6 mr-2"></i>Informasi Layanan</a></li>
@@ -130,7 +132,7 @@
       <div id="list-view-container">
         
         <section class="w-full">
-            <!-- [PERBAIKAN] Tata letak kontrol menjadi 2 baris -->
+            <!-- Tata letak kontrol menjadi 2 baris -->
             <!-- Baris 1: Judul dan Reload -->
             <div class="flex items-center justify-between gap-4 mb-4">
                 <h3 id="dataset-count" class="text-lg font-semibold text-gray-700"><i class="fa fa-spinner fa-spin"></i> Memuat data...</h3>
@@ -143,32 +145,32 @@
             <div class="flex flex-wrap items-center justify-end gap-2 lg:gap-4 mb-4">
                  <!-- Kontrol Desktop -->
                  <div class="hidden lg:flex items-center gap-4 flex-grow">
-                    <div class="relative flex-grow" style="max-width: 400px; margin-left: auto;">
-                        <input type="search" id="search-input" placeholder="Cari Nama atau Nomor SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
-                    </div>
-                    <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
-                        <option value="">Semua Unit</option>
-                    </select>
-                    <select id="filter-fungsi" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
-                        <option value="">Semua Fungsi</option>
-                    </select>
-                    <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm shrink-0">Reset</button>
-                </div>
+                     <div class="relative flex-grow" style="max-width: 400px; margin-left: auto;">
+                         <input type="search" id="search-input" placeholder="Cari Nama atau Nomor SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                     </div>
+                     <select id="filter-unit" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                         <option value="">Semua Unit</option>
+                     </select>
+                     <select id="filter-fungsi" class="p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white">
+                         <option value="">Semua Fungsi</option>
+                     </select>
+                     <button id="reset-filter-button" class="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 text-sm shrink-0">Reset</button>
+                 </div>
                 
-                <!-- Kontrol Mobile -->
-                <div class="flex lg:hidden items-center gap-2 flex-grow">
-                    <div class="relative flex-grow">
-                        <input type="search" id="search-input-mobile" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
-                    </div>
-                    <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
-                        <i class="fas fa-filter"></i>
-                    </button>
-                    <button id="reset-filter-button-mobile" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
-                        <i class="fas fa-undo"></i>
-                    </button>
-                </div>
+                 <!-- Kontrol Mobile -->
+                 <div class="flex lg:hidden items-center gap-2 flex-grow">
+                     <div class="relative flex-grow">
+                         <input type="search" id="search-input-mobile" placeholder="Cari SOP..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
+                     </div>
+                     <button id="open-filter-button" title="Buka Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
+                         <i class="fas fa-filter"></i>
+                     </button>
+                     <button id="reset-filter-button-mobile" title="Reset Filter" class="bg-white border text-gray-700 font-bold p-2 w-12 h-10 rounded-lg hover:bg-gray-100 text-sm flex items-center justify-center shrink-0">
+                         <i class="fas fa-undo"></i>
+                     </button>
+                 </div>
             </div>
 
             <div id="loading-indicator" class="text-center py-10"><i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i><p class="mt-2 text-gray-600">Sedang memuat SOP...</p></div>
@@ -203,11 +205,12 @@
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
             <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
         </div>
-        <!-- [PERBAIKAN FINAL] Tata letak grid detail yang benar-benar responsif -->
+        <!-- [PERBAIKAN] Tata letak grid detail responsif dengan urutan yang benar -->
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
             
             <!-- Bagian Detail -->
-            <section class="order-1 lg:col-span-3 bg-white p-6 rounded-lg shadow-md space-y-4">
+            <!-- [PERUBAHAN] Urutan diubah untuk mobile dan desktop -->
+            <section class="order-1 lg:order-1 lg:col-span-3 bg-white p-6 rounded-lg shadow-md space-y-4">
                 <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
                 <p id="detail-uraian" class="text-gray-600 text-sm"></p>
                 <div class="border rounded-lg p-4 flex items-center justify-between gap-4">
@@ -217,7 +220,8 @@
             </section>
             
             <!-- Bagian Metadata (Collapsible) -->
-            <section class="order-3 lg:order-none lg:col-span-3 bg-white p-6 rounded-lg shadow-md">
+            <!-- [PERUBAHAN] Urutan diubah dan ditambahkan self-start agar kartu bisa menyusut -->
+            <section class="order-3 lg:order-2 lg:col-span-3 bg-white p-6 rounded-lg shadow-md self-start">
                 <button id="toggle-metadata-button" class="w-full flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-gray-800">Metadata</h3>
                     <i id="metadata-chevron" class="fas fa-chevron-down transition-transform duration-300"></i>
@@ -237,7 +241,8 @@
             </section>
 
             <!-- Bagian Pratinjau PDF -->
-            <div class="order-2 lg:col-span-7 lg:col-start-4 lg:row-span-2 lg:row-start-1">
+            <!-- [PERUBAHAN] Urutan diubah untuk mobile -->
+            <div class="order-2 lg:order-3 lg:col-span-7 lg:col-start-4 lg:row-span-2 lg:row-start-1">
                 <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
                     <div id="table-preview-content" class="w-full h-full">
                         <!-- Konten pratinjau (iframe) akan dimasukkan di sini -->
@@ -254,6 +259,43 @@
             Sistem E-SOP IAIN Bone adalah sebuah platform terpusat yang dirancang untuk mengelola dan menyajikan Standar Operasional Prosedur (SOP) dari berbagai unit kerja di lingkungan Institut Agama Islam Negeri (IAIN) Bone. Tujuan utama dari sistem ini adalah untuk mewujudkan tata kelola dokumen yang akurat, mutakhir, terpadu, dan dapat diakses dengan mudah oleh seluruh pemangku kepentingan.
         </p>
       </div>
+
+      <!-- [BARU] Container untuk Halaman Permohonan -->
+      <div id="permohonan-view-container" class="hidden">
+        <section class="w-full">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Daftar Permohonan SOP</h3>
+            <div id="permohonan-loading-indicator" class="text-center py-10">
+                <i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i>
+                <p class="mt-2 text-gray-600">Sedang memuat data permohonan...</p>
+            </div>
+            <div id="permohonan-content" class="hidden">
+                <div class="bg-white rounded-lg shadow">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 border-b">
+                                <tr>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">ID Permohonan</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Timestamp</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Unit</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Nama SOP Diajukan</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                                    <th class="p-4 text-left text-sm font-semibold text-gray-600">Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permohonan-table-body" class="divide-y">
+                                <!-- Data akan dimuat di sini oleh app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="permohonan-no-data-message" class="hidden text-center py-10 bg-white rounded-lg shadow-md mt-4">
+                    <i class="fa-solid fa-folder-open fa-3x text-gray-400"></i>
+                    <p class="mt-4 text-lg font-semibold text-gray-700">Tidak Ada Data Permohonan</p>
+                    <p class="mt-1 text-gray-500">Saat ini belum ada permohonan SOP yang tercatat.</p>
+                </div>
+            </div>
+        </section>
+      </div>
       
     </main>
   </div>
@@ -265,4 +307,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
