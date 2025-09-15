@@ -80,6 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.loginView.classList.remove('hidden');
         DOM.dashboardView.classList.add('hidden');
         DOM.adminLoginForm.reset();
+
+        // [PERBAIKAN] Mengatur ulang tombol login ke keadaan semula
+        const btn = document.getElementById('login-button');
+        const btnText = document.getElementById('login-button-text');
+        if (btn && btnText) {
+            btn.disabled = false;
+            btnText.innerHTML = 'Login';
+        }
     };
 
     // --- DATA LOADING & CACHING ---
