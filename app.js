@@ -3,9 +3,9 @@ const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfjR1j10AkKTMXlFJ4
 
 
 document.addEventListener('DOMContentLoaded', function () {
- // === DOM ELEMENTS CACHING ===
- const DOM = {};
- const cacheDOMElements = () => {
+  // === DOM ELEMENTS CACHING ===
+  const DOM = {};
+  const cacheDOMElements = () => {
   const ids = [
     'userInfoContainer', 'listViewContainer', 'detailViewContainer', 'aboutViewContainer',
     'datasetList', 'datasetCardsContainer',
@@ -32,53 +32,52 @@ document.addEventListener('DOMContentLoaded', function () {
     'toastNotification', 'toastMessage'
   ];
     ids.forEach(id => {
-        const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
-        const el = document.getElementById(kebabCaseId);
+        const el = document.getElementById(id);
         if (el) {
             DOM[id] = el;
         } else {
-            console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
+            console.warn(`Elemen dengan ID '${id}' tidak ditemukan.`);
         }
     });
  };
 
 
- // === STATE MANAGEMENT ===
- let allDatasets = [];
- let currentPage = 1;
- const rowsPerPage = 100;
- let currentFilteredData = [];
- let allPermohonan = [];
- let isPermohonanLoaded = false;
+  // === STATE MANAGEMENT ===
+  let allDatasets = [];
+  let currentPage = 1;
+  const rowsPerPage = 100;
+  let currentFilteredData = [];
+  let allPermohonan = [];
+  let isPermohonanLoaded = false;
   let toastTimeout = null;
- 
-  // === API HELPER ===
-  const callAppsScript = async (action, payload = {}) => {
-      try {
-          const response = await fetch(WEB_APP_URL, {
-              method: 'POST',
-              body: JSON.stringify({ action, ...payload }),
-              redirect: 'follow'
-          });
-          if (!response.ok) {
-              throw new Error(`Network response error: ${response.statusText}`);
-          }
-          const text = await response.text();
-          try {
-              return JSON.parse(text);
-          } catch (e) {
-              console.error("Gagal mem-parsing JSON:", text);
-              return { status: 'error', message: 'Gagal memproses respon dari server.' };
-          }
-      } catch (error) {
-          console.error(`API Call Error untuk action "${action}":`, error);
-          return { status: 'error', message: error.message };
-      }
-  };
+  
+   // === API HELPER ===
+   const callAppsScript = async (action, payload = {}) => {
+       try {
+           const response = await fetch(WEB_APP_URL, {
+               method: 'POST',
+               body: JSON.stringify({ action, ...payload }),
+               redirect: 'follow'
+           });
+           if (!response.ok) {
+               throw new Error(`Network response error: ${response.statusText}`);
+           }
+           const text = await response.text();
+           try {
+               return JSON.parse(text);
+           } catch (e) {
+               console.error("Gagal mem-parsing JSON:", text);
+               return { status: 'error', message: 'Gagal memproses respon dari server.' };
+           }
+       } catch (error) {
+           console.error(`API Call Error untuk action "${action}":`, error);
+           return { status: 'error', message: error.message };
+       }
+   };
 
 
- // === MAIN FUNCTIONS ===
- const initializeApp = () => {
+  // === MAIN FUNCTIONS ===
+  const initializeApp = () => {
   if (WEB_APP_URL === 'GANTI_DENGAN_URL_WEB_APP_ANDA' || !WEB_APP_URL) {
    showErrorState('Konfigurasi Error', 'Harap ganti "GANTI_DENGAN_URL_WEB_APP_ANDA" dengan URL Web App Anda yang valid di dalam file app.js.');
    return;
@@ -90,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
  };
 
 
- const loadInitialData = async (isReload = false) => {
+  const loadInitialData = async (isReload = false) => {
     // [OPTIMISASI] Durasi cache browser diatur ke 1 jam.
     const CACHE_DURATION_HOURS = 1;
 
@@ -112,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     populateFilterOptions();
                     applyFiltersAndRender();
                     setLoadingState(false);
-                   
+                    
                     if (!isPermohonanLoaded) {
                         loadPermohonanDataInBackground();
                     }
@@ -127,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setLoadingState(true);
         DOM.datasetList.innerHTML = '';
     }
-   
+    
     // Baris ini hanya akan dieksekusi jika:
     // 1. Ini adalah reload paksa (isReload = true).
     // 2. Tidak ada cache di browser.
@@ -138,10 +137,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (response.status === 'success') {
         allDatasets = response.data || [];
         allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
-       
+        
         populateFilterOptions();
         applyFiltersAndRender();
-       
+        
         // Simpan data baru yang segar beserta timestamp ke cache browser.
         try {
             const cacheData = {
@@ -152,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (e) {
             console.warn("Gagal menyimpan data ke localStorage:", e);
         }
-       
+        
         if (isReload) {
             showToast('Data berhasil dimuat ulang!', 'success');
         }
@@ -168,12 +167,12 @@ document.addEventListener('DOMContentLoaded', function () {
             showErrorState('Gagal Memuat Data', response.message);
         }
     }
-   
+    
     setLoadingState(false);
 };
- 
- // === EVENT LISTENERS SETUP ===
- const setupEventListeners = () => {
+  
+  // === EVENT LISTENERS SETUP ===
+  const setupEventListeners = () => {
     DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
     DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
     DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
@@ -207,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
     DOM.closeFormModal.addEventListener('click', () => toggleModal('form-permohonan-modal', false));
     DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
     DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
- };
+  };
 
 
 //==================================================
@@ -232,31 +231,31 @@ function updateUIForLoginStatus() {
 
 // ... (Fungsi render dan filter SOP tidak berubah)
 function syncAndFilter(event) {
-     const sourceElement = event.target;
-     if (sourceElement.id === 'search-input') DOM.searchInputMobile.value = sourceElement.value;
-     else if (sourceElement.id === 'search-input-mobile') DOM.searchInput.value = sourceElement.value;
-     if (sourceElement.id === 'filter-unit') DOM.filterUnitModal.value = sourceElement.value;
-     else if (sourceElement.id === 'filter-unit-modal') DOM.filterUnit.value = sourceElement.value;
-     if (sourceElement.id === 'filter-fungsi') DOM.filterFungsiModal.value = sourceElement.value;
-     else if (sourceElement.id === 'filter-fungsi-modal') DOM.filterFungsi.value = sourceElement.value;
-     applyFiltersAndRender();
+      const sourceElement = event.target;
+      if (sourceElement.id === 'search-input') DOM.searchInputMobile.value = sourceElement.value;
+      else if (sourceElement.id === 'search-input-mobile') DOM.searchInput.value = sourceElement.value;
+      if (sourceElement.id === 'filter-unit') DOM.filterUnitModal.value = sourceElement.value;
+      else if (sourceElement.id === 'filter-unit-modal') DOM.filterUnit.value = sourceElement.value;
+      if (sourceElement.id === 'filter-fungsi') DOM.filterFungsiModal.value = sourceElement.value;
+      else if (sourceElement.id === 'filter-fungsi-modal') DOM.filterFungsi.value = sourceElement.value;
+      applyFiltersAndRender();
 }
 function applyFiltersAndRender() {
-      let filteredData = [...allDatasets];
-      const searchTerm = DOM.searchInput.value.toLowerCase();
-      const selectedUnit = DOM.filterUnit.value;
-      const selectedFungsi = DOM.filterFungsi.value;
-      if (searchTerm) {
-          filteredData = filteredData.filter(item => 
-              (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
-              (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
-          );
-      }
-      if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
-      if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
-      currentFilteredData = filteredData;
-      currentPage = 1;
-      renderPageContent();
+       let filteredData = [...allDatasets];
+       const searchTerm = DOM.searchInput.value.toLowerCase();
+       const selectedUnit = DOM.filterUnit.value;
+       const selectedFungsi = DOM.filterFungsi.value;
+       if (searchTerm) {
+           filteredData = filteredData.filter(item => 
+               (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
+               (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm)
+           );
+       }
+       if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
+       if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
+       currentFilteredData = filteredData;
+       currentPage = 1;
+       renderPageContent();
 }
 function renderPageContent() {
       DOM.datasetList.innerHTML = ''; 
@@ -276,19 +275,19 @@ function renderPageContent() {
           const safeIDSOP = (item.IDSOP || '').trim();
           const unitLabel = `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${unitText}</span>`;
           const tableRowHTML = `
-               <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
-                   <td class="p-4 text-sm text-gray-700">${nomorSOP}</td>
-                   <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
-                   <td class="p-4 text-sm text-gray-700">${unitLabel}</td>
-                   <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
-               </tr>`;
+                <tr class="view-detail-trigger cursor-pointer hover:bg-gray-50" data-id="${safeIDSOP}">
+                    <td class="p-4 text-sm text-gray-700">${nomorSOP}</td>
+                    <td class="p-4 text-sm font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</td>
+                    <td class="p-4 text-sm text-gray-700">${unitLabel}</td>
+                    <td class="p-4 text-sm text-gray-700">${fungsiText}</td>
+                </tr>`;
           const cardHTML = `
-               <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
-                   <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
-                   <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
-                       ${unitLabel} <span class="mx-1">-</span> <span>${fungsiText}</span>
-                   </p>
-               </div>`;
+                <div class="view-detail-trigger cursor-pointer p-4" data-id="${safeIDSOP}">
+                    <p class="font-semibold text-gray-900">${item['Nama SOP'] || 'Tanpa Judul'}</p>
+                    <p class="text-xs text-gray-500 mt-2 flex items-center gap-2 flex-wrap">
+                        ${unitLabel} <span class="mx-1">-</span> <span>${fungsiText}</span>
+                    </p>
+                </div>`;
           DOM.datasetList.innerHTML += tableRowHTML;
           DOM.datasetCardsContainer.innerHTML += cardHTML;
       });
@@ -387,7 +386,7 @@ const loadPermohonanDataInBackground = async () => {
             allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         }
         isPermohonanLoaded = true;
-       
+        
         if (!DOM.permohonanViewContainer.classList.contains('hidden')) {
           DOM.permohonanLoadingIndicator.style.display = 'none';
           renderPermohonanData();
@@ -399,9 +398,9 @@ const loadPermohonanDataInBackground = async () => {
 const loadPermohonanData = async () => {
     DOM.permohonanLoadingIndicator.style.display = 'block';
     DOM.permohonanContent.classList.add('hidden');
-   
+    
     await loadPermohonanDataInBackground();
-   
+    
     DOM.permohonanLoadingIndicator.style.display = 'none';
 
 
@@ -564,13 +563,17 @@ function handleReload() {
 function showToast(message, type = 'info') {
     clearTimeout(toastTimeout);
     const toast = DOM.toastNotification;
+    if (!toast) {
+        console.error("Toast notification element not found in DOM.");
+        return;
+    }
     const icon = toast.querySelector('i');
 
 
     DOM.toastMessage.textContent = message;
-   
+    
     toast.classList.remove('bg-gray-800', 'bg-green-600', 'bg-red-600', 'translate-x-[120%]');
-    icon.className = 'mr-2';
+    icon.className = 'mr-3 fa-lg'; // Reset class icon
 
 
     if (type === 'success') {
@@ -583,9 +586,9 @@ function showToast(message, type = 'info') {
         toast.classList.add('bg-gray-800');
         icon.classList.add('fas', 'fa-sync-alt', 'fa-spin');
     }
-   
+    
     toast.classList.remove('translate-x-[120%]');
-   
+    
     if (type !== 'info') {
         toastTimeout = setTimeout(hideToast, 3000);
     }
@@ -593,7 +596,9 @@ function showToast(message, type = 'info') {
 
 
 function hideToast() {
+  if (DOM.toastNotification) {
     DOM.toastNotification.classList.add('translate-x-[120%]');
+  }
 }
 
 
@@ -640,7 +645,7 @@ function setLoadingState(isLoading) {
 
 
     const buttons = [DOM.reloadDatasetButton, DOM.reloadDatasetButtonMobile];
-    const icons = [DOM.reloadIcon, DOM.reloadIconMobile];
+    const icons = [DOM.reloadIcon, DOM.reloadIconMobile]; // Assuming DOM.reloadIcon exists
 
 
     buttons.forEach(button => {
@@ -701,8 +706,3 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
-
-
-
-
-
