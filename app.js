@@ -358,7 +358,6 @@ const renderPermohonanData = () => {
                 case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
                 default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
             }
-            // [PERBAIKAN] Mengubah format tanggal menjadi DD/MM/YYYY
             const formattedTimestamp = item.Timestamp ? new Date(item.Timestamp).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
             const rowHTML = `
                 <tr>
@@ -371,7 +370,6 @@ const renderPermohonanData = () => {
                 </tr>`;
             DOM.permohonanTableBody.innerHTML += rowHTML;
 
-            // [PERBAIKAN] Memastikan 'Keterangan' selalu ada di kartu mobile jika datanya tersedia
             const cardHTML = `
                 <div class="p-4 space-y-2">
                     <div class="flex justify-between items-start">
@@ -423,7 +421,8 @@ async function handleFormSubmit(e) {
         unit,
         namaSop,
         idPermohonan: `SOP-${Date.now()}`,
-        timestamp: new Date().toLocaleDateString('id-ID', { year: 'numeric', month: '2-digit', day: '2-digit' }),
+        // [PERBAIKAN] Kirim tanggal dalam format ISO 8601 yang universal
+        timestamp: new Date().toISOString(),
     };
 
     if (file) {
@@ -581,5 +580,4 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
-
 
