@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXvm1PcTj-5edP9V4HD1YFxV-vXhVIDrmRENaIusB5XtOnahpAJo5oZWMkUe8XDL57/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxU1GMXriwVHV0qDjl5fwYgxQM8fdW1f7iHlEsahuTpXLnX9zANt_GdgV2B55Gzs4rh/exec';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -30,8 +30,11 @@ document.addEventListener('DOMContentLoaded', function () {
     'formUnit', 'formNamaSop', 'formFile', 'formError', 'submitButtonText', 'submitSpinner',
     'datasetCountMobile', 'reloadDatasetButtonMobile', 'reloadIconMobile',
     'toastNotification', 'toastMessage',
-    // PERUBAHAN: Cache elemen untuk keterkaitan di dalam kartu
-    'detailKeterkaitanCard'
+    'detailKeterkaitanCard',
+    // PENAMBAHAN: Elemen untuk modal laporan
+    'laporanModal', 'laporanForm', 'closeLaporanModal', 'submitLaporanButton',
+    'laporanSopId', 'laporanTextarea', 'laporanError', 'laporanButtonText', 'laporanSpinner',
+    'reportSopButton'
   ];
     ids.forEach(id => {
         const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -39,7 +42,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) {
             DOM[id] = el;
         } else {
-            console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
+            // Beberapa elemen seperti report-sop-button dibuat dinamis, jadi tidak apa-apa jika tidak ditemukan di awal
+            if (!['reportSopButton'].includes(id)) {
+                 console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
+            }
         }
     });
  };
@@ -53,8 +59,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let allPermohonan = [];
   let isPermohonanLoaded = false;
   let toastTimeout = null;
-  // State untuk melacak status sorting, default berdasarkan IDSOP (terbaru)
   let currentSort = { key: 'IDSOP', order: 'desc' };
+  let currentReportingSopId = null; // PENAMBAHAN: State untuk menyimpan ID SOP yang dilaporkan
   
    // === API HELPER ===
    const callAppsScript = async (action, payload = {}) => {
@@ -180,16 +186,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (DOM.permohonanForm) DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
     if (DOM.reloadDatasetButtonMobile) DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
 
-    // Event listener untuk klik pada header tabel (sorting)
     const tableHead = document.querySelector('#dataset-list')?.parentElement?.querySelector('thead');
     if (tableHead) {
         tableHead.addEventListener('click', handleSort);
     }
 
-    // PENAMBAHAN: Event listener untuk klik pada link SOP terkait
     if (DOM.detailViewContainer) {
         DOM.detailViewContainer.addEventListener('click', handleDetailViewClick);
     }
+
+    // PENAMBAHAN: Event listener untuk modal laporan
+    if (DOM.closeLaporanModal) DOM.closeLaporanModal.addEventListener('click', () => toggleModal('laporan-modal', false));
+    if (DOM.laporanForm) DOM.laporanForm.addEventListener('submit', handleLaporanSubmit);
   };
 
 function updateUIForLoginStatus() {
@@ -235,7 +243,6 @@ function applyFiltersAndRender() {
     if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
     if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
     
-    // Blok logika untuk sorting data
     if (currentSort.key) {
         filteredData.sort((a, b) => {
             const valA = a[currentSort.key] || '';
@@ -324,7 +331,6 @@ function showDetailView(idsop) {
         return;
     }
     
-    // Reset tampilan detail
     window.scrollTo(0,0);
     DOM.metadataContent.classList.add('hidden');
     DOM.metadataChevron.classList.remove('rotate-180');
@@ -353,6 +359,11 @@ function showDetailView(idsop) {
     } else {
         DOM.detailStatus.classList.add('hidden');
     }
+    
+    // PENAMBAHAN: Atur data-id untuk tombol lapor
+    const reportButton = document.getElementById('report-sop-button');
+    if(reportButton) reportButton.dataset.id = trimmedIdsop;
+    
     DOM.detailDownloadLink.style.display = 'inline-block';
     const fileUrl = item.File || '';
     const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
@@ -368,7 +379,6 @@ function showDetailView(idsop) {
         DOM.tablePreviewContent.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-gray-500 p-8 bg-gray-50 rounded-md" style="min-height: 50vh;"><i class="fas fa-file-excel fa-3x mb-4 text-gray-400"></i><p class="font-semibold">Tidak Ada Pratinjau</p><p class="text-sm mt-1">Dokumen untuk SOP ini tidak tersedia.</p></div>`;
     }
 
-    // PERUBAHAN: Logika untuk menampilkan bagian Keterkaitan di dalam kartu utama
     if (DOM.detailKeterkaitanCard && item.Hubungan && item.Hubungan.trim() !== '') {
         const hubunganList = item.Hubungan.split(',').map(sop => sop.trim());
         let listHTML = '<div class="pt-4 mt-4 border-t"><h3 class="text-sm font-semibold text-gray-800 mb-2">Keterkaitan:</h3><ol class="list-decimal list-inside space-y-2 text-sm">';
@@ -392,6 +402,69 @@ function showDetailView(idsop) {
 
     showView('detail-view-container');
 }
+
+//==================================================
+// FUNGSI-FUNGSI UNTUK HALAMAN LAPORAN
+//==================================================
+
+// PENAMBAHAN: Fungsi untuk membuka modal laporan
+const openLaporanForm = (idsop) => {
+    currentReportingSopId = idsop;
+    if (DOM.laporanForm) DOM.laporanForm.reset();
+    if (DOM.laporanSopId) DOM.laporanSopId.value = idsop;
+    if (DOM.laporanError) DOM.laporanError.classList.add('hidden');
+    toggleModal('laporan-modal', true);
+};
+
+// PENAMBAHAN: Fungsi untuk menangani submit laporan
+const handleLaporanSubmit = async (e) => {
+    e.preventDefault();
+    if (!currentReportingSopId) return;
+
+    DOM.laporanSpinner.classList.remove('hidden');
+    DOM.laporanButtonText.classList.add('hidden');
+    DOM.submitLaporanButton.disabled = true;
+    DOM.laporanError.classList.add('hidden');
+
+    const laporanText = DOM.laporanTextarea.value;
+    if (!laporanText.trim()) {
+        showLaporanError("Isi laporan tidak boleh kosong.");
+        return;
+    }
+
+    const today = new Date();
+    const formattedDate = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
+    const payload = {
+        data: {
+            IDSOP: currentReportingSopId,
+            Tanggal: formattedDate,
+            Laporan: laporanText
+        }
+    };
+
+    const response = await callAppsScript('addLaporan', payload);
+
+    if (response.status === 'success') {
+        toggleModal('laporan-modal', false);
+        showToast('Laporan berhasil dikirim. Terima kasih.', 'success');
+    } else {
+        showLaporanError(response.message || 'Terjadi kesalahan saat mengirim laporan.');
+    }
+
+    DOM.laporanSpinner.classList.add('hidden');
+    DOM.laporanButtonText.classList.remove('hidden');
+    DOM.submitLaporanButton.disabled = false;
+};
+
+const showLaporanError = (message) => {
+    DOM.laporanError.textContent = message;
+    DOM.laporanError.classList.remove('hidden');
+    DOM.laporanSpinner.classList.add('hidden');
+    DOM.laporanButtonText.classList.remove('hidden');
+    DOM.submitLaporanButton.disabled = false;
+};
+
 
 //==================================================
 // FUNGSI-FUNGSI UNTUK HALAMAN PERMOHONAN
@@ -540,7 +613,6 @@ function handleDatasetListClick(e) {
       if (viewTrigger) showDetailView(viewTrigger.dataset.id);
 }
 
-// PENAMBAHAN: Fungsi baru untuk menangani klik di dalam view detail
 const handleDetailViewClick = (e) => {
     const relatedLink = e.target.closest('.related-sop-link');
     if (relatedLink) {
@@ -548,6 +620,15 @@ const handleDetailViewClick = (e) => {
         const sopId = relatedLink.dataset.id;
         if (sopId) {
             showDetailView(sopId);
+        }
+    }
+
+    const reportButton = e.target.closest('#report-sop-button');
+    if (reportButton) {
+        e.preventDefault();
+        const sopId = reportButton.dataset.id;
+        if (sopId) {
+            openLaporanForm(sopId);
         }
     }
 };
@@ -639,7 +720,6 @@ function showView(viewId, closeMenu = false) {
       const view = document.getElementById(viewId);
       if(view) view.classList.remove('hidden');
       if (closeMenu) toggleSideMenu(false);
-      // Jangan scroll ke atas jika view-nya sama
       if (document.getElementById(viewId)?.classList.contains('hidden')) {
         window.scrollTo(0, 0);
       }
