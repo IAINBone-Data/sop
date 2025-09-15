@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwHzWud-fncbXMCnwn4n0DxDg5JoRGv_Kwlyuagsi3_67TZa4uTdK-CdQxG7W_7mVM/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXvm1PcTj-5edP9V4HD1YFxV-vXhVIDrmRENaIusB5XtOnahpAJo5oZWMkUe8XDL57/exec';
 
 
 document.addEventListener('DOMContentLoaded', function () {
