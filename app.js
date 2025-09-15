@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'formPermohonanModal', 'permohonanForm', 'closeFormModal', 'submitPermohonanButton',
     'formUnit', 'formNamaSop', 'formFile', 'formError', 'submitButtonText', 'submitSpinner',
     'datasetCountMobile', 'reloadDatasetButtonMobile', 'reloadIconMobile',
-    'toastNotification', 'toastMessage'
+    'toastNotification', 'toastMessage',
+    // PENAMBAHAN: Cache elemen untuk keterkaitan
+    'detailKeterkaitanContainer', 'detailKeterkaitanContent'
   ];
     ids.forEach(id => {
         const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -357,15 +359,32 @@ function showDetailView(idsop) {
     const driveRegex = /https:\/\/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/;
     const match = fileUrl.match(driveRegex);
     const fileId = match ? match[1] : null;
-    DOM.tablePreviewContainer.classList.add('hidden');
-    DOM.tablePreviewContent.innerHTML = '';
+    
+    // PERUBAHAN: Logika untuk menampilkan preview atau pesan "tidak ada data"
+    DOM.tablePreviewContainer.classList.remove('hidden');
     if (fileId) {
         DOM.detailDownloadLink.href = `https://drive.google.com/uc?export=download&id=${fileId}`;
-        DOM.tablePreviewContainer.classList.remove('hidden');
         DOM.tablePreviewContent.innerHTML = `<iframe src="https://drive.google.com/file/d/${fileId}/preview" class="w-full h-full" style="min-height: 80vh;" frameborder="0"></iframe>`;
     } else {
         DOM.detailDownloadLink.href = '#';
+        DOM.tablePreviewContent.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-center text-gray-500 p-8 bg-gray-50 rounded-md" style="min-height: 50vh;"><i class="fas fa-file-excel fa-3x mb-4 text-gray-400"></i><p class="font-semibold">Tidak Ada Pratinjau</p><p class="text-sm mt-1">Dokumen untuk SOP ini tidak tersedia.</p></div>`;
     }
+
+    // PENAMBAHAN: Logika untuk menampilkan bagian Keterkaitan
+    if (item.Hubungan && item.Hubungan.trim() !== '') {
+        const hubunganList = item.Hubungan.split(',').map(sop => sop.trim());
+        let listHTML = '<ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">';
+        hubunganList.forEach(sopName => {
+            listHTML += `<li>${sopName}</li>`;
+        });
+        listHTML += '</ol>';
+        
+        DOM.detailKeterkaitanContent.innerHTML = listHTML;
+        DOM.detailKeterkaitanContainer.classList.remove('hidden');
+    } else {
+        DOM.detailKeterkaitanContainer.classList.add('hidden');
+    }
+
     showView('detail-view-container');
 }
 
