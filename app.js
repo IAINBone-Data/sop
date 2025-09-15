@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby3PDSqG35NMjCoo2eT2eVt7uLfNmfx1FxfkTPfgp3_UGmSPoplvT_kyWVE65Iqo8ry/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwgRdOnjlNiJa7uDuNVbKAiujis4xRix62BdsMSVm3h1iB1RNGNqBV583zluRTfGwVQ/exec';
 
 document.addEventListener('DOMContentLoaded', function () {
  // === DOM ELEMENTS CACHING ===
