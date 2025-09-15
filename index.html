@@ -220,11 +220,12 @@
                 <div class="overflow-x-auto hidden md:block">
                     <table class="w-full">
                         <thead class="bg-gray-50 border-b">
+                            <!-- PERUBAHAN: Header tabel dibuat interaktif untuk sorting -->
                             <tr>
-                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Nomor SOP</th>
-                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Nama SOP</th>
-                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Unit</th>
-                                <th class="p-4 text-left text-sm font-semibold text-gray-600">Fungsi</th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer" data-sort-key="Nomor SOP">Nomor SOP <i class="fas fa-sort ml-1 text-gray-400"></i></th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer" data-sort-key="Nama SOP">Nama SOP <i class="fas fa-sort ml-1 text-gray-400"></i></th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer" data-sort-key="Unit">Unit <i class="fas fa-sort ml-1 text-gray-400"></i></th>
+                                <th class="p-4 text-left text-sm font-semibold text-gray-600 hover:text-blue-600 cursor-pointer" data-sort-key="Fungsi">Fungsi <i class="fas fa-sort ml-1 text-gray-400"></i></th>
                             </tr>
                         </thead>
                         <tbody id="dataset-list" class="divide-y">
