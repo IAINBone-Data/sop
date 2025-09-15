@@ -1,8 +1,6 @@
-
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxU1GMXriwVHV0qDjl5fwYgxQM8fdW1f7iHlEsahuTpXLnX9zANt_GdgV2B55Gzs4rh/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXiVWSmy8cTIqWXEmspArQNrWkKuhuB7fkY5guw7wxnEJMn3riikRl7Esl22PdX1i2/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -21,10 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- STATE ---
     let authToken = null;
-    let allData = { permohonan: [], sop: [] };
+    let allData = { permohonan: [], sop: [], laporan: [] };
     let sopHeaders = [];
+    // PERBAIKAN: Sistem sort yang lebih baik
     let currentSort = { view: '', key: '', order: 'asc' };
     let tomSelectInstances = {};
+    let toastTimeout = null;
 
     // --- API HELPER ---
     const callApi = async (action, payload = {}) => {
@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return result;
         } catch (error) {
             console.error(`API Call Error for "${action}":`, error);
+            showToast(`API Error: ${error.message}`, 'error');
             return { status: 'error', message: error.message };
         }
     };
@@ -83,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.dashboardView.classList.add('hidden');
         DOM.adminLoginForm.reset();
 
-        // [PERBAIKAN] Mengatur ulang tombol login ke keadaan semula
         const btn = document.getElementById('login-button');
         const btnText = document.getElementById('login-button-text');
         if (btn && btnText) {
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadDataForView = async (viewName, forceReload = false) => {
         const container = document.getElementById(`${viewName}-view`);
         container.innerHTML = `<div class="text-center p-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div>`;
-        const cacheKey = `cache_${viewName}`;
+        const cacheKey = `cache_admin_${viewName}`;
         if (forceReload) sessionStorage.removeItem(cacheKey);
         
         const cachedData = sessionStorage.getItem(cacheKey);
@@ -106,7 +106,14 @@ document.addEventListener('DOMContentLoaded', () => {
             renderView(viewName, allData[viewName]);
             return;
         }
-        const action = viewName === 'permohonan' ? 'adminGetPermohonan' : 'adminGetSOP';
+        
+        let action = '';
+        switch(viewName) {
+            case 'permohonan': action = 'adminGetPermohonan'; break;
+            case 'sop': action = 'adminGetSOP'; break;
+            case 'laporan': action = 'adminGetLaporan'; break;
+        }
+
         const response = await callApi(action);
         if (response.status === 'success') {
             allData[viewName] = response.data;
@@ -124,16 +131,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (countElement) {
             const total = allData[viewName].length;
             const showing = filteredData.length;
-            const itemType = viewName === 'sop' ? 'SOP' : 'Permohonan';
-            countElement.innerHTML = `Menampilkan <strong>${showing}</strong> dari <strong>${total}</strong> total ${itemType}.`;
+            const itemTypes = { sop: 'SOP', permohonan: 'Permohonan', laporan: 'Laporan'};
+            countElement.innerHTML = `Menampilkan <strong>${showing}</strong> dari <strong>${total}</strong> total ${itemTypes[viewName]}.`;
         }
     };
 
     const renderView = (viewName, data) => {
         const container = document.getElementById(`${viewName}-view`);
         if (!container) return;
+        
+        if (viewName === 'laporan') {
+            container.innerHTML = getLaporanHTML(data);
+            return;
+        }
+        
         const isSopView = viewName === 'sop';
-        const addButtonHTML = `<button onclick="window.adminApp.open${isSopView ? 'Sop' : 'Permohonan'}Modal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>`;
+        const addButtonHTML = isSopView || viewName === 'permohonan' ? `<button onclick="window.adminApp.open${isSopView ? 'Sop' : 'Permohonan'}Modal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>` : '';
         
         const filtersHTML = `
             <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
@@ -160,62 +173,151 @@ document.addEventListener('DOMContentLoaded', () => {
         
         container.innerHTML = filtersHTML + countHTML + `<div class="content-wrapper">${contentHTML}</div>`;
         populateFilters(viewName, allData[viewName]);
+        updateSortIcons(viewName);
         updateCount(viewName, data);
     };
     
     const applyFiltersAndRender = (viewName) => {
-        const searchTerm = document.querySelector(`.filter-search[data-view="${viewName}"]`).value.toLowerCase();
-        const selectedUnit = document.querySelector(`.filter-unit[data-view="${viewName}"]`).value;
-        const selectedFungsi = document.querySelector(`.filter-fungsi[data-view="${viewName}"]`).value;
+        const searchTerm = document.querySelector(`.filter-search[data-view="${viewName}"]`)?.value.toLowerCase() || '';
+        const selectedUnit = document.querySelector(`.filter-unit[data-view="${viewName}"]`)?.value || '';
+        const selectedFungsi = document.querySelector(`.filter-fungsi[data-view="${viewName}"]`)?.value || '';
+
         let filteredData = allData[viewName].filter(item => {
-            const hasSearchTerm = searchTerm === '' || (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm);
+            const hasSearchTerm = searchTerm === '' || 
+                (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
+                (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm);
             const hasUnit = selectedUnit === '' || item.Unit === selectedUnit;
-            const hasFungsi = viewName === 'permohonan' || selectedFungsi === '' || item.Fungsi === selectedFungsi;
+            const hasFungsi = viewName !== 'sop' || selectedFungsi === '' || item.Fungsi === selectedFungsi;
             return hasSearchTerm && hasUnit && hasFungsi;
         });
+
         if (currentSort.view === viewName && currentSort.key) {
             filteredData.sort((a, b) => {
                 const valA = a[currentSort.key] || '';
                 const valB = b[currentSort.key] || '';
-                if (valA < valB) return currentSort.order === 'asc' ? -1 : 1;
-                if (valA > valB) return currentSort.order === 'asc' ? 1 : -1;
-                return 0;
+                const comparison = valA.toString().localeCompare(valB.toString(), 'id-ID');
+                return currentSort.order === 'asc' ? comparison : -comparison;
             });
         }
+
         let contentHTML = '';
         if (viewName === 'permohonan') contentHTML = getPermohonanHTML(filteredData);
         if (viewName === 'sop') contentHTML = getSopHTML(filteredData);
+        
         const contentContainer = document.querySelector(`#${viewName}-view .content-wrapper`);
         if(contentContainer) contentContainer.innerHTML = contentHTML;
+        
+        updateSortIcons(viewName);
         updateCount(viewName, filteredData);
     };
     
     const populateFilters = (viewName, data) => {
         const units = [...new Set(data.map(item => item.Unit).filter(Boolean))].sort();
         const unitSelect = document.querySelector(`.filter-unit[data-view="${viewName}"]`);
-        unitSelect.innerHTML = '<option value="">Semua Unit</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
+        if(unitSelect) unitSelect.innerHTML = '<option value="">Semua Unit</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
+        
         if (viewName === 'sop') {
             const fungsis = [...new Set(data.map(item => item.Fungsi).filter(Boolean))].sort();
             const fungsiSelect = document.querySelector(`.filter-fungsi[data-view="${viewName}"]`);
-            fungsiSelect.innerHTML = '<option value="">Semua Fungsi</option>' + fungsis.map(f => `<option value="${f}">${f}</option>`).join('');
+            if(fungsiSelect) fungsiSelect.innerHTML = '<option value="">Semua Fungsi</option>' + fungsis.map(f => `<option value="${f}">${f}</option>`).join('');
         }
     };
-
-    const getSortIcon = (viewName, key) => {
-        if (currentSort.view === viewName && currentSort.key === key) {
-            return currentSort.order === 'asc' ? '<i class="fas fa-sort-up ml-1"></i>' : '<i class="fas fa-sort-down ml-1"></i>';
+    
+    // PERBAIKAN: Sistem sort yang lebih baik
+    const handleSort = (e) => {
+        const header = e.target.closest('[data-sort]');
+        if (!header) return;
+        const key = header.dataset.sort;
+        const view = header.closest('[data-view]').dataset.view;
+        if (currentSort.key === key && currentSort.view === view) {
+            currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.key = key;
+            currentSort.order = 'asc';
         }
-        return '<i class="fas fa-sort text-gray-300 ml-1"></i>';
+        currentSort.view = view;
+        applyFiltersAndRender(view);
     };
 
+    const updateSortIcons = (viewName) => {
+        const headers = document.querySelectorAll(`[data-view="${viewName}"] [data-sort]`);
+        headers.forEach(header => {
+            const key = header.dataset.sort;
+            const icon = header.querySelector('i');
+            if (!icon) return;
+            icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down', 'text-blue-500', 'text-gray-400');
+            if (currentSort.view === viewName && currentSort.key === key) {
+                icon.classList.add(currentSort.order === 'asc' ? 'fa-sort-up' : 'fa-sort-down', 'text-blue-500');
+            } else {
+                icon.classList.add('fa-sort', 'text-gray-400');
+            }
+        });
+    };
+
+    // PERBAIKAN: Sistem sort di getSopHTML
+    const getSopHTML = (data) => {
+        if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data SOP.</p></div>`;
+        const headers = [
+            { key: 'Nomor SOP', label: 'Nomor SOP' },
+            { key: 'Nama SOP', label: 'Nama SOP' },
+            { key: 'Unit', label: 'Unit' },
+            { key: 'Fungsi', label: 'Fungsi' }
+        ];
+        const tableHeaders = `
+             <tr data-view="sop">
+                ${headers.map(h => `<th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer hover:text-blue-600" data-sort="${h.key}">${h.label} <i class="fas fa-sort ml-1 text-gray-400"></i></th>`).join('')}
+                <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+            </tr>`;
+        const tableRows = data.map(item => {
+             const fileButton = (item.File && item.File.startsWith('http')) 
+                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
+                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+            return `
+            <tr class="hover:bg-gray-50">
+                <td class="p-3 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
+                <td class="p-3 text-sm font-semibold text-gray-900">${item['Nama SOP'] || ''}</td>
+                <td class="p-3 text-sm text-gray-700">${item.Unit || ''}</td>
+                <td class="p-3 text-sm text-gray-700">${item.Fungsi || ''}</td>
+                <td class="p-3 text-sm text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        ${fileButton}
+                        <button title="Edit SOP" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
+                        <button title="Hapus SOP" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+        const cards = data.map(item => {
+            const fileButton = (item.File && item.File.startsWith('http')) 
+                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
+                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+            return `
+                <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                    <p class="font-semibold text-gray-900">${item['Nama SOP']}</p>
+                    <div class="text-xs text-gray-500 space-y-1">
+                        <p><span class="font-medium">Nomor:</span> ${item['Nomor SOP'] || 'N/A'}</p>
+                        <p><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p>
+                        <p><span class="font-medium">Fungsi:</span> ${item.Fungsi || 'N/A'}</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t mt-3">
+                        ${fileButton}
+                        <button title="Edit SOP" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
+                        <button title="Hapus SOP" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        }).join('');
+        return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
+    };
+    
     const getPermohonanHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data permohonan.</p></div>`;
+        const headers = [
+            { key: 'Timestamp', label: 'Tanggal' }, { key: 'Unit', label: 'Unit' },
+            { key: 'Nama SOP', label: 'Nama SOP' }, { key: 'Status', label: 'Status' }
+        ];
         const tableHeaders = `
-            <tr>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Timestamp">Tanggal ${getSortIcon('permohonan', 'Timestamp')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Unit">Unit ${getSortIcon('permohonan', 'Unit')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Nama SOP">Nama SOP ${getSortIcon('permohonan', 'Nama SOP')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+            <tr data-view="permohonan">
+                ${headers.map(h => `<th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer hover:text-blue-600" data-sort="${h.key}">${h.label} <i class="fas fa-sort ml-1 text-gray-400"></i></th>`).join('')}
                 <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
             </tr>`;
         const tableRows = data.map(item => {
@@ -277,63 +379,90 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
 
-    const getSopHTML = (data) => {
-        if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data SOP.</p></div>`;
+    // --- PENAMBAHAN: Fungsi untuk merender tampilan laporan ---
+    const getLaporanHTML = (data) => {
+        if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data laporan.</p></div>`;
         const tableHeaders = `
-             <tr>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Nomor SOP">Nomor SOP ${getSortIcon('sop', 'Nomor SOP')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Nama SOP">Nama SOP ${getSortIcon('sop', 'Nama SOP')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Unit">Unit ${getSortIcon('sop', 'Unit')}</th>
-                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase cursor-pointer" data-sort="Fungsi">Fungsi ${getSortIcon('sop', 'Fungsi')}</th>
-                <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+            <tr>
+                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
+                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">ID SOP</th>
+                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Laporan</th>
+                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
             </tr>`;
-        const tableRows = data.map(item => {
-             const fileButton = (item.File && item.File.startsWith('http')) 
-                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
-                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+        
+        const sortedData = data.sort((a,b) => new Date(b.Tanggal) - new Date(a.Tanggal));
+
+        const tableRows = sortedData.map(item => {
+            const statusOptions = ['Ditindaklanjuti', 'Selesai', 'Ditahan'];
+            const selectOptions = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+            const statusClass = `status-${(item.Status || 'Ditindaklanjuti').replace(/\s/g, '')}`;
+            
             return `
             <tr class="hover:bg-gray-50">
-                <td class="p-3 text-sm text-gray-700">${item['Nomor SOP'] || ''}</td>
-                <td class="p-3 text-sm font-semibold text-gray-900">${item['Nama SOP'] || ''}</td>
-                <td class="p-3 text-sm text-gray-700">${item.Unit || ''}</td>
-                <td class="p-3 text-sm text-gray-700">${item.Fungsi || ''}</td>
-                <td class="p-3 text-sm text-right">
-                    <div class="flex items-center justify-end gap-2">
-                        ${fileButton}
-                        <button title="Edit SOP" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
-                        <button title="Hapus SOP" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i></button>
-                    </div>
+                <td class="p-3 text-sm text-gray-700 whitespace-nowrap">${item.Tanggal}</td>
+                <td class="p-3 text-sm text-gray-700 font-mono">${item.IDSOP || ''}</td>
+                <td class="p-3 text-sm text-gray-800"><p class="max-w-md">${item.Laporan || ''}</p></td>
+                <td class="p-3 text-sm text-gray-700">
+                    <select class="status-select font-semibold text-xs p-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-400 ${statusClass}" data-row-index="${item.rowIndex}">
+                        ${selectOptions}
+                    </select>
                 </td>
             </tr>`;
         }).join('');
-        const cards = data.map(item => {
-            const fileButton = (item.File && item.File.startsWith('http')) 
-                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
-                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+        
+        const cards = sortedData.map(item => {
+            const statusOptions = ['Ditindaklanjuti', 'Selesai', 'Ditahan'];
+            const selectOptions = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+            const statusClass = `status-${(item.Status || 'Ditindaklanjuti').replace(/\s/g, '')}`;
             return `
                 <div class="bg-white p-4 rounded-lg shadow space-y-3">
-                    <p class="font-semibold text-gray-900">${item['Nama SOP']}</p>
-                    <div class="text-xs text-gray-500 space-y-1">
-                        <p><span class="font-medium">Nomor:</span> ${item['Nomor SOP'] || 'N/A'}</p>
-                        <p><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p>
-                        <p><span class="font-medium">Fungsi:</span> ${item.Fungsi || 'N/A'}</p>
+                    <div class="flex justify-between items-start">
+                        <p class="font-mono text-xs text-gray-600">${item.IDSOP}</p>
+                        <p class="text-xs text-gray-500">${item.Tanggal}</p>
                     </div>
-                    <div class="flex items-center justify-end gap-2 pt-3 border-t mt-3">
-                        ${fileButton}
-                        <button title="Edit SOP" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
-                        <button title="Hapus SOP" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i></button>
+                    <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded-md">${item.Laporan}</p>
+                    <div>
+                         <select class="status-select w-full font-semibold text-xs p-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-400 ${statusClass}" data-row-index="${item.rowIndex}">
+                            ${selectOptions}
+                        </select>
                     </div>
                 </div>`;
         }).join('');
+
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
+    };
+
+    // PENAMBAHAN: Fungsi untuk update status laporan
+    const handleLaporanStatusChange = async (e) => {
+        const select = e.target;
+        const rowIndex = select.dataset.rowIndex;
+        const newStatus = select.value;
+
+        // Update visual
+        select.className = select.className.replace(/status-\w+/, `status-${newStatus.replace(/\s/g, '')}`);
+        showToast(`Mengupdate status...`, 'info');
+
+        const response = await callApi('adminUpdateLaporanStatus', { rowIndex, status: newStatus });
+        if(response.status === 'success') {
+            showToast('Status berhasil diperbarui!', 'success');
+            // Update data lokal
+            const item = allData.laporan.find(l => l.rowIndex == rowIndex);
+            if(item) item.Status = newStatus;
+            sessionStorage.setItem('cache_admin_laporan', JSON.stringify(allData.laporan));
+        } else {
+            showToast('Gagal memperbarui status.', 'error');
+            // Kembalikan ke nilai semula jika gagal
+            const item = allData.laporan.find(l => l.rowIndex == rowIndex);
+            if(item) select.value = item.Status;
+        }
     };
     
     // --- MODALS & FORMS ---
+    // (Fungsi-fungsi modal permohonan dan SOP tidak diubah)
     const openPermohonanModal = (id) => {
         const isEdit = id !== null;
         const item = isEdit ? allData.permohonan.find(p => p.IDPermohonan === id) : {};
         const title = isEdit ? 'Edit Permohonan' : 'Tambah Permohonan Baru';
-        // PERBAIKAN 2: Menyesuaikan daftar unit di modal admin
         const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas Syariah dan Hukum Islam</option><option>Fakultas Tarbiyah</option><option>Fakultas Ekonomi dan Bisnis Islam</option><option>Fakultas Ushuluddin dan Dakwah</option><option>Pascasarjana</option><option>Lembaga Penjaminan Mutu</option><option>Lembaga Penelitian dan Pengabdian Masyarakat</option><option>Satuan Pengawasan Internal</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad Al Jamiah</option>`;
         const modalHTML = `
             <div id="permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
@@ -354,7 +483,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isEdit) document.querySelector('#permohonan-form [name="Unit"]').value = item.Unit;
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
-    
     const handlePermohonanFormSubmit = async (e, id) => {
         e.preventDefault();
         const isEdit = id !== null;
@@ -373,12 +501,11 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             loadDataForView('permohonan', true);
         } else {
-            alert('Gagal: ' + response.message);
+            showToast('Gagal: ' + response.message, 'error');
             btn.disabled = false;
             btn.innerHTML = `Simpan`;
         }
     };
-
     const openDeletePermohonanModal = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) return;
@@ -386,7 +513,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.modalsContainer.innerHTML = modalHTML;
         document.getElementById('confirm-delete').addEventListener('click', () => handleDeletePermohonanConfirm(id));
     };
-    
     const handleDeletePermohonanConfirm = async (id) => {
         const btn = document.getElementById('confirm-delete');
         btn.disabled = true;
@@ -396,11 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             loadDataForView('permohonan', true);
         } else {
-            alert('Gagal menghapus: ' + response.message);
+            showToast('Gagal menghapus: ' + response.message, 'error');
             closeModal();
         }
     };
-
     const convertPermohonanToSop = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) return;
@@ -408,7 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.menu-item[data-view="sop"]').click();
         setTimeout(() => openSopModal(null, prefillData), 100);
     };
-    
     const openSopModal = (rowIndex, prefillData = {}) => {
         const isEdit = rowIndex !== null;
         const item = isEdit ? allData.sop.find(s => s.rowIndex === rowIndex) : prefillData;
@@ -466,7 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('sop-form').addEventListener('submit', (e) => handleSopFormSubmit(e, rowIndex));
     };
-
     const handleSopFormSubmit = async (e, rowIndex) => {
         e.preventDefault();
         const btn = document.getElementById('submit-sop');
@@ -500,12 +623,11 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             loadDataForView('sop', true);
         } else {
-            alert('Gagal menyimpan: ' + response.message);
+            showToast('Gagal menyimpan: ' + response.message, 'error');
             btn.disabled = false;
             btn.innerHTML = `Simpan`;
         }
     };
-    
     const getFileInfo = (file) => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -518,7 +640,6 @@ document.addEventListener('DOMContentLoaded', () => {
             reader.readAsDataURL(file);
         });
     };
-    
     const openDeleteSopModal = (rowIndex) => {
         const item = allData.sop.find(s => s.rowIndex === rowIndex);
         if (!item) return;
@@ -526,7 +647,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.modalsContainer.innerHTML = modalHTML;
         document.getElementById('confirm-delete').addEventListener('click', () => handleDeleteSopConfirm(rowIndex));
     };
-
     const handleDeleteSopConfirm = async (rowIndex) => {
         const btn = document.getElementById('confirm-delete');
         btn.disabled = true;
@@ -536,7 +656,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeModal();
             loadDataForView('sop', true);
         } else {
-            alert('Gagal menghapus: ' + response.message);
+            showToast('Gagal menghapus: ' + response.message, 'error');
             closeModal();
         }
     };
@@ -544,13 +664,43 @@ document.addEventListener('DOMContentLoaded', () => {
         if(tomSelectInstances['hubungan']) tomSelectInstances['hubungan'].destroy();
         DOM.modalsContainer.innerHTML = ''; 
     };
+    const showToast = (message, type = 'info') => {
+        const container = document.getElementById('modals-container');
+        if (!container) return;
+
+        clearTimeout(toastTimeout);
+        const toastId = 'toast-notification-admin';
+        let toast = document.getElementById(toastId);
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'fixed top-5 right-5 z-[101] w-full max-w-xs p-4 text-white rounded-lg shadow-lg transform transition-transform duration-300 translate-x-[120%]'
+            container.appendChild(toast);
+        }
+        
+        let iconClass = 'fas fa-info-circle';
+        let bgClass = 'bg-gray-800';
+        if (type === 'success') { iconClass = 'fas fa-check-circle'; bgClass = 'bg-green-600'; }
+        if (type === 'error') { iconClass = 'fas fa-exclamation-circle'; bgClass = 'bg-red-600'; }
+        
+        toast.innerHTML = `<div class="flex items-center"><i class="${iconClass} mr-3 fa-lg"></i><p class="text-sm font-medium">${message}</p></div>`;
+        toast.className = `fixed top-5 right-5 z-[101] w-full max-w-xs p-4 text-white rounded-lg shadow-lg transform transition-transform duration-300 ${bgClass}`;
+        
+        setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+        
+        toastTimeout = setTimeout(() => {
+            toast.classList.add('translate-x-[120%]');
+        }, 3000);
+    }
+
 
     // --- INITIALIZATION & EVENT LISTENERS ---
     const initializeApp = () => {
         DOM.loginView.classList.add('hidden');
         DOM.dashboardView.classList.remove('hidden');
         DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
-        document.querySelector('.menu-item[data-view="permohonan"]').click();
+        // PERUBAHAN: Mulai dari view SOP
+        document.querySelector('.menu-item[data-view="sop"]').click();
     };
 
     DOM.hamburgerButton.addEventListener('click', () => {
@@ -567,7 +717,18 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(`${viewName}-view`).classList.remove('hidden');
             DOM.menuItems.forEach(mi => mi.classList.remove('bg-blue-50', 'text-blue-600'));
             item.classList.add('bg-blue-50', 'text-blue-600');
-            currentSort = { view: '', key: '', order: 'asc' };
+            
+            // PERBAIKAN: Reset sort saat ganti view
+            currentSort = { view: viewName, key: '', order: 'asc' };
+            if (viewName === 'sop') {
+                currentSort.key = 'IDSOP';
+                currentSort.order = 'desc';
+            }
+             if (viewName === 'permohonan') {
+                currentSort.key = 'Timestamp';
+                currentSort.order = 'desc';
+            }
+
             loadDataForView(viewName);
         });
     });
@@ -591,22 +752,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.querySelector(`.filter-fungsi[data-view="${view}"]`)) {
                 document.querySelector(`.filter-fungsi[data-view="${view}"]`).value = '';
             }
-            currentSort = { view: '', key: '', order: 'asc' };
+            // PERBAIKAN: Reset sort ke default
+            currentSort = { view: view, key: view === 'sop' ? 'IDSOP' : 'Timestamp', order: 'desc' };
             applyFiltersAndRender(view);
         }
         
-        const sortHeader = e.target.closest('[data-sort]');
-        if (sortHeader) {
-            const key = sortHeader.dataset.sort;
-            const view = sortHeader.closest('table').closest('.content-wrapper').parentElement.id;
-            if (currentSort.key === key) {
-                currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
-            } else {
-                currentSort.key = key;
-                currentSort.order = 'asc';
-            }
-            currentSort.view = view;
-            applyFiltersAndRender(view);
+        handleSort(e);
+    });
+
+    // PENAMBAHAN: Listener untuk dropdown status laporan
+    document.body.addEventListener('change', (e) => {
+        if (e.target.matches('.status-select')) {
+            handleLaporanStatusChange(e);
         }
     });
 
