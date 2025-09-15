@@ -221,7 +221,36 @@ document.addEventListener('DOMContentLoaded', () => {
                     </td>
                 </tr>`;
         }).join('');
-        return `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
+        const cards = data.map(item => {
+            const statusText = item.Status || 'Diajukan';
+            let statusBadge = '';
+            switch (statusText.toLowerCase()) {
+                case 'disetujui': statusBadge = `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
+            }
+             const fileButton = (item.File && item.File.startsWith('http')) 
+                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
+                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+            return `
+                <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                    <div class="flex justify-between items-start">
+                        <p class="font-semibold text-gray-900 pr-2">${item['Nama SOP']}</p>
+                        ${statusBadge}
+                    </div>
+                    <div class="text-xs text-gray-500 space-y-1">
+                        <p><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p>
+                        <p><span class="font-medium">Tanggal:</span> ${new Date(item.Timestamp).toLocaleString('id-ID', { dateStyle:'short', timeStyle: 'short' })}</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t mt-3">
+                        ${fileButton}
+                        <button title="Jadikan SOP" class="bg-green-100 text-green-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-green-200" onclick="window.adminApp.convertPermohonanToSop('${item.IDPermohonan}')"><i class="fas fa-exchange-alt"></i></button>
+                        <button title="Edit Permohonan" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openPermohonanModal('${item.IDPermohonan}')"><i class="fas fa-edit"></i></button>
+                        <button title="Hapus Permohonan" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeletePermohonanModal('${item.IDPermohonan}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        }).join('');
+        return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
 
     const getSopHTML = (data) => {
@@ -253,7 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
             </tr>`;
         }).join('');
-        return `<div class="bg-white rounded-lg shadow overflow-x-auto"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div>`;
+
+        const cards = data.map(item => {
+            const fileButton = (item.File && item.File.startsWith('http')) 
+                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
+                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
+            return `
+                <div class="bg-white p-4 rounded-lg shadow space-y-3">
+                    <p class="font-semibold text-gray-900">${item['Nama SOP']}</p>
+                    <div class="text-xs text-gray-500 space-y-1">
+                        <p><span class="font-medium">Nomor:</span> ${item['Nomor SOP'] || 'N/A'}</p>
+                        <p><span class="font-medium">Unit:</span> ${item.Unit || 'N/A'}</p>
+                        <p><span class="font-medium">Fungsi:</span> ${item.Fungsi || 'N/A'}</p>
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t mt-3">
+                        ${fileButton}
+                        <button title="Edit SOP" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openSopModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
+                        <button title="Hapus SOP" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeleteSopModal(${item.rowIndex})"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+        }).join('');
+
+        return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
     
     // --- MODALS & FORMS ---
@@ -287,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isEdit = id !== null;
         const form = e.target;
         const data = { 'Unit': form.Unit.value, 'Nama SOP': form.Nama_SOP.value };
+        if(isEdit) data.Status = allData.permohonan.find(p=>p.IDPermohonan === id).Status
         let fileInfo = null;
         if (form.file.files[0]) fileInfo = await getFileInfo(form.file.files[0]);
         const action = isEdit ? 'adminUpdatePermohonan' : 'adminCreatePermohonan';
@@ -344,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const sopNameOptions = allData.sop.map(s => `<option value="${s['Nama SOP']}">${s['Nama SOP']}</option>`).join('');
 
         const visibleHeaders = sopHeaders.filter(header => header !== 'IDSOP');
-
         const fields = visibleHeaders.map(header => {
             const value = item[header] || '';
             let fieldHtml = `<div><label for="sop-${header}" class="text-sm font-medium text-gray-700">${header}</label><input type="text" id="sop-${header}" name="${header}" value="${value}" class="w-full px-4 py-2 mt-1 bg-gray-50 border rounded-lg"></div>`;
