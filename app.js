@@ -29,7 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
     'permohonanCardsContainer', 'ajukanSopButtonPage',
     // IDs untuk form permohonan
     'formPermohonanModal', 'permohonanForm', 'closeFormModal', 'submitPermohonanButton',
-    'formUnit', 'formNamaSop', 'formFile', 'formError', 'submitButtonText', 'submitSpinner'
+    'formUnit', 'formNamaSop', 'formFile', 'formError', 'submitButtonText', 'submitSpinner',
+    // [BARU] ID untuk elemen mobile yang diduplikasi
+    'datasetCountMobile', 'reloadDatasetButtonMobile', 'reloadIconMobile'
   ];
     ids.forEach(id => {
         const kebabCaseId = id.replace(/([A-Z])/g, "-$1").toLowerCase();
@@ -55,8 +57,6 @@ document.addEventListener('DOMContentLoaded', function () {
       try {
           const response = await fetch(WEB_APP_URL, {
               method: 'POST',
-              // Tipe konten diubah untuk file, tapi default ke text/plain
-              // Ini akan ditangani di dalam fungsi submit form secara spesifik
               body: JSON.stringify({ action, ...payload }),
               redirect: 'follow'
           });
@@ -108,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function () {
  
  // === EVENT LISTENERS SETUP ===
  const setupEventListeners = () => {
-    DOM.userInfoContainer.addEventListener('click', handleUserMenuClick);
     DOM.headerTitleLink.addEventListener('click', (e) => { e.preventDefault(); showView('list-view-container'); });
     DOM.hamburgerMenuButton.addEventListener('click', () => toggleSideMenu(true));
     DOM.menuOverlay.addEventListener('click', () => toggleSideMenu(false));
@@ -142,10 +141,11 @@ document.addEventListener('DOMContentLoaded', function () {
          DOM.metadataChevron.classList.toggle('rotate-180');
     });
 
-    // Event listener untuk form
+    // Event listener untuk form dan tombol mobile baru
     DOM.ajukanSopButtonPage.addEventListener('click', openPermohonanForm);
     DOM.closeFormModal.addEventListener('click', () => toggleModal('form-permohonan-modal', false));
     DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
+    DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
  };
 
 //==================================================
@@ -153,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function () {
 //==================================================
 
 function updateUIForLoginStatus() {
-  // [PERUBAHAN] Mengisi container header dengan tombol-tombol baru
   DOM.userInfoContainer.innerHTML = `
     <button id="ajukan-sop-button-header" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
       <i class="fas fa-plus"></i>
@@ -163,7 +162,6 @@ function updateUIForLoginStatus() {
       <i class="fas fa-user"></i>
     </button>
   `;
-  // Tambahkan event listener ke tombol yang baru dibuat
   document.getElementById('ajukan-sop-button-header').addEventListener('click', openPermohonanForm);
   document.getElementById('admin-login-button').addEventListener('click', () => toggleModal('login-modal', true));
 }
@@ -389,7 +387,7 @@ const renderPermohonanData = () => {
 };
 
 //==================================================
-// [BARU] FUNGSI-FUNGSI UNTUK FORM PERMOHONAN
+// FUNGSI-FUNGSI UNTUK FORM PERMOHONAN
 //==================================================
 
 function openPermohonanForm() {
@@ -524,15 +522,21 @@ function showErrorState(title, message) {
 }
 
 function setLoadingState(isLoading) {
-      if(DOM.loadingIndicator) DOM.loadingIndicator.classList.toggle('hidden', !isLoading);
-      if(DOM.reloadDatasetButton) {
-          DOM.reloadDatasetButton.disabled = isLoading;
-          const icon = DOM.reloadDatasetButton.querySelector('i');
-          if (icon) {
-              if (isLoading) icon.classList.add('fa-spin');
-              else icon.classList.remove('fa-spin');
-          }
-      }
+    if(DOM.loadingIndicator) DOM.loadingIndicator.classList.toggle('hidden', !isLoading);
+
+    const buttons = [DOM.reloadDatasetButton, DOM.reloadDatasetButtonMobile];
+    const icons = [DOM.reloadIcon, DOM.reloadIconMobile];
+
+    buttons.forEach(button => {
+        if (button) button.disabled = isLoading;
+    });
+
+    icons.forEach(icon => {
+        if (icon) {
+            if (isLoading) icon.classList.add('fa-spin');
+            else icon.classList.remove('fa-spin');
+        }
+    });
 }
 
 function populateFilterOptions() {
@@ -567,8 +571,9 @@ function resetFilters() {
 }
 
 function updateDatasetCount() {
-      if(!DOM.datasetCount) return;
-      DOM.datasetCount.innerHTML = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
+    const text = `<i class="fa-solid fa-box-archive mr-2"></i> <strong>${currentFilteredData.length}</strong> SOP Ditemukan`;
+    if(DOM.datasetCount) DOM.datasetCount.innerHTML = text;
+    if(DOM.datasetCountMobile) DOM.datasetCountMobile.innerHTML = text;
 }
 
 // RUN APP
