@@ -2,7 +2,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXvm1PcTj-5edP9V4HD1YFxV-vXhVIDrmRENaIusB5XtOnahpAJo5oZWMkUe8XDL57/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxU1GMXriwVHV0qDjl5fwYgxQM8fdW1f7iHlEsahuTpXLnX9zANt_GdgV2B55Gzs4rh/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
