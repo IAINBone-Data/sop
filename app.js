@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
   let allPermohonan = [];
   let isPermohonanLoaded = false;
   let toastTimeout = null;
+  // PENAMBAHAN: State untuk melacak status sorting
+  let currentSort = { key: 'IDSOP', order: 'desc' };
   
    // === API HELPER ===
    const callAppsScript = async (action, payload = {}) => {
@@ -105,13 +107,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (cache.data && cache.timestamp && cacheAgeHours < CACHE_DURATION_HOURS) {
                     allDatasets = cache.data;
+                    // Pastikan data awal diurutkan sesuai default
+                    allDatasets.sort((a, b) => (b.IDSOP || '').localeCompare(a.IDSOP || ''));
                     populateFilterOptions();
                     applyFiltersAndRender();
                     setLoadingState(false);
                     if (!isPermohonanLoaded) loadPermohonanDataInBackground();
                     return;
                 }
-            } catch (e) {
+            } catch (e)
                 console.error("Gagal mem-parsing cache:", e);
                 localStorage.removeItem('sopDataCache');
             }
@@ -168,8 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (DOM.datasetCardsContainer) DOM.datasetCardsContainer.addEventListener('click', handleDatasetListClick);
     if (DOM.detailDownloadLink) DOM.detailDownloadLink.addEventListener('click', handleDownload);
     if (DOM.closeCustomAlert) DOM.closeCustomAlert.addEventListener('click', () => toggleModal('custom-alert-modal', false));
-    // PERBAIKAN: Hapus event listener untuk modal login karena tombol sudah menjadi link
-    // if (DOM.closeLoginModal) DOM.closeLoginModal.addEventListener('click', () => toggleModal('login-modal', false));
     if (DOM.openFilterButton) DOM.openFilterButton.addEventListener('click', () => toggleModal('filter-modal', true));
     if (DOM.closeFilterModal) DOM.closeFilterModal.addEventListener('click', () => toggleModal('filter-modal', false));
     if (DOM.toggleMetadataButton) DOM.toggleMetadataButton.addEventListener('click', () => {
@@ -180,6 +182,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (DOM.closeFormModal) DOM.closeFormModal.addEventListener('click', () => toggleModal('form-permohonan-modal', false));
     if (DOM.permohonanForm) DOM.permohonanForm.addEventListener('submit', handleFormSubmit);
     if (DOM.reloadDatasetButtonMobile) DOM.reloadDatasetButtonMobile.addEventListener('click', handleReload);
+
+    // PENAMBAHAN: Event listener untuk klik pada header tabel
+    const tableHead = document.querySelector('#dataset-list')?.parentElement?.querySelector('thead');
+    if (tableHead) {
+        tableHead.addEventListener('click', handleSort);
+    }
   };
 
 function updateUIForLoginStatus() {
@@ -189,13 +197,11 @@ function updateUIForLoginStatus() {
       <i class="fas fa-plus"></i>
       <span class="hidden sm:inline">Ajukan SOP</span>
     </button>
-    <!-- PERBAIKAN 1: Mengubah tombol login menjadi link ke admin.html -->
     <a href="./admin.html" target="_blank" class="bg-gray-200 text-gray-700 hover:bg-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Login Administrator">
       <i class="fas fa-user"></i>
     </a>
   `;
   document.getElementById('ajukan-sop-button-header').addEventListener('click', openPermohonanForm);
-  // PERBAIKAN: Event listener untuk tombol login dihapus karena sudah menjadi link
 }
 
 function syncAndFilter(event) {
@@ -227,6 +233,19 @@ function applyFiltersAndRender() {
     if (selectedUnit) filteredData = filteredData.filter(item => item.Unit === selectedUnit);
     if (selectedFungsi) filteredData = filteredData.filter(item => item.Fungsi === selectedFungsi);
     
+    // PERUBAHAN: Blok logika untuk sorting data
+    if (currentSort.key) {
+        filteredData.sort((a, b) => {
+            const valA = a[currentSort.key] || '';
+            const valB = b[currentSort.key] || '';
+            
+            // Menggunakan localeCompare untuk perbandingan string yang benar
+            const comparison = valA.localeCompare(valB, 'id-ID', { numeric: true });
+            
+            return currentSort.order === 'asc' ? comparison : -comparison;
+        });
+    }
+
     currentFilteredData = filteredData;
     currentPage = 1;
     renderPageContent();
@@ -237,6 +256,9 @@ function renderPageContent() {
     DOM.datasetList.innerHTML = ''; 
     DOM.datasetCardsContainer.innerHTML = ''; 
     
+    // PENAMBAHAN: Memanggil fungsi untuk update ikon sort
+    updateSortIcons();
+
     if(DOM.noDataMessage) DOM.noDataMessage.classList.toggle('hidden', currentFilteredData.length > 0);
 
     if (currentFilteredData.length === 0) {
@@ -443,19 +465,21 @@ async function handleFormSubmit(e) {
         return;
     }
     const payload = {
-        unit,
-        namaSop,
-        idPermohonan: `SOP-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+        data: {
+            Unit: unit,
+            "Nama SOP": namaSop,
+        }
     };
     if (file) {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async () => {
             const fileData = reader.result;
-            payload.fileData = fileData;
-            payload.fileName = file.name;
-            payload.fileType = file.type;
+            payload.fileInfo = {
+                fileData: fileData,
+                fileName: file.name,
+                fileType: file.type,
+            };
             sendFormData(payload);
         };
         reader.onerror = () => {
@@ -500,6 +524,42 @@ function handleDownload() {
 function handleReload() {
     loadInitialData(true);
 }
+
+// PENAMBAHAN: Fungsi untuk menangani klik pada header tabel untuk sorting
+const handleSort = (e) => {
+    const header = e.target.closest('[data-sort-key]');
+    if (!header) return;
+
+    const key = header.dataset.sortKey;
+    
+    if (currentSort.key === key) {
+        currentSort.order = currentSort.order === 'asc' ? 'desc' : 'asc';
+    } else {
+        currentSort.key = key;
+        currentSort.order = 'asc'; // Default naik saat mengganti kolom
+    }
+    applyFiltersAndRender();
+};
+
+// PENAMBAHAN: Fungsi untuk memperbarui ikon sort secara visual
+const updateSortIcons = () => {
+    const headers = document.querySelectorAll('th[data-sort-key]');
+    headers.forEach(header => {
+        const key = header.dataset.sortKey;
+        const icon = header.querySelector('i');
+        if (!icon) return;
+
+        icon.classList.remove('fa-sort', 'fa-sort-up', 'fa-sort-down', 'text-blue-500', 'text-gray-400');
+
+        if (currentSort.key === key) {
+            icon.classList.add(currentSort.order === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+            icon.classList.add('text-blue-500'); // Warna untuk sort aktif
+        } else {
+            icon.classList.add('fa-sort', 'text-gray-400'); // Warna untuk sort non-aktif
+        }
+    });
+};
+
 
 function showToast(message, type = 'info') {
     if(!DOM.toastNotification || !DOM.toastMessage) return;
@@ -572,7 +632,7 @@ function setLoadingState(isLoading) {
     if(DOM.loadingIndicator) DOM.loadingIndicator.classList.toggle('hidden', !isLoading);
 
     const buttons = [DOM.reloadDatasetButton, DOM.reloadDatasetButtonMobile];
-    const icons = [DOM.reloadIcon, DOM.reloadIconMobile];
+    const icons = [document.getElementById('reload-icon'), DOM.reloadIconMobile];
 
     buttons.forEach(button => {
         if (button) button.disabled = isLoading;
@@ -607,6 +667,7 @@ function toggleSideMenu(show) {
       if(DOM.menuOverlay) DOM.menuOverlay.classList.toggle('hidden', !show);
 }
 
+// PERUBAHAN: Fungsi reset filter diperbarui untuk mereset sort juga
 function resetFilters() {
     if(DOM.searchInput) DOM.searchInput.value = '';
     if(DOM.searchInputMobile) DOM.searchInputMobile.value = '';
@@ -614,6 +675,10 @@ function resetFilters() {
     if(DOM.filterFungsi) DOM.filterFungsi.value = '';
     if(DOM.filterUnitModal) DOM.filterUnitModal.value = '';
     if(DOM.filterFungsiModal) DOM.filterFungsiModal.value = '';
+    
+    // Kembalikan ke sort default (terbaru dulu)
+    currentSort = { key: 'IDSOP', order: 'desc' };
+    
     applyFiltersAndRender();
 }
 
