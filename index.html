@@ -36,6 +36,35 @@
     </div>
 </div>
 
+  <!-- PENAMBAHAN: Modal Form Laporan SOP -->
+  <div id="laporan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+    <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
+      <div class="text-center">
+        <h1 class="text-2xl font-bold text-gray-800">Formulir Laporan SOP</h1>
+        <p class="text-gray-500">Laporkan jika ada ketidaksesuaian pada SOP ini.</p>
+      </div>
+      <form id="laporan-form" class="space-y-4">
+        <div>
+          <label for="laporan-sop-id" class="text-sm font-medium text-gray-700">ID SOP</label>
+          <input type="text" id="laporan-sop-id" name="idsop" readonly class="w-full px-4 py-2 mt-1 text-gray-500 bg-gray-100 border border-gray-300 rounded-lg">
+        </div>
+        <div>
+          <label for="laporan-textarea" class="text-sm font-medium text-gray-700">Isi Laporan</label>
+          <textarea id="laporan-textarea" name="laporan" required rows="4" placeholder="Jelaskan ketidaksesuaian yang Anda temukan..." class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div id="laporan-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+        <div class="flex items-center gap-4 pt-2">
+          <button type="button" id="close-laporan-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+          <button type="submit" id="submit-laporan-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+            <span id="laporan-button-text">Kirim Laporan</span>
+            <span id="laporan-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
   <!-- Modal Form Pengajuan SOP -->
   <div id="form-permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
     <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
@@ -51,7 +80,7 @@
             <option>Biro AUAK</option>
             <option>Bagian ULA</option>
             <option>Subbagian TUPR</option>
-<option>Subbagian LA</option>
+            <option>Subbagian LA</option>
             <option>Fakultas Syariah dan Hukum Islam</option>
             <option>Fakultas Tarbiyah</option>
             <option>Fakultas Ekonomi dan Bisnis Islam</option>
@@ -84,56 +113,6 @@
           </button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Modal Login -->
-  <div id="login-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all" id="login-modal-content">
-      <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-800">Login Administrator</h1>
-        <p class="text-gray-500">Silakan login untuk melanjutkan</p>
-      </div>
-      <form id="login-form" class="space-y-6">
-        <div>
-          <label for="username" class="text-sm font-medium text-gray-700">Username</label>
-          <input type="text" id="username" name="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-          <label for="password" class="text-sm font-medium text-gray-700">Password</label>
-          <input type="password" id="password" name="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
-        <div class="flex items-center gap-4">
-          <button type="button" id="close-login-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
-          <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
-            <span id="login-button-text">Login</span>
-            <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Filter -->
-  <div id="filter-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="w-full max-w-sm p-6 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
-        <h2 class="text-xl font-bold text-gray-800">Filter SOP</h2>
-        <div class="space-y-4">
-            <div>
-                <label for="filter-unit-modal" class="text-sm font-medium text-gray-700">Unit</label>
-                <select id="filter-unit-modal" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Semua Unit</option>
-                </select>
-            </div>
-            <div>
-                <label for="filter-fungsi-modal" class="text-sm font-medium text-gray-700">Fungsi</label>
-                <select id="filter-fungsi-modal" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-                    <option value="">Semua Fungsi</option>
-                </select>
-            </div>
-        </div>
-        <button id="close-filter-modal" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">Terapkan & Tutup</button>
     </div>
   </div>
 
@@ -241,10 +220,16 @@
       <div id="detail-view-container" class="hidden">
         <div class="flex items-center justify-between mb-6">
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
-            <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
+            <!-- PENAMBAHAN: Container untuk status dan tombol lapor -->
+            <div class="flex items-center gap-4">
+              <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
+              <button id="report-sop-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="hidden sm:inline">Laporkan</span>
+              </button>
+            </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-10 gap-8">
-            <!-- PERUBAHAN: Kartu utama sekarang berisi Keterkaitan -->
             <section class="order-1 lg:order-1 lg:col-span-3 bg-white p-6 rounded-lg shadow-md space-y-4">
                 <h2 id="detail-title" class="text-xl font-bold text-gray-800"></h2>
                 <p id="detail-uraian" class="text-gray-600 text-sm"></p>
@@ -252,7 +237,6 @@
                     <i class="fas fa-file-pdf text-red-500 text-3xl"></i>
                     <a id="detail-download-link" href="#" target="_blank" class="text-blue-600 hover:text-blue-800 font-semibold">Unduh Dokumen</a>
                 </div>
-                <!-- PENAMBAHAN: Container baru untuk Keterkaitan di dalam kartu utama -->
                 <div id="detail-keterkaitan-card" class="hidden"></div>
             </section>
             <section class="order-3 lg:order-2 lg:col-span-3 bg-white p-6 rounded-lg shadow-md self-start">
@@ -273,7 +257,6 @@
                     </table>
                 </div>
             </section>
-            <!-- PERUBAHAN: Kartu Keterkaitan yang lama dihapus -->
             <div class="order-2 lg:order-4 lg:col-span-7 lg:col-start-4 lg:row-span-2 lg:row-start-1">
                 <div id="table-preview-container" class="bg-white p-2 rounded-lg shadow-md h-full">
                     <div id="table-preview-content" class="w-full h-full">
