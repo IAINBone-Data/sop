@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwXiVWSmy8cTIqWXEmspArQNrWkKuhuB7fkY5guw7wxnEJMn3riikRl7Esl22PdX1i2/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXvm1PcTj-5edP9V4HD1YFxV-vXhVIDrmRENaIusB5XtOnahpAJo5oZWMkUe8XDL57/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let authToken = null;
     let allData = { permohonan: [], sop: [], laporan: [] };
     let sopHeaders = [];
-    // PERBAIKAN: Sistem sort yang lebih baik
     let currentSort = { view: '', key: '', order: 'asc' };
     let tomSelectInstances = {};
     let toastTimeout = null;
@@ -223,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // PERBAIKAN: Sistem sort yang lebih baik
     const handleSort = (e) => {
         const header = e.target.closest('[data-sort]');
         if (!header) return;
@@ -254,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // PERBAIKAN: Sistem sort di getSopHTML
     const getSopHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data SOP.</p></div>`;
         const headers = [
@@ -379,7 +376,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
 
-    // --- PENAMBAHAN: Fungsi untuk merender tampilan laporan ---
+    // PERUBAHAN: Fungsi render laporan diubah untuk menampilkan badge dan tombol edit
     const getLaporanHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data laporan.</p></div>`;
         const tableHeaders = `
@@ -387,83 +384,119 @@ document.addEventListener('DOMContentLoaded', () => {
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">ID SOP</th>
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Laporan</th>
+                <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Keterangan</th>
                 <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
             </tr>`;
         
         const sortedData = data.sort((a,b) => new Date(b.Tanggal) - new Date(a.Tanggal));
 
         const tableRows = sortedData.map(item => {
-            const statusOptions = ['Ditindaklanjuti', 'Selesai', 'Ditahan'];
-            const selectOptions = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
-            const statusClass = `status-${(item.Status || 'Ditindaklanjuti').replace(/\s/g, '')}`;
+            const status = item.Status || 'Ditindaklanjuti';
+            const statusClass = `status-${status.replace(/\s/g, '')}`;
             
             return `
             <tr class="hover:bg-gray-50">
                 <td class="p-3 text-sm text-gray-700 whitespace-nowrap">${item.Tanggal}</td>
                 <td class="p-3 text-sm text-gray-700 font-mono">${item.IDSOP || ''}</td>
                 <td class="p-3 text-sm text-gray-800"><p class="max-w-md">${item.Laporan || ''}</p></td>
+                <td class="p-3 text-sm text-gray-600"><p class="max-w-xs">${item.Keterangan || ''}</p></td>
                 <td class="p-3 text-sm text-gray-700">
-                    <select class="status-select font-semibold text-xs p-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-400 ${statusClass}" data-row-index="${item.rowIndex}">
-                        ${selectOptions}
-                    </select>
+                    <span class="status-badge ${statusClass}">${status}</span>
+                </td>
+                <td class="p-3 text-sm text-right">
+                    <button title="Edit Laporan" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openLaporanModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
                 </td>
             </tr>`;
         }).join('');
         
         const cards = sortedData.map(item => {
-            const statusOptions = ['Ditindaklanjuti', 'Selesai', 'Ditahan'];
-            const selectOptions = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
-            const statusClass = `status-${(item.Status || 'Ditindaklanjuti').replace(/\s/g, '')}`;
+            const status = item.Status || 'Ditindaklanjuti';
+            const statusClass = `status-${status.replace(/\s/g, '')}`;
             return `
                 <div class="bg-white p-4 rounded-lg shadow space-y-3">
-                    <div class="flex justify-between items-start">
+                    <div class="flex justify-between items-start gap-4">
                         <p class="font-mono text-xs text-gray-600">${item.IDSOP}</p>
-                        <p class="text-xs text-gray-500">${item.Tanggal}</p>
+                        <span class="status-badge ${statusClass}">${status}</span>
                     </div>
+                    <p class="text-xs text-gray-500">${item.Tanggal}</p>
                     <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded-md">${item.Laporan}</p>
-                    <div>
-                         <select class="status-select w-full font-semibold text-xs p-2 rounded-lg border-0 focus:ring-2 focus:ring-blue-400 ${statusClass}" data-row-index="${item.rowIndex}">
-                            ${selectOptions}
-                        </select>
+                    ${item.Keterangan ? `<p class="text-sm text-gray-600 border-l-4 border-blue-200 pl-2"><strong>Ket:</strong> ${item.Keterangan}</p>` : ''}
+                    <div class="flex justify-end pt-2">
+                        <button title="Edit Laporan" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openLaporanModal(${item.rowIndex})"><i class="fas fa-edit"></i></button>
                     </div>
                 </div>`;
         }).join('');
 
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
-
-    // PENAMBAHAN: Fungsi untuk update status laporan
-    const handleLaporanStatusChange = async (e) => {
-        const select = e.target;
-        const rowIndex = select.dataset.rowIndex;
-        const newStatus = select.value;
-
-        // Update visual
-        select.className = select.className.replace(/status-\w+/, `status-${newStatus.replace(/\s/g, '')}`);
-        showToast(`Mengupdate status...`, 'info');
-
-        const response = await callApi('adminUpdateLaporanStatus', { rowIndex, status: newStatus });
-        if(response.status === 'success') {
-            showToast('Status berhasil diperbarui!', 'success');
-            // Update data lokal
-            const item = allData.laporan.find(l => l.rowIndex == rowIndex);
-            if(item) item.Status = newStatus;
-            sessionStorage.setItem('cache_admin_laporan', JSON.stringify(allData.laporan));
-        } else {
-            showToast('Gagal memperbarui status.', 'error');
-            // Kembalikan ke nilai semula jika gagal
-            const item = allData.laporan.find(l => l.rowIndex == rowIndex);
-            if(item) select.value = item.Status;
-        }
-    };
     
     // --- MODALS & FORMS ---
+
+    // PENAMBAHAN: Modal untuk edit laporan
+    const openLaporanModal = (rowIndex) => {
+        const item = allData.laporan.find(l => l.rowIndex === rowIndex);
+        if (!item) return;
+
+        const statusOptions = ['Ditindaklanjuti', 'Diproses', 'Ditahan', 'Selesai'];
+        const selectOptions = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+
+        const modalHTML = `
+            <div id="laporan-edit-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold">Edit Laporan</h2>
+                    <form id="laporan-edit-form" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+                        <div><label class="text-sm font-medium">Laporan</label><p class="mt-1 p-2 bg-gray-100 rounded-md text-sm">${item.Laporan}</p></div>
+                        <div>
+                            <label for="laporan-status" class="text-sm font-medium">Status</label>
+                            <select id="laporan-status" name="Status" class="w-full mt-1 p-2 border rounded-md bg-white">${selectOptions}</select>
+                        </div>
+                        <div>
+                            <label for="laporan-keterangan" class="text-sm font-medium">Keterangan</label>
+                            <textarea id="laporan-keterangan" name="Keterangan" rows="3" class="w-full mt-1 p-2 border rounded-md">${item.Keterangan || ''}</textarea>
+                        </div>
+                        <div class="flex items-center gap-4 pt-4 border-t mt-4">
+                            <button type="button" onclick="window.adminApp.closeModal()" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
+                            <button type="submit" id="submit-laporan-edit" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        DOM.modalsContainer.innerHTML = modalHTML;
+        document.getElementById('laporan-edit-form').addEventListener('submit', (e) => handleLaporanFormSubmit(e, rowIndex));
+    };
+
+    const handleLaporanFormSubmit = async (e, rowIndex) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-laporan-edit');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+        
+        const form = e.target;
+        const data = {
+            Status: form.Status.value,
+            Keterangan: form.Keterangan.value
+        };
+
+        const response = await callApi('adminUpdateLaporan', { rowIndex, data });
+
+        if (response.status === 'success') {
+            closeModal();
+            showToast('Laporan berhasil diperbarui!', 'success');
+            loadDataForView('laporan', true);
+        } else {
+            showToast('Gagal: ' + response.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = 'Simpan';
+        }
+    };
+
     // (Fungsi-fungsi modal permohonan dan SOP tidak diubah)
     const openPermohonanModal = (id) => {
         const isEdit = id !== null;
         const item = isEdit ? allData.permohonan.find(p => p.IDPermohonan === id) : {};
         const title = isEdit ? 'Edit Permohonan' : 'Tambah Permohonan Baru';
-        const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas Syariah dan Hukum Islam</option><option>Fakultas Tarbiyah</option><option>Fakultas Ekonomi dan Bisnis Islam</option><option>Fakultas Ushuluddin dan Dakwah</option><option>Pascasarjana</option><option>Lembaga Penjaminan Mutu</option><option>Lembaga Penelitian dan Pengabdian Masyarakat</option><option>Satuan Pengawasan Internal</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad Al Jamiah</option>`;
+        const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas</option><option>Pascasarjana</option><option>LPM</option><option>LPPM</option><option>SPI</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad</option>`;
         const modalHTML = `
             <div id="permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                 <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg">
@@ -537,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const isEdit = rowIndex !== null;
         const item = isEdit ? allData.sop.find(s => s.rowIndex === rowIndex) : prefillData;
         if (isEdit && !item) return;
-        const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas Syariah dan Hukum Islam</option><option>Fakultas Tarbiyah</option><option>Fakultas Ekonomi dan Bisnis Islam</option><option>Fakultas Ushuluddin dan Dakwah</option><option>Pascasarjana</option><option>Lembaga Penjaminan Mutu</option><option>Lembaga Penelitian dan Pengabdian Masyarakat</option><option>Satuan Pengawasan Internal</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad Al Jamiah</option>`;
+        const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas</option><option>Pascasarjana</option><option>LPM</option><option>LPPM</option><option>SPI</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad</option>`;
         const fungsiOptions = [...new Set(allData.sop.map(s => s.Fungsi).filter(Boolean))].sort().map(f => `<option value="${f}">${f}</option>`).join('');
         const sopNameOptions = allData.sop.map(s => `<option value="${s['Nama SOP']}">${s['Nama SOP']}</option>`).join('');
 
@@ -699,7 +732,6 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.loginView.classList.add('hidden');
         DOM.dashboardView.classList.remove('hidden');
         DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
-        // PERUBAHAN: Mulai dari view SOP
         document.querySelector('.menu-item[data-view="sop"]').click();
     };
 
@@ -718,7 +750,6 @@ document.addEventListener('DOMContentLoaded', () => {
             DOM.menuItems.forEach(mi => mi.classList.remove('bg-blue-50', 'text-blue-600'));
             item.classList.add('bg-blue-50', 'text-blue-600');
             
-            // PERBAIKAN: Reset sort saat ganti view
             currentSort = { view: viewName, key: '', order: 'asc' };
             if (viewName === 'sop') {
                 currentSort.key = 'IDSOP';
@@ -752,7 +783,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.querySelector(`.filter-fungsi[data-view="${view}"]`)) {
                 document.querySelector(`.filter-fungsi[data-view="${view}"]`).value = '';
             }
-            // PERBAIKAN: Reset sort ke default
             currentSort = { view: view, key: view === 'sop' ? 'IDSOP' : 'Timestamp', order: 'desc' };
             applyFiltersAndRender(view);
         }
@@ -760,18 +790,14 @@ document.addEventListener('DOMContentLoaded', () => {
         handleSort(e);
     });
 
-    // PENAMBAHAN: Listener untuk dropdown status laporan
-    document.body.addEventListener('change', (e) => {
-        if (e.target.matches('.status-select')) {
-            handleLaporanStatusChange(e);
-        }
-    });
-
+    // Listener untuk dropdown status laporan dihapus karena diganti modal
+    
     DOM.adminLoginForm.addEventListener('submit', handleLogin);
     DOM.logoutButton.addEventListener('click', handleLogout);
 
-    window.adminApp = { openPermohonanModal, openDeletePermohonanModal, convertPermohonanToSop, openSopModal, openDeleteSopModal, closeModal };
+    window.adminApp = { openPermohonanModal, openDeletePermohonanModal, convertPermohonanToSop, openSopModal, openDeleteSopModal, closeModal, openLaporanModal };
 
     authToken = sessionStorage.getItem('adminAuthToken');
     if (authToken) initializeApp();
 });
+
