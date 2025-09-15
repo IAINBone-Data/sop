@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - SOP IAIN Bone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .modal-overlay { transition: opacity 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-view" class="flex items-center justify-center min-h-screen">
+        <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+            <div class="text-center">
+                <h1 class="text-2xl font-bold text-gray-800">Admin Panel Login</h1>
+                <p class="text-gray-500">SOP IAIN Bone</p>
+            </div>
+            <form id="admin-login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="password" class="text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" required class="w-full px-4 py-2 mt-2 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div id="login-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+                <button type="submit" id="login-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                    <span id="login-button-text">Login</span>
+                    <span id="login-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD (HIDDEN BY DEFAULT) -->
+    <div id="dashboard-view" class="hidden">
+        <header class="bg-white shadow-md sticky top-0 z-40">
+            <div class="w-full px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <a href="#" class="text-xl font-bold text-gray-800">Admin Dashboard</a>
+                    <div class="flex items-center gap-4">
+                        <span id="admin-user-email" class="text-sm text-gray-600 hidden sm:block"></span>
+                        <button id="logout-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span class="hidden sm:inline">Logout</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="w-full p-4 sm:p-6 lg:p-8">
+            <div class="flex border-b mb-6">
+                <button data-tab="permohonan" class="tab-button py-2 px-4 text-blue-600 border-b-2 border-blue-600 font-semibold">Manajemen Permohonan</button>
+                <button data-tab="sop" class="tab-button py-2 px-4 text-gray-500 hover:text-blue-600">Manajemen SOP</button>
+            </div>
+
+            <!-- PERMOHONAN MANAGEMENT VIEW -->
+            <div id="permohonan-view" class="tab-content">
+                <!-- Content will be injected by JS -->
+            </div>
+
+            <!-- SOP MANAGEMENT VIEW -->
+            <div id="sop-view" class="tab-content hidden">
+                 <!-- Content will be injected by JS -->
+            </div>
+        </main>
+    </div>
+    
+    <!-- MODALS CONTAINER -->
+    <div id="modals-container"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- KONFIGURASI ---
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwfjR1j10AkKTMXlFJ4rY1kcRlOhBcKJmpHqBKYlmQv3d4SCxwYyfxQoiAU0JBW6RMZ/exec';
+
+    // --- DOM ELEMENTS ---
+    const loginView = document.getElementById('login-view');
+    const dashboardView = document.getElementById('dashboard-view');
+    const adminLoginForm = document.getElementById('admin-login-form');
+    const logoutButton = document.getElementById('logout-button');
+    const adminUserEmail = document.getElementById('admin-user-email');
+    const permohonanView = document.getElementById('permohonan-view');
+    const sopView = document.getElementById('sop-view');
+    const modalsContainer = document.getElementById('modals-container');
+    const tabButtons = document.querySelectorAll('.tab-button');
+
+    // --- STATE ---
+    let authToken = null;
+
+    // --- API HELPER ---
+    const callApi = async (action, payload = {}, requiresAuth = true) => {
+        if (requiresAuth && !authToken) {
+            showToast('Sesi tidak valid. Silakan login kembali.', 'error');
+            handleLogout();
+            return { status: 'error', message: 'Token tidak ada.' };
+        }
+        
+        const fullPayload = requiresAuth ? { ...payload, authToken } : payload;
+
+        try {
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, ...fullPayload }),
+                redirect: 'follow'
+            });
+            if (!response.ok) throw new Error(`Network response error: ${response.statusText}`);
+            const result = await response.json();
+            if (result.status === 'error' && result.message === 'Token tidak valid') {
+                 showToast('Sesi Anda telah berakhir. Harap login kembali.', 'error');
+                 handleLogout();
+            }
+            return result;
+        } catch (error) {
+            console.error(`API Call Error for "${action}":`, error);
+            showToast(error.message, 'error');
+            return { status: 'error', message: error.message };
+        }
+    };
+
+    // --- AUTHENTICATION ---
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const loginError = document.getElementById('login-error');
+        const loginButton = document.getElementById('login-button');
+        const loginSpinner = document.getElementById('login-spinner');
+        const loginButtonText = document.getElementById('login-button-text');
+        
+        loginButton.disabled = true;
+        loginSpinner.classList.remove('hidden');
+        loginButtonText.classList.add('hidden');
+        loginError.classList.add('hidden');
+
+        const response = await callApi('adminLogin', { username, password }, false);
+
+        if (response.status === 'success' && response.token) {
+            authToken = response.token;
+            sessionStorage.setItem('adminAuthToken', authToken);
+            sessionStorage.setItem('adminUserEmail', response.email);
+            initializeApp();
+        } else {
+            loginError.textContent = response.message || 'Login Gagal.';
+            loginError.classList.remove('hidden');
+        }
+
+        loginButton.disabled = false;
+        loginSpinner.classList.add('hidden');
+        loginButtonText.classList.remove('hidden');
+    };
+
+    const handleLogout = () => {
+        authToken = null;
+        sessionStorage.removeItem('adminAuthToken');
+        sessionStorage.removeItem('adminUserEmail');
+        loginView.classList.remove('hidden');
+        dashboardView.classList.add('hidden');
+        adminUserEmail.textContent = '';
+    };
+
+    const checkSession = () => {
+        const token = sessionStorage.getItem('adminAuthToken');
+        if (token) {
+            authToken = token;
+            return true;
+        }
+        return false;
+    };
+    
+    // --- UI RENDERING ---
+    const renderPermohonan = (data) => {
+        if (!data || data.length === 0) {
+            permohonanView.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow"><p class="text-gray-500">Tidak ada data permohonan.</p></div>`;
+            return;
+        }
+        
+        const tableRows = data.map(item => {
+            const statusText = item.Status || 'Diajukan';
+            let statusBadge = '';
+            switch (statusText.toLowerCase()) {
+                case 'disetujui': statusBadge = `<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
+                default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
+            }
+            const formattedTimestamp = new Date(item.Timestamp).toLocaleString('id-ID');
+
+            return `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 text-sm text-gray-700">${formattedTimestamp}</td>
+                    <td class="p-3 text-sm text-gray-700">${item.Unit}</td>
+                    <td class="p-3 text-sm font-semibold text-gray-900">${item['Nama SOP']}</td>
+                    <td class="p-3 text-sm">${statusBadge}</td>
+                    <td class="p-3 text-sm text-gray-500">${item.Keterangan || ''}</td>
+                    <td class="p-3 text-sm text-right">
+                        <button class="text-blue-600 hover:text-blue-800" onclick="window.adminApp.openUpdateStatusModal('${item.IDPermohonan}')">
+                            <i class="fas fa-edit"></i> Ubah Status
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+
+        permohonanView.innerHTML = `
+            <div class="bg-white rounded-lg shadow overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Tanggal</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Unit</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Nama SOP</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                            <th class="p-3 text-left text-xs font-semibold text-gray-600 uppercase">Keterangan</th>
+                            <th class="p-3 text-right text-xs font-semibold text-gray-600 uppercase">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">${tableRows}</tbody>
+                </table>
+            </div>
+        `;
+    };
+
+    // --- INITIALIZATION ---
+    const initializeApp = () => {
+        loginView.classList.add('hidden');
+        dashboardView.classList.remove('hidden');
+        adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
+        loadPermohonanData();
+    };
+    
+    // --- DATA LOADING ---
+    const loadPermohonanData = async () => {
+        permohonanView.innerHTML = `<div class="text-center p-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div>`;
+        const response = await callApi('adminGetPermohonan');
+        if(response.status === 'success'){
+            renderPermohonan(response.data);
+        } else {
+            permohonanView.innerHTML = `<div class="text-center p-8 bg-red-50 text-red-600 rounded-lg shadow">${response.message}</div>`;
+        }
+    };
+
+    // --- EVENT LISTENERS ---
+    adminLoginForm.addEventListener('submit', handleLogin);
+    logoutButton.addEventListener('click', handleLogout);
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.tab;
+            
+            tabButtons.forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-blue-600');
+                btn.classList.add('text-gray-500');
+            });
+            button.classList.add('text-blue-600', 'border-blue-600');
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+
+            document.getElementById(`${tab}-view`).classList.remove('hidden');
+            
+            if (tab === 'sop') {
+                sopView.innerHTML = `<div class="text-center p-8 bg-white rounded-lg shadow"><p class="text-gray-500">Fitur Manajemen SOP sedang dalam pengembangan.</p></div>`;
+            }
+        });
+    });
+
+    // --- GLOBAL APP OBJECT FOR MODALS ---
+    window.adminApp = {
+        openUpdateStatusModal: (id) => {
+            // Logic to open modal and handle status update
+            alert(`Fungsi ubah status untuk ID ${id} belum diimplementasikan.`);
+        }
+    };
+
+    // --- STARTUP ---
+    if (checkSession()) {
+        initializeApp();
+    }
+});
+</script>
+</body>
+</html>
