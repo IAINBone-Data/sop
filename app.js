@@ -1,5 +1,5 @@
 // --- KONFIGURASI APLIKASI ---
-const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxvlCpZJHCMfxMOln1_aryLXIughEu4Duzosc4GRqTo2dxuPAExlaTBA1u5-aeL2rLr/exec';
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby0RiW50vhENeRYenXZRTBjz-3Fik-G1gXVFC8Vup5gbjxJBA10E90rVaEzucTeEhri/exec';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -31,7 +31,6 @@ document.addEventListener('DOMContentLoaded', function () {
     'datasetCountMobile', 'reloadDatasetButtonMobile', 'reloadIconMobile',
     'toastNotification', 'toastMessage',
     'detailKeterkaitanCard',
-    // PENAMBAHAN: Elemen untuk modal laporan
     'laporanModal', 'laporanForm', 'closeLaporanModal', 'submitLaporanButton',
     'laporanSopId', 'laporanTextarea', 'laporanError', 'laporanButtonText', 'laporanSpinner',
     'reportSopButton'
@@ -42,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (el) {
             DOM[id] = el;
         } else {
-            // Beberapa elemen seperti report-sop-button dibuat dinamis, jadi tidak apa-apa jika tidak ditemukan di awal
             if (!['reportSopButton'].includes(id)) {
                  console.warn(`Elemen dengan ID '${kebabCaseId}' tidak ditemukan.`);
             }
@@ -57,10 +55,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const rowsPerPage = 100;
   let currentFilteredData = [];
   let allPermohonan = [];
-  let isPermohonanLoaded = false;
+  let isPermohonanLoaded = false; // PERUBAHAN: Penanda apakah data permohonan sudah dimuat
   let toastTimeout = null;
   let currentSort = { key: 'IDSOP', order: 'desc' };
-  let currentReportingSopId = null; // PENAMBAHAN: State untuk menyimpan ID SOP yang dilaporkan
+  let currentReportingSopId = null; 
   
    // === API HELPER ===
    const callAppsScript = async (action, payload = {}) => {
@@ -99,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
   loadInitialData();
  };
 
-
+  // PERUBAHAN: Logika pemuatan data dioptimalkan
   const loadInitialData = async (isReload = false) => {
     const CACHE_DURATION_HOURS = 1;
 
@@ -117,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     populateFilterOptions();
                     applyFiltersAndRender();
                     setLoadingState(false);
+                    // PERUBAHAN BARU: Muat data permohonan di latar belakang setelah data utama tampil
                     if (!isPermohonanLoaded) loadPermohonanDataInBackground();
                     return;
                 }
@@ -144,6 +143,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         if (isReload) showToast('Data berhasil dimuat ulang!', 'success');
+        // PERUBAHAN BARU: Muat data permohonan di latar belakang setelah data utama tampil
         if (!isPermohonanLoaded) loadPermohonanDataInBackground();
     } else {
         if (isReload) showToast(`Gagal memuat: ${response.message}`, 'error');
@@ -195,7 +195,6 @@ document.addEventListener('DOMContentLoaded', function () {
         DOM.detailViewContainer.addEventListener('click', handleDetailViewClick);
     }
 
-    // PENAMBAHAN: Event listener untuk modal laporan
     if (DOM.closeLaporanModal) DOM.closeLaporanModal.addEventListener('click', () => toggleModal('laporan-modal', false));
     if (DOM.laporanForm) DOM.laporanForm.addEventListener('submit', handleLaporanSubmit);
   };
@@ -360,7 +359,6 @@ function showDetailView(idsop) {
         DOM.detailStatus.classList.add('hidden');
     }
     
-    // PENAMBAHAN: Atur data-id untuk tombol lapor
     const reportButton = document.getElementById('report-sop-button');
     if(reportButton) reportButton.dataset.id = trimmedIdsop;
     
@@ -407,7 +405,6 @@ function showDetailView(idsop) {
 // FUNGSI-FUNGSI UNTUK HALAMAN LAPORAN
 //==================================================
 
-// PENAMBAHAN: Fungsi untuk membuka modal laporan
 const openLaporanForm = (idsop) => {
     currentReportingSopId = idsop;
     if (DOM.laporanForm) DOM.laporanForm.reset();
@@ -416,7 +413,6 @@ const openLaporanForm = (idsop) => {
     toggleModal('laporan-modal', true);
 };
 
-// PENAMBAHAN: Fungsi untuk menangani submit laporan
 const handleLaporanSubmit = async (e) => {
     e.preventDefault();
     if (!currentReportingSopId) return;
@@ -472,36 +468,47 @@ const showLaporanError = (message) => {
 
 const displayPermohonanView = () => {
     showView('permohonan-view-container', true);
+    // PERUBAHAN: Sekarang memanggil fungsi yang menggunakan data yang sudah ada (jika ada)
     loadPermohonanData();
 };
 
+// PERUBAHAN BARU: Fungsi ini memuat data di latar belakang dan menyimpannya di state
 const loadPermohonanDataInBackground = async () => {
     const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
-    if (response.status === 'success') {
-        allPermohonan = response.data || [];
-        isPermohonanLoaded = true;
-    }
-};
-
-const loadPermohonanData = async () => {
-    DOM.permohonanLoadingIndicator.style.display = 'block';
-    DOM.permohonanContent.classList.add('hidden');
-    DOM.permohonanNoDataMessage.classList.add('hidden');
-    
-    const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
-    
-    DOM.permohonanLoadingIndicator.style.display = 'none';
-
     if (response.status === 'success') {
         allPermohonan = response.data || [];
         if (allPermohonan.length > 0 && allPermohonan[0].Timestamp) {
             allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
         }
         isPermohonanLoaded = true;
+    }
+};
+
+// PERUBAHAN: Fungsi ini sekarang akan render data jika sudah ada, atau memuatnya jika belum
+const loadPermohonanData = async () => {
+    DOM.permohonanContent.classList.add('hidden');
+    DOM.permohonanNoDataMessage.classList.add('hidden');
+
+    if (isPermohonanLoaded) {
+        // Jika data sudah dimuat di latar belakang, langsung render
         renderPermohonanData();
     } else {
-        DOM.permohonanContent.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat data permohonan. Silakan coba lagi nanti.</p>`;
-        DOM.permohonanContent.classList.remove('hidden');
+        // Jika belum, tampilkan loading dan muat sekarang
+        DOM.permohonanLoadingIndicator.style.display = 'block';
+        const response = await callAppsScript('getData', { sheetName: 'Permohonan' });
+        DOM.permohonanLoadingIndicator.style.display = 'none';
+
+        if (response.status === 'success') {
+            allPermohonan = response.data || [];
+            if (allPermohonan.length > 0 && allPermohonan[0].Timestamp) {
+                allPermohonan.sort((a, b) => new Date(b.Timestamp) - new Date(a.Timestamp));
+            }
+            isPermohonanLoaded = true;
+            renderPermohonanData();
+        } else {
+            DOM.permohonanContent.innerHTML = `<p class="text-center text-red-500 py-10">Gagal memuat data permohonan. Silakan coba lagi nanti.</p>`;
+            DOM.permohonanContent.classList.remove('hidden');
+        }
     }
 };
 
@@ -591,7 +598,7 @@ async function sendFormData(payload) {
     if (response.status === 'success') {
         toggleModal('form-permohonan-modal', false);
         showCustomAlert('Permohonan Anda berhasil dikirim!', 'success');
-        isPermohonanLoaded = false;
+        isPermohonanLoaded = false; // tandai data permohonan perlu dimuat ulang
         if (!DOM.permohonanViewContainer.classList.contains('hidden')) {
             loadPermohonanData();
         }
@@ -805,4 +812,3 @@ function updateDatasetCount() {
 // RUN APP
 initializeApp();
 });
-
