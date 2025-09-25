@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby0RiW50vhENeRYenXZRTBjz-3Fik-G1gXVFC8Vup5gbjxJBA10E90rVaEzucTeEhri/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBXz9Umo_1LbSUk4oaKL6Paz79B4lzfmXYTiwsB1DC_yWc6_v0TPwDFUPp4UkS_rAm/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -10,11 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutButton: document.getElementById('logout-button'),
         adminUserEmail: document.getElementById('admin-user-email'),
         modalsContainer: document.getElementById('modals-container'),
-        menuItems: document.querySelectorAll('.menu-item'),
+        menuItems: document.querySelectorAll('.menu-item[data-view]'), // Diubah agar lebih spesifik
         headerTitle: document.getElementById('header-title'),
         hamburgerButton: document.getElementById('hamburger-button'),
         sidebarMenu: document.getElementById('sidebar-menu'),
-        mainContent: document.getElementById('main-content')
+        mainContent: document.getElementById('main-content'),
+        clearCacheButton: document.getElementById('clear-cache-button') // PERUBAHAN BARU
     };
 
     // --- STATE ---
@@ -98,7 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const cacheKey = `cache_admin_${viewName}`;
         if (forceReload) sessionStorage.removeItem(cacheKey);
         
-        const cachedData = sessionStorage.getItem(cacheKey);
+        // Admin data should not be cached for long
+        const cachedData = forceReload ? null : sessionStorage.getItem(cacheKey);
+
         if (cachedData) {
             allData[viewName] = JSON.parse(cachedData);
             if (viewName === 'sop' && allData.sop.length > 0) sopHeaders = Object.keys(allData.sop[0]).filter(k => k !== 'rowIndex');
@@ -115,9 +118,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const response = await callApi(action);
         if (response.status === 'success') {
-            allData[viewName] = response.data;
-            if (viewName === 'sop' && response.data.length > 0) sopHeaders = Object.keys(response.data[0]).filter(k => k !== 'rowIndex');
-            sessionStorage.setItem(cacheKey, JSON.stringify(response.data));
+            const data = response.data || [];
+            allData[viewName] = data;
+            if (viewName === 'sop' && data.length > 0) sopHeaders = Object.keys(data[0]).filter(k => k !== 'rowIndex');
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
             renderView(viewName, allData[viewName]);
         } else {
             container.innerHTML = `<div class="text-center p-8 bg-red-50 text-red-700 rounded-lg shadow">${response.message}</div>`;
@@ -145,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const isSopView = viewName === 'sop';
-        const addButtonHTML = isSopView || viewName === 'permohonan' ? `<button onclick="window.adminApp.open${isSopView ? 'Sop' : 'Permohonan'}Modal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>` : '';
+        const addButtonHTML = isSopView ? `<button onclick="window.adminApp.openSopModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>` : '';
         
         const filtersHTML = `
             <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
@@ -183,8 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let filteredData = allData[viewName].filter(item => {
             const hasSearchTerm = searchTerm === '' || 
-                (item['Nama SOP'] || '').toLowerCase().includes(searchTerm) || 
-                (item['Nomor SOP'] || '').toLowerCase().includes(searchTerm);
+                Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm));
             const hasUnit = selectedUnit === '' || item.Unit === selectedUnit;
             const hasFungsi = viewName !== 'sop' || selectedFungsi === '' || item.Fungsi === selectedFungsi;
             return hasSearchTerm && hasUnit && hasFungsi;
@@ -194,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             filteredData.sort((a, b) => {
                 const valA = a[currentSort.key] || '';
                 const valB = b[currentSort.key] || '';
-                const comparison = valA.toString().localeCompare(valB.toString(), 'id-ID');
+                const comparison = valA.toString().localeCompare(valB.toString(), 'id-ID', { numeric: true });
                 return currentSort.order === 'asc' ? comparison : -comparison;
             });
         }
@@ -376,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
 
-    // PERUBAHAN: Fungsi render laporan diubah untuk menampilkan badge dan tombol edit
     const getLaporanHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data laporan.</p></div>`;
         const tableHeaders = `
@@ -397,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return `
             <tr class="hover:bg-gray-50">
-                <td class="p-3 text-sm text-gray-700 whitespace-nowrap">${item.Tanggal}</td>
+                <td class="p-3 text-sm text-gray-700 whitespace-nowrap">${new Date(item.Tanggal).toLocaleDateString('id-ID')}</td>
                 <td class="p-3 text-sm text-gray-700 font-mono">${item.IDSOP || ''}</td>
                 <td class="p-3 text-sm text-gray-800"><p class="max-w-md">${item.Laporan || ''}</p></td>
                 <td class="p-3 text-sm text-gray-600"><p class="max-w-xs">${item.Keterangan || ''}</p></td>
@@ -419,7 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="font-mono text-xs text-gray-600">${item.IDSOP}</p>
                         <span class="status-badge ${statusClass}">${status}</span>
                     </div>
-                    <p class="text-xs text-gray-500">${item.Tanggal}</p>
+                    <p class="text-xs text-gray-500">${new Date(item.Tanggal).toLocaleDateString('id-ID')}</p>
                     <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded-md">${item.Laporan}</p>
                     ${item.Keterangan ? `<p class="text-sm text-gray-600 border-l-4 border-blue-200 pl-2"><strong>Ket:</strong> ${item.Keterangan}</p>` : ''}
                     <div class="flex justify-end pt-2">
@@ -432,8 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- MODALS & FORMS ---
-
-    // PENAMBAHAN: Modal untuk edit laporan
     const openLaporanModal = (rowIndex) => {
         const item = allData.laporan.find(l => l.rowIndex === rowIndex);
         if (!item) return;
@@ -491,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // (Fungsi-fungsi modal permohonan dan SOP tidak diubah)
     const openPermohonanModal = (id) => {
         const isEdit = id !== null;
         const item = isEdit ? allData.permohonan.find(p => p.IDPermohonan === id) : {};
@@ -789,9 +788,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         handleSort(e);
     });
-
-    // Listener untuk dropdown status laporan dihapus karena diganti modal
     
+    // PERUBAHAN BARU: Event listener untuk tombol Clear Cache
+    if (DOM.clearCacheButton) {
+        DOM.clearCacheButton.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const icon = DOM.clearCacheButton.querySelector('i');
+            icon.classList.add('fa-spin');
+            const response = await callApi('adminClearCache');
+            if (response.status === 'success') {
+                showToast(response.message, 'success');
+            } else {
+                showToast(response.message || 'Gagal membersihkan cache.', 'error');
+            }
+            icon.classList.remove('fa-spin');
+        });
+    }
+
     DOM.adminLoginForm.addEventListener('submit', handleLogin);
     DOM.logoutButton.addEventListener('click', handleLogout);
 
@@ -800,4 +813,3 @@ document.addEventListener('DOMContentLoaded', () => {
     authToken = sessionStorage.getItem('adminAuthToken');
     if (authToken) initializeApp();
 });
-
