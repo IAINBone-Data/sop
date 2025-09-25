@@ -813,3 +813,4 @@ document.addEventListener('DOMContentLoaded', () => {
     authToken = sessionStorage.getItem('adminAuthToken');
     if (authToken) initializeApp();
 });
+
