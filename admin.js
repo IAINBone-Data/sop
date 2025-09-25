@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxvlCpZJHCMfxMOln1_aryLXIughEu4Duzosc4GRqTo2dxuPAExlaTBA1u5-aeL2rLr/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycby0RiW50vhENeRYenXZRTBjz-3Fik-G1gXVFC8Vup5gbjxJBA10E90rVaEzucTeEhri/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
