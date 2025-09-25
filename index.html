@@ -66,52 +66,62 @@
 
 
   <!-- Modal Form Pengajuan SOP -->
-  <div id="form-permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
-    <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all">
-      <div class="text-center">
-        <h1 class="text-2xl font-bold text-gray-800">Formulir Pengajuan SOP Baru</h1>
-        <p class="text-gray-500">Silakan isi detail di bawah ini.</p>
-      </div>
-      <form id="permohonan-form" class="space-y-4">
-        <div>
-          <label for="form-unit" class="text-sm font-medium text-gray-700">Unit</label>
-          <select id="form-unit" name="unit" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="" disabled selected>Pilih Unit</option>
-            <option>Biro AUAK</option>
-            <option>Bagian ULA</option>
-            <option>Subbagian TUPR</option>
-            <option>Subbagian LA</option>
-            <option>Fakultas</option>
-            <option>Pascasarjana</option>
-            <option>LPM</option>
-            <option>LPPM</option>
-            <option>SPI</option>
-            <option>UPT TIPD</option>
-            <option>UPT Perpustakaan</option>
-            <option>UPT Bahasa</option>
-            <option>UPT Mahad</option>
-          </select>
+  <!-- PERUBAHAN: Struktur modal diubah untuk menampung tombol download -->
+  <div id="form-permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 hidden">
+    <div class="w-full max-w-lg text-center">
+        <!-- Kotak Form Utama -->
+        <div class="p-8 space-y-6 bg-white rounded-xl shadow-lg transform transition-all mb-4">
+            <div class="text-center">
+                <h1 class="text-2xl font-bold text-gray-800">Formulir Pengajuan SOP Baru</h1>
+                <p class="text-gray-500">Silakan isi detail di bawah ini.</p>
+            </div>
+            <form id="permohonan-form" class="space-y-4 text-left">
+                <div>
+                    <label for="form-unit" class="text-sm font-medium text-gray-700">Unit</label>
+                    <select id="form-unit" name="unit" required class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="" disabled selected>Pilih Unit</option>
+                        <option>Biro AUAK</option>
+                        <option>Bagian ULA</option>
+                        <option>Subbagian TUPR</option>
+                        <option>Subbagian LA</option>
+                        <option>Fakultas</option>
+                        <option>Pascasarjana</option>
+                        <option>LPM</option>
+                        <option>LPPM</option>
+                        <option>SPI</option>
+                        <option>UPT TIPD</option>
+                        <option>UPT Perpustakaan</option>
+                        <option>UPT Bahasa</option>
+                        <option>UPT Mahad</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="form-nama-sop" class="text-sm font-medium text-gray-700">Nama SOP yang Diajukan</label>
+                    <input type="text" id="form-nama-sop" name="nama-sop" required placeholder="Contoh: SOP Pengajuan Cuti Akademik" class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="form-file" class="text-sm font-medium text-gray-700">Unggah Dokumen (Opsional)</label>
+                    <input type="file" id="form-file" name="file" accept=".xlsx,.xls" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mt-1">
+                    <p class="text-xs text-gray-500 mt-1">Format: .xlsx, .xls. Maksimal 1MB.</p>
+                </div>
+                <div id="form-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+                <div class="flex items-center gap-4 pt-2">
+                    <button type="button" id="close-form-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
+                    <button type="submit" id="submit-permohonan-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
+                        <span id="submit-button-text">Kirim Ajuan</span>
+                        <span id="submit-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+            </form>
         </div>
-        <div>
-          <label for="form-nama-sop" class="text-sm font-medium text-gray-700">Nama SOP yang Diajukan</label>
-          <input type="text" id="form-nama-sop" name="nama-sop" required placeholder="Contoh: SOP Pengajuan Cuti Akademik" class="w-full px-4 py-2 mt-1 text-gray-700 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-        </div>
-        <div>
-          <label for="form-file" class="text-sm font-medium text-gray-700">Unggah Dokumen (Opsional)</label>
-          <input type="file" id="form-file" name="file" accept=".xlsx,.xls" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mt-1">
-          <p class="text-xs text-gray-500 mt-1">Format: .xlsx, .xls. Maksimal 1MB.</p>
-        </div>
-        <div id="form-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
-        <div class="flex items-center gap-4 pt-2">
-          <button type="button" id="close-form-modal" class="w-full px-4 py-2 font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Batal</button>
-          <button type="submit" id="submit-permohonan-button" class="w-full px-4 py-2 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center justify-center">
-            <span id="submit-button-text">Kirim Ajuan</span>
-            <span id="submit-spinner" class="hidden"><i class="fa fa-spinner fa-spin"></i></span>
-          </button>
-        </div>
-      </form>
+        <!-- PERUBAHAN BARU: Tombol Download Template di bawah modal -->
+        <a href="https://docs.google.com/spreadsheets/d/11YbNLBoRomfFNyAIMn1SSlrG6rZg5eEB/export?format=xlsx" class="inline-flex items-center gap-2 px-4 py-2 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700">
+            <i class="fas fa-download"></i>
+            Download Template SOP
+        </a>
     </div>
-  </div>
+</div>
+
 
   <div id="main-app">
     <header class="bg-white shadow-md sticky top-0 z-40">
@@ -217,7 +227,6 @@
       <div id="detail-view-container" class="hidden">
         <div class="flex items-center justify-between mb-6">
             <button id="back-to-list-button" class="text-blue-600 hover:text-blue-800 font-semibold flex items-center"><i class="fas fa-arrow-left mr-2"></i>Kembali ke Daftar</button>
-            <!-- PENAMBAHAN: Container untuk status dan tombol lapor -->
             <div class="flex items-center gap-4">
               <span id="detail-status" class="text-sm font-bold px-3 py-1 rounded-full hidden"></span>
               <button id="report-sop-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
@@ -273,12 +282,20 @@
       
       <div id="permohonan-view-container" class="hidden">
         <section class="w-full">
-            <div class="flex items-center justify-between gap-4 mb-6">
+             <!-- PERUBAHAN: Container tombol diubah menjadi flex dan responsif -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
                 <h3 class="text-xl font-semibold text-gray-800">Daftar Permohonan SOP</h3>
-                <button id="ajukan-sop-button-page" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
-                    <i class="fas fa-plus"></i>
-                    <span class="hidden sm:inline">Ajukan SOP</span>
-                </button>
+                <div class="flex items-center gap-2">
+                    <!-- PERUBAHAN BARU: Tombol Download Template -->
+                    <a href="https://docs.google.com/spreadsheets/d/11YbNLBoRomfFNyAIMn1SSlrG6rZg5eEB/export?format=xlsx" class="bg-white border border-green-600 text-green-600 hover:bg-green-50 font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
+                        <i class="fas fa-download"></i>
+                        <span class="hidden sm:inline">Template SOP</span>
+                    </a>
+                    <button id="ajukan-sop-button-page" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
+                        <i class="fas fa-plus"></i>
+                        <span class="hidden sm:inline">Ajukan SOP</span>
+                    </button>
+                </div>
             </div>
             <div id="permohonan-loading-indicator" class="text-center py-10">
                 <i class="fa fa-spinner fa-spin fa-3x text-blue-500"></i>
@@ -322,4 +339,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
