@@ -476,6 +476,76 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- MODALS & FORMS ---
+    // PENAMBAHAN FUNGSI BARU
+    const openEditPasswordModal = () => {
+        const modalHTML = `
+            <div id="password-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                <div class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                    <h2 class="text-xl font-bold">Ganti Password</h2>
+                    <form id="password-form" class="space-y-4">
+                        <div>
+                            <label for="old-password" class="text-sm font-medium">Password Lama</label>
+                            <input type="password" id="old-password" name="oldPassword" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="new-password" class="text-sm font-medium">Password Baru</label>
+                            <input type="password" id="new-password" name="newPassword" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="text-sm font-medium">Konfirmasi Password Baru</label>
+                            <input type="password" id="confirm-password" name="confirmPassword" required class="w-full mt-1 p-2 border rounded-md">
+                        </div>
+                        <div id="password-error" class="text-sm text-center text-red-500 font-medium hidden"></div>
+                        <div class="flex items-center gap-4 pt-4 border-t mt-4">
+                            <button type="button" onclick="window.adminApp.closeModal()" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
+                            <button type="submit" id="submit-password" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
+        DOM.modalsContainer.innerHTML = modalHTML;
+        document.getElementById('password-form').addEventListener('submit', handlePasswordChangeSubmit);
+    };
+
+    const handlePasswordChangeSubmit = async (e) => {
+        e.preventDefault();
+        const form = e.target;
+        const errorDiv = document.getElementById('password-error');
+        const submitBtn = document.getElementById('submit-password');
+        const oldPassword = form.oldPassword.value;
+        const newPassword = form.newPassword.value;
+        const confirmPassword = form.confirmPassword.value;
+
+        errorDiv.classList.add('hidden');
+
+        if (newPassword !== confirmPassword) {
+            errorDiv.textContent = 'Password baru dan konfirmasi tidak cocok.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        if (newPassword.length < 6) {
+            errorDiv.textContent = 'Password baru minimal 6 karakter.';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+
+        const response = await callApi('adminChangePassword', { oldPassword, newPassword });
+
+        if (response.status === 'success') {
+            closeModal();
+            showToast('Password berhasil diperbarui!', 'success');
+        } else {
+            errorDiv.textContent = response.message || 'Gagal mengubah password.';
+            errorDiv.classList.remove('hidden');
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Simpan';
+    };
+    
     const openPermohonanDetailModal = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) return;
@@ -888,7 +958,39 @@ document.addEventListener('DOMContentLoaded', () => {
         toastTimeout = setTimeout(() => {
             toast.classList.add('translate-x-[120%]');
         }, 3000);
-    }
+    };
+
+    // FUNGSI BARU DITAMBAHKAN DI SINI
+    const handleDownloadXLSX = (viewName) => {
+        let dataToExport;
+        let fileName;
+    
+        if (viewName === 'sop') {
+            dataToExport = allData.sop.map(item => {
+                const { rowIndex, ...rest } = item;
+                return rest;
+            });
+            fileName = 'Daftar_SOP.xlsx';
+        } else if (viewName === 'permohonan') {
+            dataToExport = currentFilteredData.map(item => {
+                 const { rowIndex, ...rest } = item;
+                return rest;
+            });
+            fileName = 'Daftar_Permohonan_SOP.xlsx';
+        } else {
+            return;
+        }
+
+        if (dataToExport.length === 0) {
+            showToast('Tidak ada data untuk diunduh.', 'error');
+            return;
+        }
+    
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
+        XLSX.writeFile(workbook, fileName);
+    };
 
 
     // --- INITIALIZATION & EVENT LISTENERS ---
