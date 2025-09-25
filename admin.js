@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSort = { view: '', key: '', order: 'asc' };
     let tomSelectInstances = {};
     let toastTimeout = null;
-    let isPermohonanDataLoaded = false; // PERUBAHAN BARU
+    let isPermohonanDataLoaded = false;
 
     // --- API HELPER ---
     const callApi = async (action, payload = {}) => {
@@ -94,7 +94,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- DATA LOADING & CACHING ---
-    // PERUBAHAN BARU: Fungsi untuk memuat data permohonan di latar belakang
     const loadPermohonanDataInBackground = async () => {
         const response = await callApi('adminGetPermohonan');
         if (response.status === 'success') {
@@ -108,20 +107,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById(`${viewName}-view`);
         container.innerHTML = `<div class="text-center p-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div>`;
         
-        // PERUBAHAN BARU: Cek jika data permohonan sudah dimuat di background
         if (viewName === 'permohonan' && isPermohonanDataLoaded && !forceReload) {
             renderView('permohonan', allData.permohonan);
             return;
         }
 
         const cacheKey = `cache_admin_${viewName}`;
-        if (forceReload) sessionStorage.removeItem(cacheKey);
+        if (forceReload) {
+            sessionStorage.removeItem(cacheKey);
+            if(viewName === 'permohonan') isPermohonanDataLoaded = false;
+        }
         
-        const cachedData = forceReload ? null : sessionStorage.getItem(cacheKey);
+        const cachedData = sessionStorage.getItem(cacheKey);
 
         if (cachedData) {
             allData[viewName] = JSON.parse(cachedData);
             if (viewName === 'sop' && allData.sop.length > 0) sopHeaders = Object.keys(allData.sop[0]).filter(k => k !== 'rowIndex');
+            if(viewName === 'permohonan') isPermohonanDataLoaded = true;
             renderView(viewName, allData[viewName]);
             return;
         }
@@ -139,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allData[viewName] = data;
             if (viewName === 'sop' && data.length > 0) sopHeaders = Object.keys(data[0]).filter(k => k !== 'rowIndex');
             sessionStorage.setItem(cacheKey, JSON.stringify(data));
-            if(viewName === 'permohonan') isPermohonanDataLoaded = true; // Tandai sudah dimuat
+            if(viewName === 'permohonan') isPermohonanDataLoaded = true;
             renderView(viewName, allData[viewName]);
         } else {
             container.innerHTML = `<div class="text-center p-8 bg-red-50 text-red-700 rounded-lg shadow">${response.message}</div>`;
@@ -337,7 +339,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
     
-    // PERUBAHAN BARU: Menambahkan tombol lihat detail
     const getPermohonanHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data permohonan.</p></div>`;
         const headers = [
@@ -357,9 +358,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
                 default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
             }
-            const fileButton = (item.File && item.File.startsWith('http')) 
-                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
-                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
             return `
                 <tr class="hover:bg-gray-50">
                     <td class="p-3 text-sm text-gray-700">${new Date(item.Timestamp).toLocaleString('id-ID', { dateStyle:'short', timeStyle: 'short' })}</td>
@@ -384,9 +382,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'ditolak': statusBadge = `<span class="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`; break;
                 default: statusBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusText}</span>`;
             }
-             const fileButton = (item.File && item.File.startsWith('http')) 
-                ? `<a href="${item.File}" target="_blank" title="Lihat File" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200"><i class="fas fa-file-alt"></i></a>`
-                : `<button title="File tidak tersedia" class="bg-gray-50 text-gray-300 p-2 rounded-full w-8 h-8 flex items-center justify-center cursor-not-allowed" disabled><i class="fas fa-file-alt"></i></button>`;
             return `
                 <div class="bg-white p-4 rounded-lg shadow space-y-3">
                     <div class="flex justify-between items-start">
@@ -463,6 +458,80 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- MODALS & FORMS ---
+    // PERUBAHAN BARU: Fungsi untuk modal detail permohonan dengan timeline
+    const openPermohonanDetailModal = (id) => {
+        const item = allData.permohonan.find(p => p.IDPermohonan === id);
+        if (!item) return;
+
+        const statusTimeline = ['Diajukan', 'Diproses', 'Proses Review 1', 'Proses Review SPI', 'Proses Review LPM', 'Proses Penyusunan', 'Proses Pengesahan', 'Terbit'];
+        const currentStatus = item.Status || 'Diajukan';
+        const currentStatusIndex = statusTimeline.indexOf(currentStatus);
+
+        const timelineHTML = statusTimeline.map((status, index) => {
+            let statusClass = 'text-gray-400';
+            let iconClass = 'fa-circle bg-gray-300';
+            let lineClass = 'border-gray-300 border-dashed';
+            let noteHTML = '';
+
+            if (index < currentStatusIndex) {
+                statusClass = 'text-green-600 font-semibold';
+                iconClass = 'fa-check bg-green-500 text-white';
+                lineClass = 'border-green-500';
+            } else if (index === currentStatusIndex) {
+                statusClass = 'text-blue-600 font-bold';
+                iconClass = 'fa-circle bg-blue-500 text-white ring-4 ring-blue-100';
+                lineClass = 'border-gray-300 border-dashed';
+            }
+            
+            // Check for review notes
+            if (status === 'Proses Review 1' && item['Review 1']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review 1']}</div>`;
+            if (status === 'Proses Review SPI' && item['Review SPI']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review SPI']}</div>`;
+            if (status === 'Proses Review LPM' && item['Review LPM']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review LPM']}</div>`;
+
+
+            return `
+                <li class="relative pb-8">
+                    ${index < statusTimeline.length - 1 ? `<div class="absolute top-1 left-2.5 h-full w-0.5 ${lineClass}"></div>` : ''}
+                    <div class="relative flex items-center">
+                        <div class="h-5 w-5 rounded-full flex items-center justify-center ${iconClass}"><i class="fas text-xs"></i></div>
+                        <p class="ml-4 text-sm ${statusClass}">${status}</p>
+                    </div>
+                    ${noteHTML}
+                </li>`;
+        }).join('');
+
+        const modalHTML = `
+            <div id="permohonan-detail-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+                <div class="w-full max-w-2xl p-8 space-y-6 bg-white rounded-xl shadow-lg">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Detail Permohonan</h2>
+                            <p class="text-sm text-gray-500">${item['Nama SOP']}</p>
+                        </div>
+                        <button onclick="window.adminApp.closeModal()" class="text-gray-400 hover:text-gray-600">&times;</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[60vh] overflow-y-auto pr-2">
+                        <div>
+                            <h3 class="font-semibold mb-2 text-gray-700">Informasi</h3>
+                            <div class="text-sm space-y-2 text-gray-600">
+                                <p><strong>Unit:</strong> ${item.Unit}</p>
+                                <p><strong>Tanggal Diajukan:</strong> ${new Date(item.Timestamp).toLocaleString('id-ID')}</p>
+                                <p><strong>Terakhir Diperbarui:</strong> ${item['Tgl Diperbarui'] || 'N/A'}</p>
+                                <p><strong>Oleh:</strong> ${item['Diperbarui Oleh'] || 'N/A'}</p>
+                                ${item.Keterangan ? `<div class="pt-2 mt-2 border-t"><p class="font-medium">Keterangan:</p><p class="bg-gray-50 p-2 rounded-md">${item.Keterangan}</p></div>` : ''}
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold mb-2 text-gray-700">Tracking Proses</h3>
+                            <ol>${timelineHTML}</ol>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        DOM.modalsContainer.innerHTML = modalHTML;
+    };
+
+
     const openLaporanModal = (rowIndex) => {
         const item = allData.laporan.find(l => l.rowIndex === rowIndex);
         if (!item) return;
@@ -593,7 +662,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
     
-    // PERUBAHAN BARU: Fungsi handlePermohonanFormSubmit dirombak total
     const handlePermohonanFormSubmit = async (e, id) => {
         e.preventDefault();
         const btn = document.getElementById('submit-permohonan');
@@ -604,7 +672,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
-        // Tambahkan data otomatis
         data['Diperbarui Oleh'] = sessionStorage.getItem('adminUserEmail') || 'N/A';
         const today = new Date();
         data['Tgl Diperbarui'] = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
@@ -815,6 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.dashboardView.classList.remove('hidden');
         DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
         document.querySelector('.menu-item[data-view="sop"]').click();
+        loadPermohonanDataInBackground(); // PERUBAHAN BARU
     };
 
     DOM.hamburgerButton.addEventListener('click', () => {
@@ -893,8 +961,19 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.adminLoginForm.addEventListener('submit', handleLogin);
     DOM.logoutButton.addEventListener('click', handleLogout);
 
-    window.adminApp = { openPermohonanModal, openDeletePermohonanModal, convertPermohonanToSop, openSopModal, openDeleteSopModal, closeModal, openLaporanModal };
+    // PERUBAHAN BARU: Menambahkan fungsi baru ke global scope
+    window.adminApp = { 
+        openPermohonanModal, 
+        openDeletePermohonanModal, 
+        convertPermohonanToSop, 
+        openSopModal, 
+        openDeleteSopModal, 
+        closeModal, 
+        openLaporanModal,
+        openPermohonanDetailModal
+    };
 
     authToken = sessionStorage.getItem('adminAuthToken');
     if (authToken) initializeApp();
 });
+
