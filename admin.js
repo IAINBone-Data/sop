@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxG6DLutIFKgCWsndqjUuV_C7Qkt4axE_QmB_ngqX3l9SShKrRFXttrsW3wq1l-BLDi/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxvaUYuafHWp_V071JqqUQbHEzW09lg2TwDGx1hWRDKdGhxfZT8hywDCW37VpZAxQgc/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- AUTHENTICATION ---
-    // PERUBAHAN BARU: Menyimpan role ke session storage
+    // PERUBAHAN: Menyimpan username ke session storage
     const handleLogin = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-button');
@@ -69,7 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
             authToken = response.token;
             sessionStorage.setItem('adminAuthToken', authToken);
             sessionStorage.setItem('adminUserEmail', response.email);
-            sessionStorage.setItem('adminUserRole', response.role); // Simpan role
+            sessionStorage.setItem('adminUserRole', response.role);
+            sessionStorage.setItem('adminUsername', response.username); // Simpan username
             initializeApp();
         } else {
             const err = document.getElementById('login-error');
@@ -662,6 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
     
+    // PERUBAHAN: Menggunakan username dari session storage
     const handlePermohonanFormSubmit = async (e, id) => {
         e.preventDefault();
         const btn = document.getElementById('submit-permohonan');
@@ -672,7 +674,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
-        data['Diperbarui Oleh'] = sessionStorage.getItem('adminUserEmail') || 'N/A';
+        data['Diperbarui Oleh'] = sessionStorage.getItem('adminUsername') || 'N/A';
         const today = new Date();
         data['Tgl Diperbarui'] = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
 
@@ -880,7 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeApp = () => {
         DOM.loginView.classList.add('hidden');
         DOM.dashboardView.classList.remove('hidden');
-        DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
+        DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUsername'); // PERUBAHAN
         document.querySelector('.menu-item[data-view="sop"]').click();
         loadPermohonanDataInBackground();
     };
