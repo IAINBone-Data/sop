@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - SOP / Dokumen / Juknis IAIN Bone</title>
+    <title>Admin Panel - SOP IAIN Bone</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Tom Select CSS -->
@@ -27,7 +27,6 @@
         .status-Ditindaklanjuti { background-color: #FEF3C7; color: #92400E; }
         .status-Selesai { background-color: #D1FAE5; color: #065F46; }
         .status-Ditahan { background-color: #FEE2E2; color: #991B1B; }
-        /* PENAMBAHAN: Warna status baru */
         .status-Diproses { background-color: #DBEAFE; color: #1E40AF; }
     </style>
 </head>
@@ -63,7 +62,7 @@
         <div id="dashboard-view" class="hidden">
             <div id="sidebar-menu" class="fixed top-0 left-0 h-full bg-white shadow-lg z-50 w-64 transition-all duration-300">
                 <div class="flex items-center justify-between p-4 border-b h-16">
-                    <h2 class="text-xl font-bold text-gray-800 menu-text">Admin</h2>
+                    <h2 class="text-xl font-bold text-gray-800 menu-text">Admin SOP</h2>
                     <button id="hamburger-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100"><i class="fas fa-bars"></i></button>
                 </div>
                 <nav class="p-4">
@@ -71,6 +70,7 @@
                         <li><a href="#" data-view="sop" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-book w-8 mr-2 text-center"></i><span class="menu-text">Daftar SOP</span></a></li>
                         <li><a href="#" data-view="permohonan" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fa-solid fa-file w-8 mr-2 text-center"></i><span class="menu-text">Permohonan</span></a></li>
                         <li><a href="#" data-view="laporan" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold"><i class="fas fa-flag w-8 mr-2 text-center"></i><span class="menu-text">Laporan</span></a></li>
+                        <li class="border-t pt-2 mt-2"><a href="#" id="clear-cache-button" class="menu-item flex items-center py-2 px-4 rounded-lg font-semibold text-gray-600 hover:bg-gray-100"><i class="fas fa-broom w-8 mr-2 text-center"></i><span class="menu-text">Clear Cache</span></a></li>
                     </ul>
                 </nav>
             </div>
@@ -79,9 +79,16 @@
                 <header class="bg-white shadow-md sticky top-0 z-40">
                     <div class="flex items-center justify-between h-16 px-6">
                         <div id="header-title" class="text-lg font-semibold text-gray-800"></div>
-                        <div class="flex items-center gap-4">
-                            <span id="admin-user-email" class="text-sm text-gray-600 hidden sm:block"></span>
-                            <button id="logout-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm"><i class="fas fa-sign-out-alt"></i><span class="hidden sm:inline">Logout</span></button>
+                        <!-- PERUBAHAN BARU: Menambahkan info user dan tombol ganti password -->
+                        <div id="admin-user-info" class="flex items-center gap-4">
+                            <span id="admin-username-display" class="text-sm text-gray-600 hidden sm:block font-semibold"></span>
+                            <button id="change-password-button" class="text-gray-600 hover:bg-gray-100 p-2 rounded-full w-8 h-8 flex items-center justify-center" title="Ganti Password">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            <button id="logout-button" class="bg-red-500 text-white hover:bg-red-600 font-semibold px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span class="hidden sm:inline">Logout</span>
+                            </button>
                         </div>
                     </div>
                 </header>
@@ -98,6 +105,8 @@
     <div id="modals-container"></div>
     <!-- Tom Select JS -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    <!-- PERUBAHAN BARU: Menambahkan library SheetJS (xlsx) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="admin.js"></script>
 </body>
 </html>
