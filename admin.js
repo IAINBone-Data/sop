@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSort = { view: '', key: '', order: 'asc' };
     let tomSelectInstances = {};
     let toastTimeout = null;
+    let isPermohonanDataLoaded = false; // PERUBAHAN BARU
 
     // --- API HELPER ---
     const callApi = async (action, payload = {}) => {
@@ -93,9 +94,26 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- DATA LOADING & CACHING ---
+    // PERUBAHAN BARU: Fungsi untuk memuat data permohonan di latar belakang
+    const loadPermohonanDataInBackground = async () => {
+        const response = await callApi('adminGetPermohonan');
+        if (response.status === 'success') {
+            allData.permohonan = response.data || [];
+            sessionStorage.setItem('cache_admin_permohonan', JSON.stringify(allData.permohonan));
+            isPermohonanDataLoaded = true;
+        }
+    };
+
     const loadDataForView = async (viewName, forceReload = false) => {
         const container = document.getElementById(`${viewName}-view`);
         container.innerHTML = `<div class="text-center p-8"><i class="fas fa-spinner fa-spin fa-2x text-blue-500"></i></div>`;
+        
+        // PERUBAHAN BARU: Cek jika data permohonan sudah dimuat di background
+        if (viewName === 'permohonan' && isPermohonanDataLoaded && !forceReload) {
+            renderView('permohonan', allData.permohonan);
+            return;
+        }
+
         const cacheKey = `cache_admin_${viewName}`;
         if (forceReload) sessionStorage.removeItem(cacheKey);
         
@@ -121,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
             allData[viewName] = data;
             if (viewName === 'sop' && data.length > 0) sopHeaders = Object.keys(data[0]).filter(k => k !== 'rowIndex');
             sessionStorage.setItem(cacheKey, JSON.stringify(data));
+            if(viewName === 'permohonan') isPermohonanDataLoaded = true; // Tandai sudah dimuat
             renderView(viewName, allData[viewName]);
         } else {
             container.innerHTML = `<div class="text-center p-8 bg-red-50 text-red-700 rounded-lg shadow">${response.message}</div>`;
@@ -318,6 +337,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<div class="bg-white rounded-lg shadow overflow-x-auto hidden md:block"><table class="w-full"><thead class="bg-gray-50">${tableHeaders}</thead><tbody class="divide-y">${tableRows}</tbody></table></div><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">${cards}</div>`;
     };
     
+    // PERUBAHAN BARU: Menambahkan tombol lihat detail
     const getPermohonanHTML = (data) => {
         if (!data || data.length === 0) return `<div class="text-center p-8 bg-white rounded-lg shadow"><p>Tidak ada data permohonan.</p></div>`;
         const headers = [
@@ -348,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="p-3 text-sm">${statusBadge}</td>
                     <td class="p-3 text-sm text-right">
                         <div class="flex items-center justify-end gap-2">
-                           ${fileButton}
+                           <button title="Lihat Detail" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200" onclick="window.adminApp.openPermohonanDetailModal('${item.IDPermohonan}')"><i class="fas fa-eye"></i></button>
                            <button title="Jadikan SOP" class="bg-green-100 text-green-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-green-200" onclick="window.adminApp.convertPermohonanToSop('${item.IDPermohonan}')"><i class="fas fa-exchange-alt"></i></button>
                            <button title="Edit Permohonan" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openPermohonanModal('${item.IDPermohonan}')"><i class="fas fa-edit"></i></button>
                            <button title="Hapus Permohonan" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeletePermohonanModal('${item.IDPermohonan}')"><i class="fas fa-trash"></i></button>
@@ -378,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p><span class="font-medium">Tanggal:</span> ${new Date(item.Timestamp).toLocaleString('id-ID', { dateStyle:'short', timeStyle: 'short' })}</p>
                     </div>
                     <div class="flex items-center justify-end gap-2 pt-3 border-t mt-3">
-                        ${fileButton}
+                        <button title="Lihat Detail" class="bg-gray-100 text-gray-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-gray-200" onclick="window.adminApp.openPermohonanDetailModal('${item.IDPermohonan}')"><i class="fas fa-eye"></i></button>
                         <button title="Jadikan SOP" class="bg-green-100 text-green-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-green-200" onclick="window.adminApp.convertPermohonanToSop('${item.IDPermohonan}')"><i class="fas fa-exchange-alt"></i></button>
                         <button title="Edit Permohonan" class="bg-blue-100 text-blue-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-blue-200" onclick="window.adminApp.openPermohonanModal('${item.IDPermohonan}')"><i class="fas fa-edit"></i></button>
                         <button title="Hapus Permohonan" class="bg-red-100 text-red-700 p-2 rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-200" onclick="window.adminApp.openDeletePermohonanModal('${item.IDPermohonan}')"><i class="fas fa-trash"></i></button>
@@ -500,7 +520,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // PERUBAHAN BARU: Fungsi openPermohonanModal dirombak total
     const openPermohonanModal = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) {
@@ -879,4 +898,3 @@ document.addEventListener('DOMContentLoaded', () => {
     authToken = sessionStorage.getItem('adminAuthToken');
     if (authToken) initializeApp();
 });
-
