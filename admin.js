@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxvaUYuafHWp_V071JqqUQbHEzW09lg2TwDGx1hWRDKdGhxfZT8hywDCW37VpZAxQgc/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbytCmso0p9YGHdmxmF8-IzqyW7elN3-M_2tQGuXRScusdfm5sQlEe2wML9RoJCq9Rw/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardView: document.getElementById('dashboard-view'),
         adminLoginForm: document.getElementById('admin-login-form'),
         logoutButton: document.getElementById('logout-button'),
-        adminUserEmail: document.getElementById('admin-user-email'),
+        adminUsernameDisplay: document.getElementById('admin-username-display'),
+        changePasswordButton: document.getElementById('change-password-button'),
         modalsContainer: document.getElementById('modals-container'),
         menuItems: document.querySelectorAll('.menu-item[data-view]'),
         headerTitle: document.getElementById('header-title'),
@@ -26,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let tomSelectInstances = {};
     let toastTimeout = null;
     let isPermohonanDataLoaded = false;
+    let currentFilteredData = [];
 
     // --- API HELPER ---
     const callApi = async (action, payload = {}) => {
@@ -52,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- AUTHENTICATION ---
-    // PERUBAHAN: Menyimpan username ke session storage
     const handleLogin = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-button');
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sessionStorage.setItem('adminAuthToken', authToken);
             sessionStorage.setItem('adminUserEmail', response.email);
             sessionStorage.setItem('adminUserRole', response.role);
-            sessionStorage.setItem('adminUsername', response.username); // Simpan username
+            sessionStorage.setItem('adminUsername', response.username);
             initializeApp();
         } else {
             const err = document.getElementById('login-error');
@@ -173,7 +174,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const isSopView = viewName === 'sop';
         const isPermohonanView = viewName === 'permohonan';
-        const addButtonHTML = isSopView ? `<button onclick="window.adminApp.openSopModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>` : '';
+
+        let actionButtonsHTML = '';
+        if(isSopView) {
+            actionButtonsHTML = `
+                <button onclick="window.adminApp.handleDownloadXLSX('sop')" class="bg-green-600 text-white hover:bg-green-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-file-excel"></i> Download</button>
+                <button onclick="window.adminApp.openSopModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>
+            `;
+        }
+        if(isPermohonanView) {
+            actionButtonsHTML = `
+                <button onclick="window.adminApp.handleDownloadXLSX('permohonan')" class="bg-green-600 text-white hover:bg-green-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-file-excel"></i> Download</button>
+            `;
+        }
         
         const filtersHTML = `
             <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
@@ -188,8 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button data-view="${viewName}" title="Reset Filter" class="reset-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-undo"></i></button>
                     <button data-view="${viewName}" title="Muat Ulang" class="reload-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-sync-alt"></i></button>
                 </div>
-                <div class="flex-shrink-0">
-                    ${addButtonHTML}
+                <div class="flex-shrink-0 flex items-center gap-2">
+                    ${actionButtonsHTML}
                 </div>
             </div>`;
         
@@ -228,6 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return currentSort.order === 'asc' ? comparison : -comparison;
             });
         }
+        
+        currentFilteredData = filteredData;
 
         let contentHTML = '';
         if (viewName === 'permohonan') contentHTML = getPermohonanHTML(filteredData);
@@ -622,7 +637,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <textarea name="Keterangan" rows="3" class="w-full mt-1 p-2 border rounded-md">${item.Keterangan || ''}</textarea>
                         </div>
                         
-                        <!-- Kolom Review Kondisional -->
                         <div id="review-1-field" class="hidden">
                             <label for="Review 1" class="text-sm font-medium">Review 1</label>
                             <textarea name="Review 1" rows="3" class="w-full mt-1 p-2 border rounded-md">${item['Review 1'] || ''}</textarea>
@@ -663,7 +677,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
     
-    // PERUBAHAN: Menggunakan username dari session storage
     const handlePermohonanFormSubmit = async (e, id) => {
         e.preventDefault();
         const btn = document.getElementById('submit-permohonan');
@@ -882,7 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initializeApp = () => {
         DOM.loginView.classList.add('hidden');
         DOM.dashboardView.classList.remove('hidden');
-        DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUsername'); // PERUBAHAN
+        DOM.adminUsernameDisplay.textContent = sessionStorage.getItem('adminUsername');
         document.querySelector('.menu-item[data-view="sop"]').click();
         loadPermohonanDataInBackground();
     };
@@ -962,6 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     DOM.adminLoginForm.addEventListener('submit', handleLogin);
     DOM.logoutButton.addEventListener('click', handleLogout);
+    DOM.changePasswordButton.addEventListener('click', openEditPasswordModal);
 
     window.adminApp = { 
         openPermohonanModal, 
@@ -971,7 +985,8 @@ document.addEventListener('DOMContentLoaded', () => {
         openDeleteSopModal, 
         closeModal, 
         openLaporanModal,
-        openPermohonanDetailModal
+        openPermohonanDetailModal,
+        handleDownloadXLSX
     };
 
     authToken = sessionStorage.getItem('adminAuthToken');
