@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- KONFIGURASI ---
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyBXz9Umo_1LbSUk4oaKL6Paz79B4lzfmXYTiwsB1DC_yWc6_v0TPwDFUPp4UkS_rAm/exec';
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxG6DLutIFKgCWsndqjUuV_C7Qkt4axE_QmB_ngqX3l9SShKrRFXttrsW3wq1l-BLDi/exec';
 
     // --- DOM ELEMENTS ---
     const DOM = {
@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- AUTHENTICATION ---
+    // PERUBAHAN BARU: Menyimpan role ke session storage
     const handleLogin = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('login-button');
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             authToken = response.token;
             sessionStorage.setItem('adminAuthToken', authToken);
             sessionStorage.setItem('adminUserEmail', response.email);
+            sessionStorage.setItem('adminUserRole', response.role); // Simpan role
             initializeApp();
         } else {
             const err = document.getElementById('login-error');
@@ -458,7 +460,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- MODALS & FORMS ---
-    // PERUBAHAN BARU: Fungsi untuk modal detail permohonan dengan timeline
     const openPermohonanDetailModal = (id) => {
         const item = allData.permohonan.find(p => p.IDPermohonan === id);
         if (!item) return;
@@ -483,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 lineClass = 'border-gray-300 border-dashed';
             }
             
-            // Check for review notes
             if (status === 'Proses Review 1' && item['Review 1']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review 1']}</div>`;
             if (status === 'Proses Review SPI' && item['Review SPI']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review SPI']}</div>`;
             if (status === 'Proses Review LPM' && item['Review LPM']) noteHTML = `<div class="text-xs text-gray-600 bg-gray-100 p-2 rounded-md mt-1 ml-8">${item['Review LPM']}</div>`;
@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         statusSelect.addEventListener('change', toggleReviewFields);
-        toggleReviewFields(); // Panggil sekali saat modal dibuka
+        toggleReviewFields(); 
 
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
@@ -882,7 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
         DOM.dashboardView.classList.remove('hidden');
         DOM.adminUserEmail.textContent = sessionStorage.getItem('adminUserEmail');
         document.querySelector('.menu-item[data-view="sop"]').click();
-        loadPermohonanDataInBackground(); // PERUBAHAN BARU
+        loadPermohonanDataInBackground();
     };
 
     DOM.hamburgerButton.addEventListener('click', () => {
@@ -961,7 +961,6 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.adminLoginForm.addEventListener('submit', handleLogin);
     DOM.logoutButton.addEventListener('click', handleLogout);
 
-    // PERUBAHAN BARU: Menambahkan fungsi baru ke global scope
     window.adminApp = { 
         openPermohonanModal, 
         openDeletePermohonanModal, 
