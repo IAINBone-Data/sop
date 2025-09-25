@@ -10,12 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
         logoutButton: document.getElementById('logout-button'),
         adminUserEmail: document.getElementById('admin-user-email'),
         modalsContainer: document.getElementById('modals-container'),
-        menuItems: document.querySelectorAll('.menu-item[data-view]'), // Diubah agar lebih spesifik
+        menuItems: document.querySelectorAll('.menu-item[data-view]'),
         headerTitle: document.getElementById('header-title'),
         hamburgerButton: document.getElementById('hamburger-button'),
         sidebarMenu: document.getElementById('sidebar-menu'),
         mainContent: document.getElementById('main-content'),
-        clearCacheButton: document.getElementById('clear-cache-button') // PERUBAHAN BARU
+        clearCacheButton: document.getElementById('clear-cache-button')
     };
 
     // --- STATE ---
@@ -99,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cacheKey = `cache_admin_${viewName}`;
         if (forceReload) sessionStorage.removeItem(cacheKey);
         
-        // Admin data should not be cached for long
         const cachedData = forceReload ? null : sessionStorage.getItem(cacheKey);
 
         if (cachedData) {
@@ -491,19 +490,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // PERUBAHAN BARU: Fungsi openPermohonanModal dirombak total
     const openPermohonanModal = (id) => {
-        const isEdit = id !== null;
-        const item = isEdit ? allData.permohonan.find(p => p.IDPermohonan === id) : {};
-        const title = isEdit ? 'Edit Permohonan' : 'Tambah Permohonan Baru';
-        const unitOptions = `<option value="" disabled selected>Pilih Unit</option><option>Biro AUAK</option><option>Bagian ULA</option><option>Subbag TUPR</option><option>Subbag LA</option><option>Fakultas</option><option>Pascasarjana</option><option>LPM</option><option>LPPM</option><option>SPI</option><option>UPT TIPD</option><option>UPT Perpustakaan</option><option>UPT Bahasa</option><option>UPT Mahad</option>`;
+        const item = allData.permohonan.find(p => p.IDPermohonan === id);
+        if (!item) {
+            showToast('Data permohonan tidak ditemukan.', 'error');
+            return;
+        }
+
+        const statusOptions = ['Diproses', 'Proses Review 1', 'Proses Review SPI', 'Proses Review LPM', 'Proses Penyusunan', 'Proses Pengesahan', 'Terbit'];
+        const statusSelectHTML = statusOptions.map(opt => `<option value="${opt}" ${item.Status === opt ? 'selected' : ''}>${opt}</option>`).join('');
+
         const modalHTML = `
             <div id="permohonan-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
                 <div class="w-full max-w-lg p-8 space-y-6 bg-white rounded-xl shadow-lg">
-                    <h2 class="text-xl font-bold">${title}</h2>
-                    <form id="permohonan-form" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                        <div><label for="Unit" class="text-sm font-medium">Unit</label><select name="Unit" required class="w-full mt-1 p-2 border rounded-md bg-white">${unitOptions}</select></div>
-                        <div><label for="Nama_SOP" class="text-sm font-medium">Nama SOP</label><input type="text" name="Nama_SOP" value="${item['Nama SOP'] || ''}" required class="w-full mt-1 p-2 border rounded-md"></div>
-                        <div><label for="File" class="text-sm font-medium">Unggah Dokumen (Opsional)</label><input type="file" name="file" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 mt-1"></div>
+                    <h2 class="text-xl font-bold">Edit Permohonan</h2>
+                    <form id="permohonan-form" class="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Nama SOP</label>
+                            <p class="mt-1 p-2 bg-gray-100 rounded-md text-sm font-semibold">${item['Nama SOP'] || ''}</p>
+                        </div>
+                        <div>
+                            <label class="text-sm font-medium text-gray-500">Unit</label>
+                            <p class="mt-1 p-2 bg-gray-100 rounded-md text-sm">${item.Unit || ''}</p>
+                        </div>
+                        <div>
+                            <label for="Status" class="text-sm font-medium">Status</label>
+                            <select name="Status" id="permohonan-status-select" class="w-full mt-1 p-2 border rounded-md bg-white">${statusSelectHTML}</select>
+                        </div>
+                        <div>
+                            <label for="Keterangan" class="text-sm font-medium">Keterangan</label>
+                            <textarea name="Keterangan" rows="3" class="w-full mt-1 p-2 border rounded-md">${item.Keterangan || ''}</textarea>
+                        </div>
+                        
+                        <!-- Kolom Review Kondisional -->
+                        <div id="review-1-field" class="hidden">
+                            <label for="Review 1" class="text-sm font-medium">Review 1</label>
+                            <textarea name="Review 1" rows="3" class="w-full mt-1 p-2 border rounded-md">${item['Review 1'] || ''}</textarea>
+                        </div>
+                        <div id="review-spi-field" class="hidden">
+                            <label for="Review SPI" class="text-sm font-medium">Review SPI</label>
+                            <textarea name="Review SPI" rows="3" class="w-full mt-1 p-2 border rounded-md">${item['Review SPI'] || ''}</textarea>
+                        </div>
+                        <div id="review-lpm-field" class="hidden">
+                            <label for="Review LPM" class="text-sm font-medium">Review LPM</label>
+                            <textarea name="Review LPM" rows="3" class="w-full mt-1 p-2 border rounded-md">${item['Review LPM'] || ''}</textarea>
+                        </div>
+
                         <div class="flex items-center gap-4 pt-4 border-t mt-4">
                             <button type="button" onclick="window.adminApp.closeModal()" class="w-full py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold">Batal</button>
                             <button type="submit" id="submit-permohonan" class="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">Simpan</button>
@@ -512,25 +545,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>`;
         DOM.modalsContainer.innerHTML = modalHTML;
-        if (isEdit) document.querySelector('#permohonan-form [name="Unit"]').value = item.Unit;
+
+        const statusSelect = document.getElementById('permohonan-status-select');
+        const review1Field = document.getElementById('review-1-field');
+        const reviewSpiField = document.getElementById('review-spi-field');
+        const reviewLpmField = document.getElementById('review-lpm-field');
+
+        const toggleReviewFields = () => {
+            const selectedStatus = statusSelect.value;
+            review1Field.classList.toggle('hidden', selectedStatus !== 'Proses Review 1');
+            reviewSpiField.classList.toggle('hidden', selectedStatus !== 'Proses Review SPI');
+            reviewLpmField.classList.toggle('hidden', selectedStatus !== 'Proses Review LPM');
+        };
+
+        statusSelect.addEventListener('change', toggleReviewFields);
+        toggleReviewFields(); // Panggil sekali saat modal dibuka
+
         document.getElementById('permohonan-form').addEventListener('submit', (e) => handlePermohonanFormSubmit(e, id));
     };
+    
+    // PERUBAHAN BARU: Fungsi handlePermohonanFormSubmit dirombak total
     const handlePermohonanFormSubmit = async (e, id) => {
         e.preventDefault();
-        const isEdit = id !== null;
-        const form = e.target;
-        const data = { 'Unit': form.Unit.value, 'Nama SOP': form.Nama_SOP.value };
-        if(isEdit) data.Status = allData.permohonan.find(p=>p.IDPermohonan === id).Status
-        let fileInfo = null;
-        if (form.file.files[0]) fileInfo = await getFileInfo(form.file.files[0]);
-        const action = isEdit ? 'adminUpdatePermohonan' : 'adminCreatePermohonan';
-        const payload = isEdit ? { id, data, fileInfo } : { data, fileInfo };
         const btn = document.getElementById('submit-permohonan');
         btn.disabled = true;
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
-        const response = await callApi(action, payload);
+        
+        const form = e.target;
+        const formData = new FormData(form);
+        const data = Object.fromEntries(formData.entries());
+
+        // Tambahkan data otomatis
+        data['Diperbarui Oleh'] = sessionStorage.getItem('adminUserEmail') || 'N/A';
+        const today = new Date();
+        data['Tgl Diperbarui'] = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
+
+        const response = await callApi('adminUpdatePermohonan', { id, data });
+
         if (response.status === 'success') {
             closeModal();
+            showToast('Permohonan berhasil diperbarui!', 'success');
             loadDataForView('permohonan', true);
         } else {
             showToast('Gagal: ' + response.message, 'error');
@@ -789,7 +843,6 @@ document.addEventListener('DOMContentLoaded', () => {
         handleSort(e);
     });
     
-    // PERUBAHAN BARU: Event listener untuk tombol Clear Cache
     if (DOM.clearCacheButton) {
         DOM.clearCacheButton.addEventListener('click', async (e) => {
             e.preventDefault();
