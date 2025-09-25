@@ -148,6 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         const isSopView = viewName === 'sop';
+        const isPermohonanView = viewName === 'permohonan';
         const addButtonHTML = isSopView ? `<button onclick="window.adminApp.openSopModal(null)" class="bg-blue-600 text-white hover:bg-blue-700 font-semibold px-4 py-2 rounded-lg flex items-center gap-2 flex-shrink-0"><i class="fas fa-plus"></i> Tambah</button>` : '';
         
         const filtersHTML = `
@@ -158,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><i class="fa fa-search text-gray-400"></i></div>
                     </div>
                     <select data-view="${viewName}" class="filter-unit w-full sm:w-auto p-2 border rounded-md bg-white"><option value="">Semua Unit</option></select>
+                    <select data-view="${viewName}" class="filter-status w-full sm:w-auto p-2 border rounded-md bg-white ${isPermohonanView ? '' : 'hidden'}"><option value="">Semua Status</option></select>
                     <select data-view="${viewName}" class="filter-fungsi w-full sm:w-auto p-2 border rounded-md bg-white ${isSopView ? '' : 'hidden'}"><option value="">Semua Fungsi</option></select>
                     <button data-view="${viewName}" title="Reset Filter" class="reset-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-undo"></i></button>
                     <button data-view="${viewName}" title="Muat Ulang" class="reload-btn p-2 w-10 h-10 border rounded-lg flex items-center justify-center bg-white flex-shrink-0"><i class="fas fa-sync-alt"></i></button>
@@ -182,14 +184,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const applyFiltersAndRender = (viewName) => {
         const searchTerm = document.querySelector(`.filter-search[data-view="${viewName}"]`)?.value.toLowerCase() || '';
         const selectedUnit = document.querySelector(`.filter-unit[data-view="${viewName}"]`)?.value || '';
+        const selectedStatus = document.querySelector(`.filter-status[data-view="${viewName}"]`)?.value || '';
         const selectedFungsi = document.querySelector(`.filter-fungsi[data-view="${viewName}"]`)?.value || '';
 
         let filteredData = allData[viewName].filter(item => {
             const hasSearchTerm = searchTerm === '' || 
                 Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm));
             const hasUnit = selectedUnit === '' || item.Unit === selectedUnit;
+            const hasStatus = viewName !== 'permohonan' || selectedStatus === '' || (item.Status || 'Diajukan') === selectedStatus;
             const hasFungsi = viewName !== 'sop' || selectedFungsi === '' || item.Fungsi === selectedFungsi;
-            return hasSearchTerm && hasUnit && hasFungsi;
+            return hasSearchTerm && hasUnit && hasStatus && hasFungsi;
         });
 
         if (currentSort.view === viewName && currentSort.key) {
@@ -217,6 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const unitSelect = document.querySelector(`.filter-unit[data-view="${viewName}"]`);
         if(unitSelect) unitSelect.innerHTML = '<option value="">Semua Unit</option>' + units.map(u => `<option value="${u}">${u}</option>`).join('');
         
+        if (viewName === 'permohonan') {
+            const statuses = [...new Set(data.map(item => item.Status || 'Diajukan').filter(Boolean))].sort();
+            const statusSelect = document.querySelector(`.filter-status[data-view="${viewName}"]`);
+            if(statusSelect) statusSelect.innerHTML = '<option value="">Semua Status</option>' + statuses.map(s => `<option value="${s}">${s}</option>`).join('');
+        }
+
         if (viewName === 'sop') {
             const fungsis = [...new Set(data.map(item => item.Fungsi).filter(Boolean))].sort();
             const fungsiSelect = document.querySelector(`.filter-fungsi[data-view="${viewName}"]`);
@@ -819,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.body.addEventListener('input', (e) => {
         const target = e.target;
-        if (target.matches('.filter-search, .filter-unit, .filter-fungsi')) {
+        if (target.matches('.filter-search, .filter-unit, .filter-status, .filter-fungsi')) {
             applyFiltersAndRender(target.dataset.view);
         }
     });
@@ -833,6 +843,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const view = resetBtn.dataset.view;
             document.querySelector(`.filter-search[data-view="${view}"]`).value = '';
             document.querySelector(`.filter-unit[data-view="${view}"]`).value = '';
+            if(document.querySelector(`.filter-status[data-view="${view}"]`)) {
+                document.querySelector(`.filter-status[data-view="${view}"]`).value = '';
+            }
             if(document.querySelector(`.filter-fungsi[data-view="${view}"]`)) {
                 document.querySelector(`.filter-fungsi[data-view="${view}"]`).value = '';
             }
